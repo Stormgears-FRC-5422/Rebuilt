@@ -1,6 +1,8 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2026.1.1"
+    id "com.peterabeles.gversion" version "1.10"
+    id "io.freefair.lombok" version "8.4"
 }
 
 java {
@@ -27,14 +29,32 @@ deploy {
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                    jvmArgs.add("-Dcom.sun.management.jmxremote=true")
+                    jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
+                    jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
+                    jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
+                    jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
+                    jvmArgs.add("-Djava.rmi.server.hostname=10.54.22.2")
+                    jvmArgs.add("-XX:+UnlockExperimentalVMOptions")
+                    jvmArgs.add("-XX:GCTimeRatio=5")
+                    jvmArgs.add("-XX:MaxGCPauseMillis=50")
+//                    jvmArgs.add("-Xlog:gc*:file=/U/logs/gc.log:time,uptime,level,tags")
+                    // The options below may improve performance, but should only be enabled on the RIO 2
+                    //
+                    // final MAX_JAVA_HEAP_SIZE_MB = 100;
+                    // jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
+                    // jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
+                    // jvmArgs.add("-XX:+AlwaysPreTouch")
+
                 }
 
                 // Static files artifact
                 frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
                     files = project.fileTree('src/main/deploy')
                     directory = '/home/lvuser/deploy'
-                    deleteOldFiles = false // Change to true to delete files on roboRIO that no
-                                           // longer exist in deploy directory of this project
+                    // Change to true to delete files on roboRIO that no
+                    // longer exist in deploy directory on roboRIO
+                    deleteOldFiles = false
                 }
             }
         }
@@ -43,12 +63,17 @@ deploy {
 
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
-// Set to true to use debug for all targets including JNI, which will drastically impact
-// performance.
+// Set to true to use debug for JNI.
 wpi.java.debugJni = false
 
 // Set this to true to enable desktop support.
 def includeDesktopSupport = true
+
+// Configuration for AdvantageKit
+task(replayWatch, type: JavaExec) {
+    mainClass = "org.littletonrobotics.junction.ReplayWatch"
+    classpath = sourceSets.main.runtimeClasspath
+}
 
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
@@ -73,6 +98,12 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+//    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
+//    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+    // Add the AdvantageKit annotation processor
+    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir, "vendordeps/AdvantageKit.json").text)
+    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+
 }
 
 test {
@@ -81,6 +112,11 @@ test {
 }
 
 // Simulation configuration (e.g. environment variables).
+//
+// The sim GUI is *disabled* by default to support running
+// AdvantageKit log replay from the command line. Set the
+// value to "true" to enable the sim GUI by default (this
+// is the standard WPILib behavior).
 wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
 
@@ -89,9 +125,7 @@ wpi.sim.addDriverstation()
 // knows where to look for our Robot Class.
 jar {
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    from('src') { into 'backup/src' }
-    from('vendordeps') { into 'backup/vendordeps' }
-    from('build.gradle') { into 'backup' }
+    from sourceSets.main.allSource
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
@@ -104,4 +138,61 @@ wpi.java.configureTestTasks(test)
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
+}
+
+// Create version file
+project.compileJava.dependsOn(createVersionFile)
+gversion {
+    srcDir = "src/main/java/"
+    classPackage = "frc.robot"
+    className = "BuildConstants"
+    dateFormat = "yyyy-MM-dd HH:mm:ss z"
+    timeZone = "America/New_York"
+    indent = "  "
+}
+
+// Additions to handle code generation for properties
+// A different source set is required to decouple compilation of the generator from the rest of the code.
+// The generator needs to be compiled and run before the rest of the code is compiled (since generated code is
+// compiled with the rest of the robot
+sourceSets {
+    generate {
+        java {
+            srcDir 'src/generate/java'
+        }
+    }
+}
+
+task compileGeneratorCode(type: JavaCompile) {
+    source = sourceSets.generate.java
+    classpath = configurations.runtimeClasspath
+
+    destinationDir = file("$buildDir/myGeneratorCode")
+    outputs.dir destinationDir
+}
+
+// Task to run the generator
+task generateCode(dependsOn: compileGeneratorCode) {
+    def propertyFileDir = 'src/main/deploy'
+    def outputFileName = 'src/main/java/frc/robot/Constants.java'
+
+    // Dependency on the generated java code being up-to-date
+    inputs.dir file("$buildDir/myGeneratorCode") as Object
+    // Dependency on the *.properties files we care about
+    inputs.files fileTree(dir: propertyFileDir, include: '**/*.properties')
+    // Has the output file been modified? Regenerate it!
+    outputs.file outputFileName
+
+    doLast {
+        javaexec {
+            classpath = files(compileGeneratorCode.destinationDirectory, sourceSets.main.runtimeClasspath)
+            main = 'frc.utils.generator.ConstantGenerator'
+            args = [propertyFileDir, outputFileName]
+        }
+    }
+}
+
+// build task depends on both compileJava and generateCode
+tasks.named('compileJava').configure {
+    dependsOn generateCode
 }

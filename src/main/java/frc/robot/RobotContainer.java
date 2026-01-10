@@ -1,63 +1,90 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.ExampleSubsystem;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.Toggles;
+import frc.robot.commands.HoldSwerveModuleStates;
+import frc.robot.commands.JoyStickDrive;
+import frc.robot.elastic.SwerveModuleTuner;
+import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.subsystems.Lights;
+import frc.robot.subsystems.drive.DrivetrainBase;
+import frc.robot.subsystems.drive.DrivetrainFactory;
+import frc.robot.subsystems.drive.IllegalDriveTypeException;
+import frc.robot.subsystems.drive.config.SwerveModuleConstants;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
+    // **********
+    // Control
+    // **********
+    RebuiltJoystick joystick;
+    @SuppressWarnings("unused")
+    private DrivetrainBase drivetrain;
+    private SwerveModuleTuner tuner;
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+    // **********
+    // Commands
+    // **********
+    // (no pre-created commands)
+    @SuppressWarnings("unused")
+    private Lights lights;
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
-    // Configure the trigger bindings
-    configureBindings();
-  }
+    public RobotContainer() {
+        try {
+            console("[Init] RobotContainer");
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    new Trigger(m_exampleSubsystem::exampleCondition)
-        .onTrue(new ExampleCommand(m_exampleSubsystem));
+            console("Making joystick!");
+            joystick = new RebuiltJoystick(Constants.ButtonBoard.driveJoystickPort);
 
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // cancelling on release.
-    m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
-  }
+            if (Toggles.useDrive) {
+                console("Create drive type " + Constants.Drive.driveType);
+                drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, "");
+            }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
-  public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
-  }
+            if (Toggles.useLights) {
+                lights = new Lights();
+            }
+
+            if (Toggles.usePidTuner) {
+                tuner = new SwerveModuleTuner("PID Tuning", SwerveModuleConstants.drivePidConfig, SwerveModuleConstants.steerPidConfig);
+            }
+
+            configureBindings();
+            console("[DONE] RobotContainer");
+        } catch (IllegalDriveTypeException e) {
+            console("Error: Invalid drive type specified: " + e.getMessage());
+        } catch (RuntimeException e) {
+            console("Error initializing RobotContainer: " + e.getMessage());
+        }
+    }
+
+    private void configureBindings() {
+        console("[Init] configureBindings");
+
+        if (Toggles.useDrive) {
+            JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
+            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
+
+            drivetrain.setDefaultCommand(driveWithJoystick);
+
+            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
+        }
+
+        console("[DONE] configureBindings");
+    }
+
+    public void periodic() {
+        if (tuner != null) {
+            tuner.periodic();
+        }
+    }
+
+    private void console(String message) {
+        System.out.println("RobotContainer : " + message);
+    }
 }
