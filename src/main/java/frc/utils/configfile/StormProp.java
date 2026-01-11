@@ -7,6 +7,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.function.Function;
@@ -83,24 +86,53 @@ public class StormProp {
 
         if (overrideName.equalsIgnoreCase("auto")) {
             System.out.println("Using AUTOMATIC configuration");
+            String autoConfigKey = null;
             Properties rcProperties = new Properties();
             FileInputStream rcStream = null;
+
+            // Try to read .stormrc file
             try {
                 System.out.println("rcFile path: " + RC_FILE.getAbsolutePath());
                 rcStream = new FileInputStream(RC_FILE);
                 rcProperties.load(rcStream);
-                System.out.println("autoConfig setting " + rcProperties.getProperty("autoConfig"));
-                overrideName = properties.getProperty(rcProperties.getProperty("autoConfig"));
+                autoConfigKey = rcProperties.getProperty("autoConfig");
+                System.out.println("autoConfig setting from .stormrc: " + autoConfigKey);
             } catch (FileNotFoundException e) {
-                System.out.println("Failed to find autoConfig file: " + e.getMessage());
+                System.out.println("Failed to find .stormrc file: " + e.getMessage());
             } catch (IOException e) {
-                System.out.println("Error reading autoConfig file: " + e.getMessage());
+                System.out.println("Error reading .stormrc file: " + e.getMessage());
             } finally {
                 if (rcStream != null) {
                     try {
                         rcStream.close();
                     } catch (IOException e) {
-                        System.out.println("Error closing autoConfig file: " + e.getMessage());
+                        System.out.println("Error closing .stormrc file: " + e.getMessage());
+                    }
+                }
+            }
+
+            // If .stormrc didn't provide a valid key, try MAC address detection
+            if (autoConfigKey == null || autoConfigKey.trim().isEmpty()) {
+                System.out.println(".stormrc file missing or empty, falling back to MAC address detection");
+                autoConfigKey = getEth0MacAddress();
+            }
+
+            // Try to find the override file using the autoConfigKey
+            if (autoConfigKey != null) {
+                overrideName = properties.getProperty(autoConfigKey);
+
+                // If the key doesn't map to a valid override file, try MAC address as fallback
+                if (overrideName == null) {
+                    System.out.println("WARNING: autoConfig key '" + autoConfigKey + "' not found in config.properties");
+                    if (!autoConfigKey.startsWith("robot.")) {
+                        System.out.println("Falling back to MAC address detection");
+                        String macAddress = getEth0MacAddress();
+                        if (macAddress != null) {
+                            overrideName = properties.getProperty(macAddress);
+                            if (overrideName != null) {
+                                System.out.println("Found override using MAC address: " + macAddress + " -> " + overrideName);
+                            }
+                        }
                     }
                 }
             }
@@ -176,6 +208,34 @@ public class StormProp {
             throw new IllegalArgumentException("Malformed property value, missing type cast: " + value);
         }
         return value.substring(endIndex + 1).trim();
+    }
+
+    /**
+     * Get the MAC address of the eth0 interface formatted as robot.XX.XX.XX.XX.XX.XX
+     * @return MAC address string or null if not found
+     */
+    private static String getEth0MacAddress() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface ni = interfaces.nextElement();
+                if (ni.getName().equals("eth0")) {
+                    byte[] mac = ni.getHardwareAddress();
+                    if (mac != null && mac.length == 6) {
+                        StringBuilder sb = new StringBuilder("robot");
+                        for (byte b : mac) {
+                            sb.append(String.format(".%02x", b));
+                        }
+                        String macAddress = sb.toString().toLowerCase();
+                        System.out.println("Detected eth0 MAC address: " + macAddress);
+                        return macAddress;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            System.out.println("Error detecting MAC address: " + e.getMessage());
+        }
+        return null;
     }
 
     private static String getPropString(String key) {
