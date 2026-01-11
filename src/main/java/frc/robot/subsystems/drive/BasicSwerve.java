@@ -1,6 +1,5 @@
 package frc.robot.subsystems.drive;
 
-import com.studica.frc.AHRS;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -9,24 +8,26 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Options.DriveOptions;
-import frc.robot.subsystems.drive.config.SwerveModule;
+import frc.robot.subsystems.drive.config.SwerveModuleBase;
 import frc.robot.subsystems.drive.config.SwerveModuleGroup;
+import frc.robot.subsystems.drive.imu.IMU;
+import frc.robot.subsystems.drive.imu.IMUFactory;
 
 import static edu.wpi.first.units.Units.*;
 
 public class BasicSwerve extends DrivetrainBase {
 
     final SwerveModuleGroup moduleGroup;
-    final SwerveModule[] modules;
+    final SwerveModuleBase[] modules;
     final SwerveDriveKinematics kinematics;
     private final DriveOptions options;
-    private final AHRS navx;
+    private final IMU imu;
 
     public BasicSwerve() {
         super();
 
-        navx = new AHRS(AHRS.NavXComType.kMXP_SPI, AHRS.NavXUpdateRate.k50Hz);
-        navx.zeroYaw();
+        imu = IMUFactory.createIMU();
+        imu.reset();
 
         options = DriveOptions.create();
 
@@ -39,8 +40,8 @@ public class BasicSwerve extends DrivetrainBase {
 
         SmartDashboard.putData("Swerve Drive", builder -> {
             builder.setSmartDashboardType("SwerveDrive");
-            builder.addDoubleProperty("Robot Angle", () -> -navx.getYaw(), null);
-            for (SwerveModule m : modules) {
+            builder.addDoubleProperty("Robot Angle", () -> -imu.getYaw(), null);
+            for (SwerveModuleBase m : modules) {
                 builder.addDoubleProperty(m.name + " Angle", m::getSteerAngle, null);
                 builder.addDoubleProperty(m.name + " Velocity", m::getDriveVelocity, null);
             }
@@ -79,7 +80,7 @@ public class BasicSwerve extends DrivetrainBase {
         Angle angle = Radians.of(
                 Math.atan2(m_chassisSpeeds.vyMetersPerSecond, m_chassisSpeeds.vxMetersPerSecond));
 
-        for (SwerveModule m : modules) {
+        for (SwerveModuleBase m : modules) {
             m.setDriveVelocity(speed);
             m.setSteerAngle(angle);
         }
@@ -87,12 +88,12 @@ public class BasicSwerve extends DrivetrainBase {
 
     @Override
     public Rotation2d getRotation() {
-        return new Rotation2d(Degrees.of(-navx.getAngle()));
+        return imu.getRotation();
     }
 
     @Override
     public void resetOrientation() {
-        navx.zeroYaw();
+        imu.reset();
     }
 
     public void stop() {

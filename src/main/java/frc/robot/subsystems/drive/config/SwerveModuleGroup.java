@@ -1,7 +1,5 @@
 package frc.robot.subsystems.drive.config;
 
-import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -18,10 +16,7 @@ public class SwerveModuleGroup {
     final int BACK_LEFT = SwerveModuleConstants.BACK_LEFT;
     final int NUM_MODULES = SwerveModuleConstants.NUM_MODULES;
 
-    final SwerveModule[] swerveModules;
-    final SparkMax[] driveArray;
-    final SparkMax[] steerArray;
-    final CANcoder[] encoderArray;
+    final SwerveModuleBase[] swerveModules;
     final PidConfig drivePidConfig;
     final PidConfig steerPidConfig;
 
@@ -31,29 +26,18 @@ public class SwerveModuleGroup {
         drivePidConfig = SwerveModuleConstants.drivePidConfig;
         steerPidConfig = SwerveModuleConstants.steerPidConfig;
 
-        swerveModules = new SwerveModule[NUM_MODULES];
+        swerveModules = new SwerveModuleBase[NUM_MODULES];
         for (int i = 0; i < NUM_MODULES; i++) {
-            swerveModules[i] = new SwerveModule(
+            swerveModules[i] = SwerveModuleFactory.createModule(
                     i,
                     moduleConfigs[i],
                     drivePidConfig,
                     steerPidConfig);
         }
-
-        driveArray = new SparkMax[NUM_MODULES];
-        steerArray = new SparkMax[NUM_MODULES];
-        encoderArray = new CANcoder[NUM_MODULES];
-
-        // Initialize arrays in module order
-        for (int i = 0; i < NUM_MODULES; i++) {
-            driveArray[i] = swerveModules[i].driveMotor;
-            steerArray[i] = swerveModules[i].steerMotor;
-            encoderArray[i] = swerveModules[i].steerCANCoder;
-        }
     }
 
     public void periodic() {
-        for (SwerveModule module : swerveModules) {
+        for (SwerveModuleBase module : swerveModules) {
             module.periodic();
         }
 
@@ -79,26 +63,14 @@ public class SwerveModuleGroup {
         };
     }
 
-    public SparkMax[] getDriveMotors() {
-        return driveArray;
-    }
-
-    public SparkMax[] getSteerMotors() {
-        return steerArray;
-    }
-
-    public CANcoder[] getEncoders() {
-        return encoderArray;
-    }
-
-    public SwerveModule[] getModules() {
+    public SwerveModuleBase[] getModules() {
         return swerveModules;
     }
 
     public LinearVelocity getMaxLinearVelocity() {
         // return min drive velocity across all modules since the robot can only go as fast as its slowest module
         LinearVelocity minVelocity = MetersPerSecond.of(Double.POSITIVE_INFINITY);
-        for (SwerveModule module : swerveModules) {
+        for (SwerveModuleBase module : swerveModules) {
             LinearVelocity velocity = module.getMaxLinearVelocity();
             if (velocity.in(MetersPerSecond) < minVelocity.in(MetersPerSecond)) {
                 minVelocity = velocity;
@@ -127,7 +99,7 @@ public class SwerveModuleGroup {
     }
 
     public void stop() {
-        for (SwerveModule m : swerveModules) {
+        for (SwerveModuleBase m : swerveModules) {
             m.stop();
         }
     }

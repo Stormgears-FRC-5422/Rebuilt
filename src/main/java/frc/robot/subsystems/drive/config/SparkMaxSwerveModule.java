@@ -14,44 +14,33 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
-import frc.robot.Options.DriveOptions;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
-public class SwerveModule {
+/**
+ * SparkMax-based swerve module implementation.
+ * Uses REV Robotics SparkMax motor controllers and CTRE CANcoder for absolute position.
+ */
+public class SparkMaxSwerveModule extends SwerveModuleBase {
 
-    public final int index;
     public final CANcoder steerCANCoder;
     public final SparkMax driveMotor;
     public final SparkMax steerMotor;
     public final RelativeEncoder driveEncoder;
     public final RelativeEncoder steerEncoder;
-    public final ModuleConfig config;
-    public final String name;
     private final SparkMaxConfig driveConfig;
     private final SparkMaxConfig steerConfig;
     private final SparkClosedLoopController steerController;
     private final SparkClosedLoopController driveController;
-    private final PidConfig dPid;
-    private final PidConfig sPid;
-    public double steerOffset;
     private double driveVelocity;
     private double tgtDriveVelocity = 0;
     private double steerAngle;
     private double tgtSteerAngle = 0;
-    private final DriveOptions options;
 
-    public SwerveModule(int index, ModuleConfig moduleConfig, PidConfig dPid, PidConfig sPid) {
-        options = DriveOptions.create();
-
-        this.index = index;
-        config = moduleConfig;
-        this.dPid = dPid;
-        this.sPid = sPid;
-        name = config.name;
-        steerOffset = config.encoderOffset;
+    public SparkMaxSwerveModule(int index, ModuleConfig moduleConfig, PidConfig drivePidConfig, PidConfig steerPidConfig) {
+        super(index, moduleConfig, drivePidConfig, steerPidConfig);
 
         // CANCODER - read only!
         steerCANCoder = new CANcoder(config.encoderID);
@@ -80,11 +69,11 @@ public class SwerveModule {
 
         driveConfig.apply(driveEncoderConfig);
 
-        dPid.kV = 1.0 / getMaxLinearVelocity().in(MetersPerSecond);
+        drivePidConfig.kV = 1.0 / getMaxLinearVelocity().in(MetersPerSecond);
 
         driveConfig.closedLoop
-                .p(dPid.kP).i(dPid.kI).d(dPid.kD)
-                .velocityFF(dPid.kV).outputRange(dPid.kMin, dPid.kMax);
+                .p(drivePidConfig.kP).i(drivePidConfig.kI).d(drivePidConfig.kD)
+                .velocityFF(drivePidConfig.kV).outputRange(drivePidConfig.kMin, drivePidConfig.kMax);
 
         driveMotor.configure(driveConfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
 
@@ -102,10 +91,10 @@ public class SwerveModule {
         steerEncoderConfig.positionConversionFactor(steerRotationsToDegrees(1.0));
         steerConfig.apply(steerEncoderConfig);
 
-        sPid.kV = 0; // probably want nothing here for the steer
+        steerPidConfig.kV = 0; // probably want nothing here for the steer
         steerConfig.closedLoop
-                .p(sPid.kP).i(sPid.kI).d(sPid.kD)
-                .velocityFF(sPid.kV).outputRange(sPid.kMin, sPid.kMax)
+                .p(steerPidConfig.kP).i(steerPidConfig.kI).d(steerPidConfig.kD)
+                .velocityFF(steerPidConfig.kV).outputRange(steerPidConfig.kMin, steerPidConfig.kMax)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(-180, 180);
 
@@ -120,65 +109,62 @@ public class SwerveModule {
         // /MOTORS
     }
 
+    @Override
     public void periodic() {
         telemetry();
 
-        if (sPid.isDirty()) {
-            updatePidConfig(steerConfig, steerMotor, sPid, "Steer");
+        if (steerPidConfig.isDirty()) {
+            updatePidConfig(steerConfig, steerMotor, steerPidConfig, "Steer");
         }
-        if (dPid.isDirty()) {
-            updatePidConfig(driveConfig, driveMotor, dPid, "Drive");
+        if (drivePidConfig.isDirty()) {
+            updatePidConfig(driveConfig, driveMotor, drivePidConfig, "Drive");
         }
     }
 
-    public void telemetry() {
+    @Override
+    protected void telemetry() {
+        // Update internal cached values for getDriveVelocity() and getSteerAngle()
         driveVelocity = driveEncoder.getVelocity();
         double rawSteerAngle = steerEncoder.getPosition();
         steerAngle = normalizeDegrees(rawSteerAngle);
 
-        Angle canCoderAngle = steerCANCoder.getPosition().getValue();
-
-        Logger.recordOutput("Mod " + name + "/driveOutput", driveMotor.get());
-        Logger.recordOutput("Mod " + name + "/driveVelocity", driveVelocity);
-        Logger.recordOutput("Mod " + name + "/targetDriveVelocity", tgtDriveVelocity);
-        Logger.recordOutput("Mod " + name + "/drivePosition", driveEncoder.getPosition());
-
-        Logger.recordOutput("Mod " + name + "/CANCoder_angle", canCoderAngle.in(Degrees));
-        Logger.recordOutput("Mod " + name + "/CANCoder_abs_pos", steerCANCoder.getAbsolutePosition().getValue().in(Degrees));
-        Logger.recordOutput("Mod " + name + "/normCANCoder", normalizeDegrees(canCoderAngle.in(Degrees)));
-
-        Logger.recordOutput("Mod " + name + "/steerAngle", rawSteerAngle);
-        Logger.recordOutput("Mod " + name + "/normSteerAngle", steerAngle);
-        Logger.recordOutput("Mod " + name + "/targetSteerAngle", tgtSteerAngle);
-        Logger.recordOutput("Mod " + name + "/steerVelocity", steerEncoder.getVelocity());
+        // Log using base class implementation (calls getDriveVelocity() and getSteerAngle())
+        super.telemetry();
     }
 
+    @Override
     public void driveMotorSet(double voltage) {
         driveMotor.set(voltage);
     }
 
+    @Override
     public void steerMotorSet(double voltage) {
         steerMotor.set(voltage);
     }
 
+    @Override
     public double getDriveVelocity() {
         return driveVelocity;
     }
 
+    @Override
     public void setDriveVelocity(LinearVelocity speed) {
         tgtDriveVelocity = speed.in(MetersPerSecond);
         driveController.setReference(tgtDriveVelocity, SparkBase.ControlType.kVelocity);
     }
 
+    @Override
     public double getSteerAngle() {
         return steerAngle;
     }
 
+    @Override
     public void setSteerAngle(Angle angle) {
         tgtSteerAngle = angle.in(Degrees);
         steerController.setReference(tgtSteerAngle, SparkBase.ControlType.kPosition);
     }
 
+    @Override
     public final LinearVelocity getMaxLinearVelocity() {
         // Calculate actual max RPM based on voltage compensation
         double maxRpm = Constants.SparkConstants.FreeSpeedRPM * (Constants.SparkConstants.NominalVoltage / 12.0);
@@ -186,6 +172,7 @@ public class SwerveModule {
         return MetersPerSecond.of(driveRPMToMetersPerSecond(maxRpm));
     }
 
+    @Override
     public void setSwerveModuleState(SwerveModuleState state) {
         if (Constants.Drive.angleOptimize) {
             state.optimize(new Rotation2d(Degrees.of(steerAngle)));
@@ -199,6 +186,7 @@ public class SwerveModule {
         setSteerAngle(Degrees.of(state.angle.getDegrees()));
     }
 
+    @Override
     public void stop() {
         driveMotorSet(0);
     }
@@ -230,26 +218,5 @@ public class SwerveModule {
         return rotations // input rotations
                 * 360.0 // degrees per rotation
                 * (1.0 / config.steerRatio); // output rotations per input rotation
-    }
-
-    private double normalizeDegrees(double unwoundAngleDegrees) {
-        // First, use modulo to get the angle within a 360 degree range (0 to 360)
-        double angleMod = unwoundAngleDegrees % 360.0;
-
-        // Handle negative angles (modulo in Java can return negative values)
-        if (angleMod < 0) {
-            angleMod += 360.0;
-        }
-
-        // Now convert from 0-360 range to -180 to 180 range
-        if (angleMod > 180.0) {
-            angleMod -= 360.0;
-        }
-
-        return angleMod;
-    }
-
-    private void console(String message) {
-        System.out.println("SwerveModule (" + name + "): " + message);
     }
 }
