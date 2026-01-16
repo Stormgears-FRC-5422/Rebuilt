@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.imu;
+package frc.robot.sensors.imu;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.Constants;
@@ -14,7 +14,7 @@ public abstract class IMUBase implements IMU {
 
     protected IMUBase(String name) {
         this.name = name;
-        this.invertMultiplier = Constants.Drive.imuInverted ? 1.0 : -1.0;
+        this.invertMultiplier = Constants.Imu.inverted ? 1.0 : -1.0;
     }
 
     /**

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.imu;
+package frc.robot.sensors.imu;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 

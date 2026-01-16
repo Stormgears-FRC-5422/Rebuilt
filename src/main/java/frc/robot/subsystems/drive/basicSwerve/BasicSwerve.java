@@ -9,8 +9,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Options.DriveOptions;
 import frc.robot.subsystems.drive.DrivetrainBase;
-import frc.robot.subsystems.drive.imu.IMU;
-import frc.robot.subsystems.drive.imu.IMUFactory;
+import frc.robot.sensors.imu.IMU;
+import frc.robot.sensors.imu.IMUFactory;
 
 import static edu.wpi.first.units.Units.*;
 
