@@ -1,6 +1,11 @@
 package frc.robot.subsystems.drive.basicSwerve.config;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 
 public class ModuleConfig {
     private boolean isDirty = false;
@@ -11,10 +16,10 @@ public class ModuleConfig {
     public boolean steerInverted = false;
     public double driveRatio = 1;
     public double steerRatio = 1;
-    public double wheelDiameter = 0;
+    public Distance wheelDiameter = Inches.of(0);
     public boolean driveCoast = true;
     public boolean steerCoast = true;
-    public double encoderOffset = 0;
+    public Angle encoderOffset = Degrees.of(0);
     public boolean invertEncoder = false;
     public Translation2d offset = new Translation2d();
     public String name = "module";
@@ -99,12 +104,12 @@ public class ModuleConfig {
         return this;
     }
 
-    public ModuleConfig withWheelDiameter(double newDiameter) {
+    public ModuleConfig withWheelDiameter(Distance newDiameter) {
         wheelDiameter = newDiameter;
         return this;
     }
 
-    public ModuleConfig withEncoderOffset(double newEncoderOffset) {
+    public ModuleConfig withEncoderOffset(Angle newEncoderOffset) {
         encoderOffset = newEncoderOffset;
         return this;
     }
@@ -127,10 +132,10 @@ public class ModuleConfig {
         ss += "        encoderID: " + encoderID + "\n";
         ss += "    driveInverted: " + driveInverted + "\n";
         ss += "    steerInverted: " + steerInverted + "\n";
-        ss += "    wheelDiameter: " + wheelDiameter + "\n";
+        ss += "    wheelDiameter: " + wheelDiameter.in(Inches) + " in\n";
         ss += "       driveCoast: " + driveCoast + "\n";
         ss += "       steerCoast: " + steerCoast + "\n";
-        ss += "    encoderOffset: " + encoderOffset + "\n";
+        ss += "    encoderOffset: " + encoderOffset.in(Degrees) + " deg\n";
         ss += "    invertEncoder: " + invertEncoder + "\n";
         ss += "           offset: " + offset + "\n";
         return ss;

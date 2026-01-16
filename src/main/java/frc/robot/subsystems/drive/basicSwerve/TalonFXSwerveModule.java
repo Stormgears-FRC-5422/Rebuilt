@@ -48,8 +48,8 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         steerMotor = new TalonFX(config.steerID, canBus);
         steerCANCoder = new CANcoder(config.encoderID, canBus);
 
-        // CANcoder setup - apply encoder offset via magnet offset (convert degrees to rotations)
-        double offsetRotations = -steerOffset / 360.0;
+        // CANcoder setup - apply encoder offset via magnet offset
+        double offsetRotations = -steerOffset.in(Rotations);
         configureCancoderMagnetOffset(steerCANCoder, offsetRotations);
 
         // Delegate configuration
@@ -143,13 +143,13 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
     }
 
     @Override
-    public double getDriveVelocity() {
-        return driveVelocity;
+    public LinearVelocity getDriveVelocity() {
+        return MetersPerSecond.of(driveVelocity);
     }
 
     @Override
-    public double getSteerAngle() {
-        return steerAngle;
+    public Angle getSteerAngle() {
+        return Degrees.of(steerAngle);
     }
 
     @Override

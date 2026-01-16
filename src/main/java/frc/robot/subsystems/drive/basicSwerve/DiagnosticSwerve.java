@@ -4,8 +4,8 @@ import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 import org.littletonrobotics.junction.Logger;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 /**
  * Diagnostic swerve drive for low-level motor testing.
@@ -26,8 +26,8 @@ public class DiagnosticSwerve extends DrivetrainBase {
         super();
 
         moduleGroup = new SwerveModuleGroup();
-        setMaxVelocities(moduleGroup.getMaxLinearVelocity().in(MetersPerSecond),
-                moduleGroup.getMaxAngularVelocity().in(RadiansPerSecond));
+        setMaxVelocities(moduleGroup.getMaxLinearVelocity(),
+                moduleGroup.getMaxAngularVelocity());
 
         modules = moduleGroup.getModules();
     }
@@ -44,15 +44,15 @@ public class DiagnosticSwerve extends DrivetrainBase {
         }
 
         // Log telemetry using hardware-agnostic methods
-        Logger.recordOutput("Diagnostic/" + modules[FRONT_LEFT].name + "/steerAngle", modules[FRONT_LEFT].getSteerAngle());
-        Logger.recordOutput("Diagnostic/" + modules[FRONT_RIGHT].name + "/steerAngle", modules[FRONT_RIGHT].getSteerAngle());
-        Logger.recordOutput("Diagnostic/" + modules[BACK_LEFT].name + "/steerAngle", modules[BACK_LEFT].getSteerAngle());
-        Logger.recordOutput("Diagnostic/" + modules[BACK_RIGHT].name + "/steerAngle", modules[BACK_RIGHT].getSteerAngle());
+        Logger.recordOutput("Diagnostic/" + modules[FRONT_LEFT].name + "/steerAngle", modules[FRONT_LEFT].getSteerAngle().in(Degrees));
+        Logger.recordOutput("Diagnostic/" + modules[FRONT_RIGHT].name + "/steerAngle", modules[FRONT_RIGHT].getSteerAngle().in(Degrees));
+        Logger.recordOutput("Diagnostic/" + modules[BACK_LEFT].name + "/steerAngle", modules[BACK_LEFT].getSteerAngle().in(Degrees));
+        Logger.recordOutput("Diagnostic/" + modules[BACK_RIGHT].name + "/steerAngle", modules[BACK_RIGHT].getSteerAngle().in(Degrees));
 
-        Logger.recordOutput("Diagnostic/" + modules[FRONT_LEFT].name + "/driveVelocity", modules[FRONT_LEFT].getDriveVelocity());
-        Logger.recordOutput("Diagnostic/" + modules[FRONT_RIGHT].name + "/driveVelocity", modules[FRONT_RIGHT].getDriveVelocity());
-        Logger.recordOutput("Diagnostic/" + modules[BACK_LEFT].name + "/driveVelocity", modules[BACK_LEFT].getDriveVelocity());
-        Logger.recordOutput("Diagnostic/" + modules[BACK_RIGHT].name + "/driveVelocity", modules[BACK_RIGHT].getDriveVelocity());
+        Logger.recordOutput("Diagnostic/" + modules[FRONT_LEFT].name + "/driveVelocity", modules[FRONT_LEFT].getDriveVelocity().in(MetersPerSecond));
+        Logger.recordOutput("Diagnostic/" + modules[FRONT_RIGHT].name + "/driveVelocity", modules[FRONT_RIGHT].getDriveVelocity().in(MetersPerSecond));
+        Logger.recordOutput("Diagnostic/" + modules[BACK_LEFT].name + "/driveVelocity", modules[BACK_LEFT].getDriveVelocity().in(MetersPerSecond));
+        Logger.recordOutput("Diagnostic/" + modules[BACK_RIGHT].name + "/driveVelocity", modules[BACK_RIGHT].getDriveVelocity().in(MetersPerSecond));
 
         Logger.recordOutput("Diagnostic/driveSpeedCommand", driveSpeed);
         Logger.recordOutput("Diagnostic/steerSpeedCommand", steerSpeed);

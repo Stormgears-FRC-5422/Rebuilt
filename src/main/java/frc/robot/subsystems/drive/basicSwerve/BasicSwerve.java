@@ -31,8 +31,8 @@ public class BasicSwerve extends DrivetrainBase {
         options = DriveOptions.create();
 
         moduleGroup = new SwerveModuleGroup();
-        setMaxVelocities(moduleGroup.getMaxLinearVelocity().in(MetersPerSecond),
-                moduleGroup.getMaxAngularVelocity().in(RadiansPerSecond));
+        setMaxVelocities(moduleGroup.getMaxLinearVelocity(),
+                moduleGroup.getMaxAngularVelocity());
 
         kinematics = new SwerveDriveKinematics(moduleGroup.getModuleTranslations());
         modules = moduleGroup.getModules();
@@ -41,8 +41,8 @@ public class BasicSwerve extends DrivetrainBase {
             builder.setSmartDashboardType("SwerveDrive");
             builder.addDoubleProperty("Robot Angle", () -> imu.getRotation().getDegrees(), null);
             for (SwerveModuleBase m : modules) {
-                builder.addDoubleProperty(m.name + " Angle", m::getSteerAngle, null);
-                builder.addDoubleProperty(m.name + " Velocity", m::getDriveVelocity, null);
+                builder.addDoubleProperty(m.name + " Angle", () -> m.getSteerAngle().in(Degrees), null);
+                builder.addDoubleProperty(m.name + " Velocity", () -> m.getDriveVelocity().in(MetersPerSecond), null);
             }
         });
     }

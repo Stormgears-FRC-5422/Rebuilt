@@ -3,18 +3,23 @@ package frc.robot.subsystems.drive;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.Drive;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.NullIMU;
 import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.AutoLogOutput;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
 public abstract class DrivetrainBase extends StormSubsystem {
 
     public static boolean driveFlip = true;
     public static boolean fieldRelativeOn = true;
-    protected double m_maxVelocityMetersPerSecond = 1;
-    protected double m_maxAngularVelocityRadiansPerSecond = 1;
+    protected LinearVelocity m_maxVelocity = MetersPerSecond.of(1);
+    protected AngularVelocity m_maxAngularVelocity = RadiansPerSecond.of(1);
     protected double m_driveSpeedScale = 0;
     protected boolean m_fieldRelative = false;
 
@@ -35,11 +40,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
         fieldRelativeOn = flip;
     }
 
-    protected final void setMaxVelocities(double maxVelocityMetersPerSecond, double maxAngularVelocityRadiansPerSecond) {
-        m_maxVelocityMetersPerSecond = maxVelocityMetersPerSecond;
-        m_maxAngularVelocityRadiansPerSecond = maxAngularVelocityRadiansPerSecond;
-        console("MaxDriveVelocity: " + m_maxVelocityMetersPerSecond);
-        console("MaxAngularVelocity: " + m_maxAngularVelocityRadiansPerSecond);
+    protected final void setMaxVelocities(LinearVelocity maxVelocity, AngularVelocity maxAngularVelocity) {
+        m_maxVelocity = maxVelocity;
+        m_maxAngularVelocity = maxAngularVelocity;
+        console("MaxDriveVelocity: " + m_maxVelocity.in(MetersPerSecond));
+        console("MaxAngularVelocity: " + m_maxAngularVelocity.in(RadiansPerSecond));
     }
 
     public final void setDriveSpeedScale(double scale) {
@@ -85,9 +90,9 @@ public abstract class DrivetrainBase extends StormSubsystem {
      * @param fieldRelative True for field relative driving
      */
     public void percentOutputDrive(ChassisSpeeds speeds, boolean fieldRelative) {
-        drive(new ChassisSpeeds(speeds.vxMetersPerSecond * m_maxVelocityMetersPerSecond,
-                speeds.vyMetersPerSecond * m_maxVelocityMetersPerSecond,
-                speeds.omegaRadiansPerSecond * m_maxAngularVelocityRadiansPerSecond),
+        drive(new ChassisSpeeds(speeds.vxMetersPerSecond * m_maxVelocity.in(MetersPerSecond),
+                speeds.vyMetersPerSecond * m_maxVelocity.in(MetersPerSecond),
+                speeds.omegaRadiansPerSecond * m_maxAngularVelocity.in(RadiansPerSecond)),
                 fieldRelative);
     }
 

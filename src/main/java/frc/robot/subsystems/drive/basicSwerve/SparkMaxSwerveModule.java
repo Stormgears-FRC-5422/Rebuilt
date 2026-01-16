@@ -119,7 +119,7 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
 
     private void syncSteerEncoderWithCancoder() {
         double cancoderPosition = steerCANCoder.getAbsolutePosition().getValue().in(Degrees);
-        steerEncoder.setPosition(cancoderPosition - steerOffset);
+        steerEncoder.setPosition(cancoderPosition - steerOffset.in(Degrees));
     }
 
     @Override
@@ -156,8 +156,8 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     }
 
     @Override
-    public double getDriveVelocity() {
-        return driveVelocity;
+    public LinearVelocity getDriveVelocity() {
+        return MetersPerSecond.of(driveVelocity);
     }
 
     @Override
@@ -166,8 +166,8 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     }
 
     @Override
-    public double getSteerAngle() {
-        return steerAngle;
+    public Angle getSteerAngle() {
+        return Degrees.of(steerAngle);
     }
 
     @Override

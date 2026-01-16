@@ -14,6 +14,7 @@ import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 /**
@@ -29,7 +30,7 @@ public abstract class SwerveModuleBase {
     protected final PidConfig steerPidConfig;
     protected final DriveOptions options;
 
-    public double steerOffset;
+    public Angle steerOffset;
 
     public SwerveModuleBase(int index, ModuleConfig config, PidConfig drivePidConfig, PidConfig steerPidConfig) {
         this.index = index;
@@ -59,26 +60,26 @@ public abstract class SwerveModuleBase {
      */
     public void setSwerveModuleState(SwerveModuleState state) {
         if (Constants.Drive.angleOptimize) {
-            state.optimize(new Rotation2d(Degrees.of(getSteerAngle())));
+            state.optimize(new Rotation2d(getSteerAngle()));
         }
         if (Constants.Drive.cosineOptimize) {
-            state.cosineScale(new Rotation2d(Degrees.of(getSteerAngle())));
+            state.cosineScale(new Rotation2d(getSteerAngle()));
         }
         setDriveVelocity(MetersPerSecond.of(state.speedMetersPerSecond));
         setSteerAngle(Degrees.of(state.angle.getDegrees()));
     }
 
     /**
-     * Get the current drive velocity in m/s
+     * Get the current drive velocity
      * @return Current drive velocity
      */
-    public abstract double getDriveVelocity();
+    public abstract LinearVelocity getDriveVelocity();
 
     /**
-     * Get the current steering angle in degrees
+     * Get the current steering angle
      * @return Current steer angle
      */
-    public abstract double getSteerAngle();
+    public abstract Angle getSteerAngle();
 
     /**
      * Get the maximum linear velocity this module can achieve
@@ -135,8 +136,8 @@ public abstract class SwerveModuleBase {
      * All values are accessed through abstract methods, so this works with any hardware.
      */
     protected void telemetry() {
-        Logger.recordOutput("Mod " + name + "/driveVelocity", getDriveVelocity());
-        Logger.recordOutput("Mod " + name + "/steerAngle", getSteerAngle());
+        Logger.recordOutput("Mod " + name + "/driveVelocity", getDriveVelocity().in(MetersPerSecond));
+        Logger.recordOutput("Mod " + name + "/steerAngle", getSteerAngle().in(Degrees));
     }
 
     /**
@@ -151,14 +152,12 @@ public abstract class SwerveModuleBase {
     // These are pure physics calculations based on module geometry.
     // Implementations use the appropriate method for their unit convention.
 
-    private static final double INCHES_TO_METERS = 0.0254;
-
     /**
      * Convert wheel rotations per second to linear velocity in m/s.
      * Use when the encoder reports wheel-level rotational speed (e.g., TalonFX with SensorToMechanismRatio).
      */
     protected double wheelRPSToMetersPerSecond(double wheelRPS) {
-        double circumference = Math.PI * config.wheelDiameter * INCHES_TO_METERS;
+        double circumference = Math.PI * config.wheelDiameter.in(Meters);
         return wheelRPS * circumference;
     }
 
@@ -167,7 +166,7 @@ public abstract class SwerveModuleBase {
      * Use when setting wheel-level velocity setpoints (e.g., TalonFX with SensorToMechanismRatio).
      */
     protected double metersPerSecondToWheelRPS(double mps) {
-        double circumference = Math.PI * config.wheelDiameter * INCHES_TO_METERS;
+        double circumference = Math.PI * config.wheelDiameter.in(Meters);
         return mps / circumference;
     }
 
