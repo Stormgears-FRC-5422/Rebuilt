@@ -1,12 +1,20 @@
 package frc.robot.subsystems.drive.basicSwerve;
 
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
+import frc.robot.Constants;
 import frc.robot.Options.DriveOptions;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
 import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 import org.littletonrobotics.junction.Logger;
+
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 /**
  * Abstract base class for swerve modules.
@@ -46,10 +54,19 @@ public abstract class SwerveModuleBase {
     public abstract void setSteerAngle(Angle angle);
 
     /**
-     * Set the module state (velocity and angle)
+     * Set the module state (velocity and angle) with optimization.
      * @param state Target swerve module state
      */
-    public abstract void setSwerveModuleState(SwerveModuleState state);
+    public void setSwerveModuleState(SwerveModuleState state) {
+        if (Constants.Drive.angleOptimize) {
+            state.optimize(new Rotation2d(Degrees.of(getSteerAngle())));
+        }
+        if (Constants.Drive.cosineOptimize) {
+            state.cosineScale(new Rotation2d(Degrees.of(getSteerAngle())));
+        }
+        setDriveVelocity(MetersPerSecond.of(state.speedMetersPerSecond));
+        setSteerAngle(Degrees.of(state.angle.getDegrees()));
+    }
 
     /**
      * Get the current drive velocity in m/s
@@ -128,5 +145,83 @@ public abstract class SwerveModuleBase {
      */
     protected void console(String message) {
         System.out.println("SwerveModule (" + name + "): " + message);
+    }
+
+    // ==================== Unit Conversion Methods ====================
+    // These are pure physics calculations based on module geometry.
+    // Implementations use the appropriate method for their unit convention.
+
+    private static final double INCHES_TO_METERS = 0.0254;
+
+    /**
+     * Convert wheel rotations per second to linear velocity in m/s.
+     * Use when the encoder reports wheel-level rotational speed (e.g., TalonFX with SensorToMechanismRatio).
+     */
+    protected double wheelRPSToMetersPerSecond(double wheelRPS) {
+        double circumference = Math.PI * config.wheelDiameter * INCHES_TO_METERS;
+        return wheelRPS * circumference;
+    }
+
+    /**
+     * Convert linear velocity in m/s to wheel rotations per second.
+     * Use when setting wheel-level velocity setpoints (e.g., TalonFX with SensorToMechanismRatio).
+     */
+    protected double metersPerSecondToWheelRPS(double mps) {
+        double circumference = Math.PI * config.wheelDiameter * INCHES_TO_METERS;
+        return mps / circumference;
+    }
+
+    /**
+     * Convert motor RPM to linear velocity in m/s (accounts for gear ratio).
+     * Use when the encoder reports raw motor rotational speed (e.g., SparkMax).
+     */
+    protected double motorRPMToMetersPerSecond(double motorRPM) {
+        double wheelRPM = motorRPM / config.driveRatio;
+        double wheelRPS = wheelRPM / 60.0;
+        return wheelRPSToMetersPerSecond(wheelRPS);
+    }
+
+    /**
+     * Convert linear velocity in m/s to motor RPM (accounts for gear ratio).
+     * Use when setting motor-level velocity setpoints (e.g., SparkMax).
+     */
+    protected double metersPerSecondToMotorRPM(double mps) {
+        double wheelRPS = metersPerSecondToWheelRPS(mps);
+        double wheelRPM = wheelRPS * 60.0;
+        return wheelRPM * config.driveRatio;
+    }
+
+    /**
+     * Convert motor rotations to steer angle in degrees (accounts for gear ratio).
+     */
+    protected double steerRotationsToDegrees(double rotations) {
+        return rotations * 360.0 / config.steerRatio;
+    }
+
+    // ==================== CANcoder Configuration ====================
+
+    /**
+     * Configure a CANcoder with zero magnetic offset.
+     * Use this when the offset will be applied elsewhere (e.g., to a relative encoder).
+     */
+    protected StatusCode configureCancoderMagnetOffset(CANcoder cancoder) {
+        return configureCancoderMagnetOffset(cancoder, 0.0);
+    }
+
+    /**
+     * Configure a CANcoder with a specified magnetic offset.
+     * Use this when the CANcoder is used directly for feedback (e.g., TalonFX remote sensor).
+     * The offset is in rotations (CANcoder native units).
+     */
+    protected StatusCode configureCancoderMagnetOffset(CANcoder cancoder, double offsetRotations) {
+        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
+        canCoderConfig.MagnetSensor.MagnetOffset = offsetRotations;
+        StatusCode status = cancoder.getConfigurator().apply(canCoderConfig, 0.050);
+        if (status.isOK()) {
+            console("Successfully configured CANcoder " + config.encoderID + " magnetic offset: " + offsetRotations + " rotations");
+        } else {
+            console("Failed to configure CANcoder " + config.encoderID + " magnetic offset: " + status);
+        }
+        return status;
     }
 }

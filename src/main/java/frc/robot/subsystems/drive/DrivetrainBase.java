@@ -4,6 +4,8 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Constants.Drive;
+import frc.robot.sensors.imu.IMU;
+import frc.robot.sensors.imu.NullIMU;
 import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.AutoLogOutput;
 
@@ -90,7 +92,16 @@ public abstract class DrivetrainBase extends StormSubsystem {
     }
 
     public Rotation2d getRotation() {
-        return new Rotation2d();
+        return getIMU().getRotation();
+    }
+
+    /**
+     * Get the IMU used by this drivetrain.
+     * Subclasses should override to return their actual IMU.
+     * @return IMU instance (NullIMU if not overridden)
+     */
+    public IMU getIMU() {
+        return new NullIMU();
     }
 
     // Teach the drive that the current orientation is facing the opposite end of the field

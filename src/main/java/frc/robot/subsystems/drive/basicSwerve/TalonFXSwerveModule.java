@@ -1,7 +1,6 @@
 package frc.robot.subsystems.drive.basicSwerve;
 
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -10,8 +9,6 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
@@ -33,24 +30,29 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
     private final VelocityVoltage driveVelocityControl;
     private final PositionVoltage steerPositionControl;
 
-    private final String canBusName;
+    // Cached sensor values (updated in periodic)
+    private double driveVelocity;
+    private double steerAngle;
 
     public TalonFXSwerveModule(int index, ModuleConfig moduleConfig, PidConfig drivePidConfig, PidConfig steerPidConfig) {
         super(index, moduleConfig, drivePidConfig, steerPidConfig);
 
-        canBusName = Constants.Drive.canBusName;
+        // CANBus setup
+        String canBusName = Constants.Drive.canBusName;
         String busName = (canBusName == null || canBusName.isEmpty()) ? "" : canBusName;
         CANBus canBus = new CANBus(busName);
-
         console("Configured for CANivore: \"" + busName + "\"");
 
+        // Hardware creation
         driveMotor = new TalonFX(config.driveID, canBus);
         steerMotor = new TalonFX(config.steerID, canBus);
         steerCANCoder = new CANcoder(config.encoderID, canBus);
 
-        configureCancoder();
-        Angle canOffset = Degrees.of(steerOffset);
+        // CANcoder setup - apply encoder offset via magnet offset (convert degrees to rotations)
+        double offsetRotations = -steerOffset / 360.0;
+        configureCancoderMagnetOffset(steerCANCoder, offsetRotations);
 
+        // Delegate configuration
         configureDriveMotor();
         configureSteerMotor();
 
@@ -58,19 +60,7 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         driveVelocityControl = new VelocityVoltage(0).withSlot(0);
         steerPositionControl = new PositionVoltage(0).withSlot(0);
 
-        console("TalonFX module initialized on " + canBusName);
-    }
-
-    private void configureCancoder() {
-        // Zero the magnetic offset to ensure we obliterate any prior stored values and read raw values
-        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
-        canCoderConfig.MagnetSensor.MagnetOffset = 0.0;
-        StatusCode status = steerCANCoder.getConfigurator().apply(canCoderConfig, 0.050);
-        if (status.isOK()) {
-            console("Successfully configured CANcoder " + config.encoderID + " magnetic offset");
-        } else {
-            console("Failed to configure CANcoder " + config.encoderID + " magnetic offset: " + status.toString());
-        }
+        console("TalonFX module initialized");
     }
 
     private void configureDriveMotor() {
@@ -135,70 +125,52 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
 
         // Closed loop configuration for continuous rotation
         ClosedLoopGeneralConfigs closedLoop = steerConfig.ClosedLoopGeneral;
-        closedLoop.ContinuousWrap = true; // Enable position wrapping at ±0.5 rotations (±180°)
+        closedLoop.ContinuousWrap = true;
 
         steerMotor.getConfigurator().apply(steerConfig);
     }
 
     @Override
     public void setDriveVelocity(LinearVelocity speed) {
-        // Convert m/s to rotations/second of the wheel
-        double wheelCircumference = Math.PI * config.wheelDiameter * 0.0254; // inches to meters
-        double targetRPS = speed.in(MetersPerSecond) / wheelCircumference;
-
+        double targetRPS = metersPerSecondToWheelRPS(speed.in(MetersPerSecond));
         driveMotor.setControl(driveVelocityControl.withVelocity(targetRPS));
     }
 
     @Override
     public void setSteerAngle(Angle angle) {
-        // Convert degrees to rotations
         double targetRotations = angle.in(Degrees) / 360.0;
-
         steerMotor.setControl(steerPositionControl.withPosition(targetRotations));
     }
 
     @Override
-    public void setSwerveModuleState(SwerveModuleState state) {
-        if (Constants.Drive.angleOptimize) {
-            state.optimize(new Rotation2d(Degrees.of(getSteerAngle())));
-        }
-
-        if (Constants.Drive.cosineOptimize) {
-            state.cosineScale(new Rotation2d(Degrees.of(getSteerAngle())));
-        }
-
-        setDriveVelocity(MetersPerSecond.of(state.speedMetersPerSecond));
-        setSteerAngle(Degrees.of(state.angle.getDegrees()));
-    }
-
-    @Override
     public double getDriveVelocity() {
-        double rps = driveMotor.getVelocity().getValueAsDouble(); // rotations per second
-        double wheelCircumference = Math.PI * config.wheelDiameter * 0.0254;
-        return rps * wheelCircumference; // m/s
+        return driveVelocity;
     }
 
     @Override
     public double getSteerAngle() {
-        double rotations = steerMotor.getPosition().getValueAsDouble();
-        return normalizeDegrees(rotations * 360.0); // rotations to degrees, normalized
+        return steerAngle;
     }
 
     @Override
     public LinearVelocity getMaxLinearVelocity() {
         // Kraken X60 free speed: ~6000 RPM
         double krakenFreeSpeedRPM = 6000.0;
-        double maxRPM = krakenFreeSpeedRPM / config.driveRatio;
-        double maxRPS = maxRPM / 60.0;
-        double wheelCircumference = Math.PI * config.wheelDiameter * 0.0254;
-        return MetersPerSecond.of(maxRPS * wheelCircumference);
+        double maxWheelRPM = krakenFreeSpeedRPM / config.driveRatio;
+        double maxWheelRPS = maxWheelRPM / 60.0;
+        return MetersPerSecond.of(wheelRPSToMetersPerSecond(maxWheelRPS));
     }
 
     @Override
     public void periodic() {
+        // Update cached sensor values
+        double wheelRPS = driveMotor.getVelocity().getValueAsDouble();
+        driveVelocity = wheelRPSToMetersPerSecond(wheelRPS);
+        double rotations = steerMotor.getPosition().getValueAsDouble();
+        steerAngle = normalizeDegrees(rotations * 360.0);
+
         telemetry();
 
-        // Check for PID updates (dirty flag pattern)
         if (drivePidConfig.isDirty()) {
             configureDriveMotor();
             drivePidConfig.clearDirty();
@@ -220,7 +192,6 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         steerMotor.stopMotor();
     }
 
-    // Diagnostic methods (for DiagnosticSwerve compatibility)
     @Override
     public void driveMotorSet(double voltage) {
         driveMotor.set(voltage);

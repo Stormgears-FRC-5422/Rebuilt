@@ -86,6 +86,11 @@ public class BasicSwerve extends DrivetrainBase {
     }
 
     @Override
+    public IMU getIMU() {
+        return imu;
+    }
+
+    @Override
     public Rotation2d getRotation() {
         return imu.getRotation();
     }
