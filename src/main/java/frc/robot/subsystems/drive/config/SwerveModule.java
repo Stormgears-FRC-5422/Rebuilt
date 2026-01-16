@@ -1,5 +1,7 @@
 package frc.robot.subsystems.drive.config;
 
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.REVLibError;
@@ -53,16 +55,20 @@ public class SwerveModule {
         name = config.name;
         steerOffset = config.encoderOffset;
 
-        // CANCODER - read only!
+		// CANCoder
         steerCANCoder = new CANcoder(config.encoderID);
 
         // Zero the magnetic offset to ensure we obliterate any prior stored values and read raw values
-        MagnetSensorConfigs magnetConfigs = new MagnetSensorConfigs();
-        magnetConfigs.MagnetOffset = 0.0;
-        steerCANCoder.getConfigurator().apply(magnetConfigs);
+        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
+        canCoderConfig.MagnetSensor.MagnetOffset = 0.0;
+        StatusCode status = steerCANCoder.getConfigurator().apply(canCoderConfig, 0.050);
+        if (status.isOK()) {
+            console("Successfully configured CANcoder " + config.encoderID + " magnetic offset");
+        } else {
+            console("Failed to configure CANcoder " + config.encoderID + " magnetic offset: " + status.toString());
+        }
 
-        Angle canOffset = Degrees.of(steerOffset);
-        // /CANCODER
+        Angle canOffset = Degrees.of(steerOffset);       
 
         // MOTORS
         SparkMaxConfig globalConfig = new SparkMaxConfig();

@@ -1,6 +1,5 @@
 package frc.robot.subsystems.drive;
 
-import com.studica.frc.AHRS;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -9,8 +8,9 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Options.DriveOptions;
-import frc.robot.subsystems.drive.config.SwerveModule;
 import frc.robot.subsystems.drive.config.SwerveModuleGroup;
+import frc.robot.subsystems.drive.config.SwerveModule;
+import com.studica.frc.AHRS;
 
 import static edu.wpi.first.units.Units.*;
 
