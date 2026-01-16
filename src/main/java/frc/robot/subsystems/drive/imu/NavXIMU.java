@@ -1,34 +1,29 @@
 package frc.robot.subsystems.drive.imu;
 
 import com.studica.frc.AHRS;
-import edu.wpi.first.math.geometry.Rotation2d;
-import static edu.wpi.first.units.Units.Degrees;
+import frc.robot.Constants;
 
 /**
  * NavX IMU implementation using Studica AHRS.
  * Communicates via MXP SPI interface.
  */
-public class NavXIMU implements IMU {
+public class NavXIMU extends IMUBase {
     private final AHRS navx;
 
     public NavXIMU() {
+        super("NavX");
         navx = new AHRS(AHRS.NavXComType.kMXP_SPI, AHRS.NavXUpdateRate.k50Hz);
         navx.zeroYaw();
-        System.out.println("NavX IMU initialized on MXP SPI");
+        console("Initialized on MXP SPI (inverted: " + Constants.Drive.imuInverted + ")");
     }
 
     @Override
-    public Rotation2d getRotation() {
-        return new Rotation2d(Degrees.of(-navx.getAngle()));
+    protected double getRawAngle() {
+        return navx.getAngle();
     }
 
     @Override
     public void reset() {
         navx.zeroYaw();
-    }
-
-    @Override
-    public double getYaw() {
-        return navx.getYaw();
     }
 }

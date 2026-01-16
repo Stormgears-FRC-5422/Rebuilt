@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive;
+package frc.robot.subsystems.drive.basicSwerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -8,8 +8,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Options.DriveOptions;
-import frc.robot.subsystems.drive.config.SwerveModuleBase;
-import frc.robot.subsystems.drive.config.SwerveModuleGroup;
+import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.imu.IMU;
 import frc.robot.subsystems.drive.imu.IMUFactory;
 
@@ -40,7 +39,7 @@ public class BasicSwerve extends DrivetrainBase {
 
         SmartDashboard.putData("Swerve Drive", builder -> {
             builder.setSmartDashboardType("SwerveDrive");
-            builder.addDoubleProperty("Robot Angle", () -> -imu.getYaw(), null);
+            builder.addDoubleProperty("Robot Angle", () -> imu.getRotation().getDegrees(), null);
             for (SwerveModuleBase m : modules) {
                 builder.addDoubleProperty(m.name + " Angle", m::getSteerAngle, null);
                 builder.addDoubleProperty(m.name + " Velocity", m::getDriveVelocity, null);

@@ -1,6 +1,8 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve;
 
 import frc.robot.Constants;
+import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 
 /**
  * Factory for creating SwerveModule instances based on configuration.

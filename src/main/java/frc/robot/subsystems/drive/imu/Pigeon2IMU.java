@@ -1,40 +1,48 @@
 package frc.robot.subsystems.drive.imu;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.Constants;
-import static edu.wpi.first.units.Units.Degrees;
 
 /**
  * Pigeon2 IMU implementation using CTRE Phoenix6.
  * Can be configured to use CANivore bus.
  */
-public class Pigeon2IMU implements IMU {
+public class Pigeon2IMU extends IMUBase {
     private final Pigeon2 pigeon;
 
     public Pigeon2IMU() {
+        super("Pigeon2");
+
         // Pigeon2 ID from constants, on CANivore bus if configured
         int pigeonID = Constants.Drive.pigeonID;
-        String canBus = Constants.Drive.canBusName;
+        String canBusName = Constants.Drive.canBusName;
+        String busName = (canBusName == null || canBusName.isEmpty()) ? "" : canBusName;
+        CANBus canBus = new CANBus(busName);
 
         pigeon = new Pigeon2(pigeonID, canBus);
+
+        // Apply default configuration and verify it succeeded
+        Pigeon2Configuration config = new Pigeon2Configuration();
+        StatusCode status = pigeon.getConfigurator().apply(config, 0.050);
+        if (status.isOK()) {
+            console("Configured successfully (ID: " + pigeonID + ", Bus: " + busName + ", inverted: " + Constants.Drive.imuInverted + ")");
+        } else {
+            console("Configuration failed (ID: " + pigeonID + ", Bus: " + busName + "): " + status.toString());
+        }
+
         pigeon.reset();
-        System.out.println("Pigeon2 IMU initialized (ID: " + pigeonID + ", Bus: " + canBus + ")");
     }
 
     @Override
-    public Rotation2d getRotation() {
-        // Pigeon2 uses getYaw() which returns a StatusSignal
-        return new Rotation2d(Degrees.of(-pigeon.getYaw().getValueAsDouble()));
+    protected double getRawAngle() {
+        return pigeon.getYaw().getValueAsDouble();
     }
 
     @Override
     public void reset() {
         pigeon.reset();
-    }
-
-    @Override
-    public double getYaw() {
-        return pigeon.getYaw().getValueAsDouble();
     }
 }

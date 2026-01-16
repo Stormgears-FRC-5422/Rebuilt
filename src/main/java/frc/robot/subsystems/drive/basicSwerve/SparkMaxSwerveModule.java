@@ -1,9 +1,12 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve;
 
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.PersistMode;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
@@ -14,6 +17,8 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
+import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.Degrees;
@@ -24,7 +29,6 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
  * Uses REV Robotics SparkMax motor controllers and CTRE CANcoder for absolute position.
  */
 public class SparkMaxSwerveModule extends SwerveModuleBase {
-
     public final CANcoder steerCANCoder;
     public final SparkMax driveMotor;
     public final SparkMax steerMotor;
@@ -42,16 +46,9 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     public SparkMaxSwerveModule(int index, ModuleConfig moduleConfig, PidConfig drivePidConfig, PidConfig steerPidConfig) {
         super(index, moduleConfig, drivePidConfig, steerPidConfig);
 
-        // CANCODER - read only!
         steerCANCoder = new CANcoder(config.encoderID);
-
-        // Zero the magnetic offset to ensure we obliterate any prior stored values and read raw values
-        MagnetSensorConfigs magnetConfigs = new MagnetSensorConfigs();
-        magnetConfigs.MagnetOffset = 0.0;
-        steerCANCoder.getConfigurator().apply(magnetConfigs);
-
+        configureCancoder();
         Angle canOffset = Degrees.of(steerOffset);
-        // /CANCODER
 
         // MOTORS
         SparkMaxConfig globalConfig = new SparkMaxConfig();
@@ -73,9 +70,10 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
 
         driveConfig.closedLoop
                 .p(drivePidConfig.kP).i(drivePidConfig.kI).d(drivePidConfig.kD)
-                .velocityFF(drivePidConfig.kV).outputRange(drivePidConfig.kMin, drivePidConfig.kMax);
+                .outputRange(drivePidConfig.kMin, drivePidConfig.kMax);
+        driveConfig.closedLoop.feedForward.kV(drivePidConfig.kV);
 
-        driveMotor.configure(driveConfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
+        driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         driveController = driveMotor.getClosedLoopController();
         driveEncoder = driveMotor.getEncoder();
@@ -94,11 +92,12 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
         steerPidConfig.kV = 0; // probably want nothing here for the steer
         steerConfig.closedLoop
                 .p(steerPidConfig.kP).i(steerPidConfig.kI).d(steerPidConfig.kD)
-                .velocityFF(steerPidConfig.kV).outputRange(steerPidConfig.kMin, steerPidConfig.kMax)
+                .outputRange(steerPidConfig.kMin, steerPidConfig.kMax)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(-180, 180);
+        steerConfig.closedLoop.feedForward.kV(steerPidConfig.kV);
 
-        steerMotor.configure(steerConfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
+        steerMotor.configure(steerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         steerController = steerMotor.getClosedLoopController();
         steerEncoder = steerMotor.getEncoder();
@@ -107,6 +106,18 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
 
         // /MOTORS: STEER MOTOR
         // /MOTORS
+    }
+
+    private void configureCancoder() {
+        // Zero the magnetic offset to ensure we obliterate any prior stored values and read raw values
+        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
+        canCoderConfig.MagnetSensor.MagnetOffset = 0.0;
+        StatusCode status = steerCANCoder.getConfigurator().apply(canCoderConfig, 0.050);
+        if (status.isOK()) {
+            console("Successfully configured CANcoder " + config.encoderID + " magnetic offset");
+        } else {
+            console("Failed to configure CANcoder " + config.encoderID + " magnetic offset: " + status.toString());
+        }
     }
 
     @Override
@@ -150,7 +161,7 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     @Override
     public void setDriveVelocity(LinearVelocity speed) {
         tgtDriveVelocity = speed.in(MetersPerSecond);
-        driveController.setReference(tgtDriveVelocity, SparkBase.ControlType.kVelocity);
+        driveController.setSetpoint(tgtDriveVelocity, SparkBase.ControlType.kVelocity);
     }
 
     @Override
@@ -161,7 +172,7 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     @Override
     public void setSteerAngle(Angle angle) {
         tgtSteerAngle = angle.in(Degrees);
-        steerController.setReference(tgtSteerAngle, SparkBase.ControlType.kPosition);
+        steerController.setSetpoint(tgtSteerAngle, SparkBase.ControlType.kPosition);
     }
 
     @Override
@@ -192,10 +203,11 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
     }
 
     private void updatePidConfig(SparkMaxConfig config, SparkMax motor, PidConfig pid, String motorType) {
-        config.closedLoop.p(pid.kP).i(pid.kI).d(pid.kD).velocityFF(pid.kV) // Using kV as feedforward term
+        config.closedLoop.p(pid.kP).i(pid.kI).d(pid.kD)
                 .outputRange(pid.kMin, pid.kMax);
+        config.closedLoop.feedForward.kV(pid.kV); // Using kV as feedforward term
 
-        REVLibError error = motor.configure(config, SparkBase.ResetMode.kNoResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
+        REVLibError error = motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
 
         if (error == REVLibError.kOk) {
             console(motorType + " motor configured successfully: " + pid);

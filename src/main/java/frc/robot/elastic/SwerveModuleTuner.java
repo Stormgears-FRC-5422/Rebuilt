@@ -1,6 +1,6 @@
 package frc.robot.elastic;
 
-import frc.robot.subsystems.drive.config.PidConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 import frc.utils.configfile.DashboardTuner;
 import frc.utils.configfile.PidTuningGroup;
 

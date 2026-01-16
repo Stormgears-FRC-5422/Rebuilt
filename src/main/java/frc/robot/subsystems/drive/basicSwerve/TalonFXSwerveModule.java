@@ -1,6 +1,7 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -14,6 +15,8 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
+import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -46,6 +49,8 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         steerCANCoder = new CANcoder(config.encoderID, canBus);
 
         configureCancoder();
+        Angle canOffset = Degrees.of(steerOffset);
+
         configureDriveMotor();
         configureSteerMotor();
 
@@ -57,10 +62,15 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
     }
 
     private void configureCancoder() {
-        MagnetSensorConfigs magnetConfigs = new MagnetSensorConfigs();
-        // Convert degrees to rotations for TalonFX
-        magnetConfigs.MagnetOffset = config.encoderOffset / 360.0;
-        steerCANCoder.getConfigurator().apply(magnetConfigs);
+        // Zero the magnetic offset to ensure we obliterate any prior stored values and read raw values
+        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
+        canCoderConfig.MagnetSensor.MagnetOffset = 0.0;
+        StatusCode status = steerCANCoder.getConfigurator().apply(canCoderConfig, 0.050);
+        if (status.isOK()) {
+            console("Successfully configured CANcoder " + config.encoderID + " magnetic offset");
+        } else {
+            console("Failed to configure CANcoder " + config.encoderID + " magnetic offset: " + status.toString());
+        }
     }
 
     private void configureDriveMotor() {

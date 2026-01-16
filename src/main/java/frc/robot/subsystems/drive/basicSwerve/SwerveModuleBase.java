@@ -1,9 +1,11 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve;
 
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Options.DriveOptions;
+import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 import org.littletonrobotics.junction.Logger;
 
 /**

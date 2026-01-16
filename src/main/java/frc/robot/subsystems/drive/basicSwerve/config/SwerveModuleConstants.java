@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve.config;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.Constants.Drive;

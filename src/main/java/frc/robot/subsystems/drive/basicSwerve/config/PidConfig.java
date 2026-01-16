@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve.config;
 /*
  * This class was shamelessly stolen from the Slot0Configs class from CTRE.
  * Simplified for the outreach robot

@@ -1,8 +1,11 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;

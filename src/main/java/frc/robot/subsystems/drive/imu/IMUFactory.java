@@ -14,8 +14,9 @@ public class IMUFactory {
         return switch (imuType.toLowerCase()) {
             case "navx" -> new NavXIMU();
             case "pigeon2" -> new Pigeon2IMU();
+            case "adxrs450" -> new ADXRS450IMU();
             default -> throw new IllegalArgumentException("Unknown IMU type: " + imuType +
-                ". Valid options: NavX, Pigeon2");
+                ". Valid options: NavX, Pigeon2, ADXRS450");
         };
     }
 }

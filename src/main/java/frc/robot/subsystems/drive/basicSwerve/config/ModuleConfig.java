@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve.config;
 
 import edu.wpi.first.math.geometry.Translation2d;
 
@@ -10,7 +10,7 @@ public class ModuleConfig {
     public boolean driveInverted = false;
     public boolean steerInverted = false;
     public double driveRatio = 1;
-    double steerRatio = 1;
+    public double steerRatio = 1;
     public double wheelDiameter = 0;
     public boolean driveCoast = true;
     public boolean steerCoast = true;

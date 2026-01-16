@@ -13,7 +13,7 @@ import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.config.SwerveModuleConstants;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;

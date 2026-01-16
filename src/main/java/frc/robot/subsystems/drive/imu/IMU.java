@@ -8,7 +8,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public interface IMU {
     /**
-     * Get the current rotation of the robot
+     * Get the current rotation of the robot.
+     * Implementations should apply any necessary inversion based on configuration.
      * @return Robot rotation as Rotation2d
      */
     Rotation2d getRotation();
@@ -17,10 +18,4 @@ public interface IMU {
      * Reset/zero the gyro orientation
      */
     void reset();
-
-    /**
-     * Get the yaw angle in degrees (for telemetry)
-     * @return Yaw angle in degrees
-     */
-    double getYaw();
 }

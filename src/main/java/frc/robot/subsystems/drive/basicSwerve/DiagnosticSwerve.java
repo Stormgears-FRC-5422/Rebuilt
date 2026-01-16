@@ -1,8 +1,7 @@
-package frc.robot.subsystems.drive;
+package frc.robot.subsystems.drive.basicSwerve;
 
-import frc.robot.subsystems.drive.config.SwerveModuleBase;
-import frc.robot.subsystems.drive.config.SwerveModuleConstants;
-import frc.robot.subsystems.drive.config.SwerveModuleGroup;
+import frc.robot.subsystems.drive.DrivetrainBase;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
