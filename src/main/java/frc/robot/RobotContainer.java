@@ -14,6 +14,9 @@ import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 import frc.robot.subsystems.drive.config.SwerveModuleConstants;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -26,6 +29,11 @@ public class RobotContainer {
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     private SwerveModuleTuner tuner;
+    
+    //elastic control
+    private final MotorTestTuner motorTestTuner = new MotorTestTuner();
+    private final SparkMax motor1 = new SparkMax(1, MotorType.kBrushless);
+    private final SparkMax motor2 = new SparkMax(2, MotorType.kBrushless);
 
     // **********
     // Commands
@@ -77,10 +85,27 @@ public class RobotContainer {
 
         console("[DONE] configureBindings");
     }
+    
+    private static double slider(double x, double low, double high) {
+        return Math.max(low, Math.min(high, x));
+    }   
+
 
     public void periodic() {
         if (tuner != null) {
             tuner.periodic();
+        }
+        Options.periodic();
+
+        if (motorTestTuner.enabled.get()) {
+        double m1 = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+        double m2 = slider(motorTestTuner.motor2.get(), -1.0, 1.0);
+
+        motor1.set(m1);
+        motor2.set(m2);
+        } else {
+            motor1.set(0.0);
+            motor2.set(0.0);
         }
     }
 

@@ -6,9 +6,17 @@ import frc.utils.configfile.Option;
 import frc.utils.configfile.OptionsRegistry;
 
 public final class Options {
+
+
+    private Options() {
+
+    }  
+
     public static void periodic() {
         OptionsRegistry.periodic();
     }
+
+
 
     public static class DriveOptions extends OptionsController {
 
