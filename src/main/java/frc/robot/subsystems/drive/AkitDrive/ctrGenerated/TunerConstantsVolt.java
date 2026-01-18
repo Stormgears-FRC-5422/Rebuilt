@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.AkitDrive;
+package frc.robot.subsystems.drive.AkitDrive.ctrGenerated;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.*;
@@ -17,7 +17,6 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.*;
-import frc.robot.Constants;
 
 import static edu.wpi.first.units.Units.*;
 

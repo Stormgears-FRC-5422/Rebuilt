@@ -1,40 +1,109 @@
 package frc.robot.joysticks;
 
-import frc.utils.joysticks.StormLogitechController;
-
-public class RebuiltJoystick {
-
-    StormLogitechController controller;
-
-    public RebuiltJoystick(int port) {
-        controller = new StormLogitechController(port);
-    }
-
+public abstract class ReefscapeJoystick {
     public double getWpiX() {
-        return controller.getWpiXSpeed();
+        return 0;
     }
 
     public double getWpiY() {
-        return controller.getWpiYSpeed();
+        return 0;
     }
 
     public double getOmegaSpeed() {
-        return controller.getOmegaSpeed();
+        return 0;
     }
 
-    public boolean shoot() {
-        return controller.getRawButton(1);
+    public boolean getRobotRelative() {
+        return true;
     }
 
-    public boolean outtake() {
-        return controller.getRawButton(2);
+    public double getTurbo() {
+        return 0.0;
     }
 
-    public double getSlider() {
-        return controller.getSliderAxis();
+    public boolean zeroGyro() {
+        return false;
     }
 
-    public boolean holdSwerveState() {
-        return controller.getRawButton(7);
+    public boolean zeroWheels() {
+        return false;
     }
+
+    public boolean coralIntake() {
+        return false;
+    }
+    public boolean autoReef() {
+        return false;
+    }
+
+    public boolean cancelAutoReef(){
+        return false;
+    }
+
+    public boolean climb(){
+        return false;
+    }
+
+    public boolean releaseClimb(){
+        return false;
+    }
+
+    public boolean coralOuttake() {
+        return false;
+    }
+
+    public boolean elevatorUp() {
+        return false;
+    }
+
+    public boolean elevatorDown() {
+        return false;
+    }
+
+    public boolean isAlgaeHigh(){
+        return false;
+    }
+
+    public boolean elevatorLevel1() {
+        return false;
+    }
+
+    public boolean elevatorLevel2() {
+        return false;
+    }
+
+    public boolean elevatorLevel3() {
+        return false;
+    }
+
+    public boolean elevatorLevel4() {
+        return false;
+    }
+
+    public boolean isRightReef() {
+        return false;
+    }
+
+    public boolean autoStation() {
+        return false;
+    }
+
+    public boolean algaeIntake() {
+        return false;
+    }
+
+    public boolean algaeOuttake() {
+        return false;
+    }
+
+    public boolean autoProcessor() {
+        return false;
+    }
+
+    public boolean autoAlgaeReef() {
+        return false;
+    }
+
+    public boolean elevatorTestPid() { return false; }
+
 }
