@@ -8,6 +8,9 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
+import frc.utils.configfile.OptionsRegistry;
+import frc.utils.configfile.OptionsRegistry;
+
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -127,7 +130,7 @@ public class Robot extends LoggedRobot {
         if (robotContainer != null) {
             robotContainer.periodic();
         }
-        Options.periodic();
+        OptionsRegistry.periodic();
     }
 
     @Override

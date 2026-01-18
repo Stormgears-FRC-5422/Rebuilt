@@ -8,6 +8,7 @@ import frc.robot.Constants.Toggles;
 import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.SwerveModuleTuner;
+import frc.robot.elastic.MotorTestTuner;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
@@ -33,7 +34,7 @@ public class RobotContainer {
     //elastic control
     private final MotorTestTuner motorTestTuner = new MotorTestTuner();
     private final SparkMax motor1 = new SparkMax(1, MotorType.kBrushless);
-    private final SparkMax motor2 = new SparkMax(2, MotorType.kBrushless);
+    // private final SparkMax motor2 = new SparkMax(2, MotorType.kBrushless);
 
     // **********
     // Commands
@@ -95,17 +96,16 @@ public class RobotContainer {
         if (tuner != null) {
             tuner.periodic();
         }
-        Options.periodic();
 
         if (motorTestTuner.enabled.get()) {
         double m1 = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-        double m2 = slider(motorTestTuner.motor2.get(), -1.0, 1.0);
+        // double m2 = slider(motorTestTuner.motor2.get(), -1.0, 1.0);
 
         motor1.set(m1);
-        motor2.set(m2);
+        // motor2.set(m2);
         } else {
             motor1.set(0.0);
-            motor2.set(0.0);
+            // motor2.set(0.0);
         }
     }
 
