@@ -1,13 +1,12 @@
 package frc.robot.joysticks;
 
-public class ReefscapeJoystickFactory {
+public class RebuiltJoystickFactory {
 
-    public static ReefscapeJoystick getInstance(String joystickType, int port) throws IllegalJoystickTypeException {
-        ReefscapeJoystick instance;
+    public static RebuiltJoystick getInstance(String joystickType, int port) throws IllegalJoystickTypeException {
+        RebuiltJoystick instance;
         System.out.println("Initializing " + joystickType + " as Joystick");
         switch (joystickType.toLowerCase()) {
-            case "xboxcontroller" -> instance = new ReefscapeXboxController(port);
-            case "buttonboard" -> instance = new ReefscapeButtonBoard(port);
+            case "xboxcontroller" -> instance = new RebuiltXboxController(port);
             default -> throw new IllegalJoystickTypeException("Illegal Joystick Type: " + joystickType + " ---!");
         }
         return instance;

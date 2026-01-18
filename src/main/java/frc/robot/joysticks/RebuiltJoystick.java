@@ -1,6 +1,6 @@
 package frc.robot.joysticks;
 
-public abstract class ReefscapeJoystick {
+public abstract class RebuiltJoystick {
     public double getWpiX() {
         return 0;
     }
@@ -29,81 +29,11 @@ public abstract class ReefscapeJoystick {
         return false;
     }
 
-    public boolean coralIntake() {
-        return false;
-    }
-    public boolean autoReef() {
+    public boolean holdSwerveState() {
         return false;
     }
 
-    public boolean cancelAutoReef(){
+    public boolean wheelRadiusCharacterization() {
         return false;
     }
-
-    public boolean climb(){
-        return false;
-    }
-
-    public boolean releaseClimb(){
-        return false;
-    }
-
-    public boolean coralOuttake() {
-        return false;
-    }
-
-    public boolean elevatorUp() {
-        return false;
-    }
-
-    public boolean elevatorDown() {
-        return false;
-    }
-
-    public boolean isAlgaeHigh(){
-        return false;
-    }
-
-    public boolean elevatorLevel1() {
-        return false;
-    }
-
-    public boolean elevatorLevel2() {
-        return false;
-    }
-
-    public boolean elevatorLevel3() {
-        return false;
-    }
-
-    public boolean elevatorLevel4() {
-        return false;
-    }
-
-    public boolean isRightReef() {
-        return false;
-    }
-
-    public boolean autoStation() {
-        return false;
-    }
-
-    public boolean algaeIntake() {
-        return false;
-    }
-
-    public boolean algaeOuttake() {
-        return false;
-    }
-
-    public boolean autoProcessor() {
-        return false;
-    }
-
-    public boolean autoAlgaeReef() {
-        return false;
-    }
-
-    public boolean elevatorTestPid() { return false; }
-
 }

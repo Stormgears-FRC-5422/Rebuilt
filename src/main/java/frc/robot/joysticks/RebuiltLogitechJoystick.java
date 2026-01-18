@@ -2,11 +2,11 @@ package frc.robot.joysticks;
 
 import frc.utils.joysticks.StormLogitechController;
 
-public class RebuiltJoystick {
+public class RebuiltLogitechJoystick extends RebuiltJoystick{
 
     StormLogitechController controller;
 
-    public RebuiltJoystick(int port) {
+    public RebuiltLogitechJoystick(int port) {
         controller = new StormLogitechController(port);
     }
 

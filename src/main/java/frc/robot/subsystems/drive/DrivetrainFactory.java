@@ -1,5 +1,7 @@
 package frc.robot.subsystems.drive;
 
+import frc.robot.subsystems.drive.AkitDrive.AkitDrive;
+
 public class DrivetrainFactory {
     protected static DrivetrainBase instance;
 
@@ -12,6 +14,7 @@ public class DrivetrainFactory {
             switch (driveType.toLowerCase()) {
                 case "diagnosticswerve" -> instance = new DiagnosticSwerve();
                 case "basicswerve" -> instance = new BasicSwerve();
+                case "akitdrive" -> instance = new AkitDrive();
                 default -> throw new IllegalDriveTypeException("Illegal Drive Type: " + driveType);
             }
         }

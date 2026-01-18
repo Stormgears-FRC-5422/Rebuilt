@@ -2,10 +2,10 @@ package frc.robot.joysticks;
 
 import frc.utils.joysticks.StormXboxController;
 
-public class ReefscapeXboxController extends ReefscapeJoystick {
+public class RebuiltXboxController extends RebuiltJoystick {
     StormXboxController XboxController;
 
-    ReefscapeXboxController(int port) {
+    RebuiltXboxController(int port) {
         XboxController = new StormXboxController(port);
     }
 
@@ -40,25 +40,7 @@ public class ReefscapeXboxController extends ReefscapeJoystick {
     }
 
     @Override
-    public boolean coralIntake(){
-        return XboxController.getXButtonIsHeld();
-    }
-
-    @Override
-    public boolean climb() {
-        return XboxController.getBButtonIsHeld();
-    }
-
-    @Override
-    public boolean releaseClimb() {
+    public boolean wheelRadiusCharacterization() {
         return XboxController.getYButtonIsHeld();
     }
-
-    @Override
-    public boolean cancelAutoReef() {
-        return XboxController.getAButtonIsHeld();
-    }
-
-    @Override
-    public boolean elevatorTestPid() { return XboxController.getRightLittleButtonIsHeld(); }
 }

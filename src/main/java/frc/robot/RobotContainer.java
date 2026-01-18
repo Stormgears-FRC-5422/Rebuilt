@@ -3,17 +3,27 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.DriveCommands;
 import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.SwerveModuleTuner;
+import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.joysticks.RebuiltJoystickFactory;
+import frc.robot.joysticks.RebuiltLogitechJoystick;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 import frc.robot.subsystems.drive.config.SwerveModuleConstants;
+
+import java.util.LinkedList;
+import java.util.List;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -39,7 +49,7 @@ public class RobotContainer {
             console("[Init] RobotContainer");
 
             console("Making joystick!");
-            joystick = new RebuiltJoystick(Constants.ButtonBoard.driveJoystickPort);
+            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.drivePort);
 
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
@@ -60,6 +70,8 @@ public class RobotContainer {
             console("Error: Invalid drive type specified: " + e.getMessage());
         } catch (RuntimeException e) {
             console("Error initializing RobotContainer: " + e.getMessage());
+        } catch (IllegalJoystickTypeException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -68,11 +80,15 @@ public class RobotContainer {
 
         if (Toggles.useDrive) {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
-            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
+//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 
             drivetrain.setDefaultCommand(driveWithJoystick);
+            new Trigger(() -> joystick.wheelRadiusCharacterization())
+                .onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
+//            new Trigger(() -> joystick.wheelRadiusCharacterization())
+//                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
-            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
+//            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
         console("[DONE] configureBindings");
@@ -87,4 +103,5 @@ public class RobotContainer {
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
     }
+
 }

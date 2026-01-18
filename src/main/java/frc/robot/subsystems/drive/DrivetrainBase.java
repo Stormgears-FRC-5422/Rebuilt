@@ -23,7 +23,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
         setDriveSpeedScale(Drive.driveSpeedScale);
         driveFlip = false;
         fieldRelativeOn = true;
-    }   
+    }
+
+    public double[] getWheelRadiusCharacterizationPositions() {
+        return new double[] {};
+    }
 
     protected final void setDriveFlip(boolean flip) {
         driveFlip = flip;
@@ -98,4 +102,7 @@ public abstract class DrivetrainBase extends StormSubsystem {
     public void resetOrientation() {
     }
 
+    public void runVelocity(ChassisSpeeds chassisSpeeds) {
+
+    }
 }
