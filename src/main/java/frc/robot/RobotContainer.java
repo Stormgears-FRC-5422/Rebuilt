@@ -13,7 +13,7 @@ import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.config.SwerveModuleConstants;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -68,11 +68,12 @@ public class RobotContainer {
 
         if (Toggles.useDrive) {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
-            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 
             drivetrain.setDefaultCommand(driveWithJoystick);
 
-            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
+            // Need a test here to allow this based on the drive type.
+//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
+//            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
         console("[DONE] configureBindings");

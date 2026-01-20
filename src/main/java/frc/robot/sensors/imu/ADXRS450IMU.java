@@ -1,0 +1,50 @@
+package frc.robot.sensors.imu;
+
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import frc.robot.Constants;
+
+/**
+ * ADXRS450 IMU implementation using WPILib.
+ * Communicates via SPI interface on the RoboRIO.
+ */
+public class ADXRS450IMU extends IMUBase {
+    private final ADXRS450_Gyro gyro;
+    private final boolean ownsHardware;
+
+    /**
+     * Creates a new ADXRS450IMU using default SPI configuration.
+     * This constructor creates and owns the gyro hardware.
+     */
+    public ADXRS450IMU() {
+        super("ADXRS450");
+        this.ownsHardware = true;
+        gyro = new ADXRS450_Gyro();
+        gyro.calibrate();
+        gyro.reset();
+        console("Initialized on SPI (inverted: " + Constants.Imu.inverted + ")");
+    }
+
+    /**
+     * Creates an ADXRS450IMU wrapper around an existing gyro.
+     * Use this when another library creates the gyro.
+     * This constructor does not calibrate or reset the hardware.
+     *
+     * @param existingGyro The ADXRS450_Gyro instance to wrap
+     */
+    public ADXRS450IMU(ADXRS450_Gyro existingGyro) {
+        super("ADXRS450");
+        this.ownsHardware = false;
+        this.gyro = existingGyro;
+        console("Wrapping existing ADXRS450 (inverted: " + Constants.Imu.inverted + ")");
+    }
+
+    @Override
+    protected double getRawAngle() {
+        return gyro.getAngle();
+    }
+
+    @Override
+    public void reset() {
+        gyro.reset();
+    }
+}

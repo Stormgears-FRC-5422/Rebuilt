@@ -2,7 +2,7 @@ package frc.utils.configfile;
 
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import frc.robot.subsystems.drive.config.PidConfig;
+import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
 
 /**
  * Groups related NetworkTable entries for PID tuning. Each group manages the P,

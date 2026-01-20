@@ -1,7 +1,10 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve.config;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.Constants.Drive;
+
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 
 public final class SwerveModuleConstants {
     public static final int FRONT_LEFT = 0;
@@ -61,9 +64,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.frontLeftDriveID)
                 .withSteerID(Drive.frontLeftSteerID)
                 .withEncoderID(Drive.frontLeftEncoderID)
-                .withWheelDiameter(Drive.frontLeftDiameter)
+                .withWheelDiameter(Inches.of(Drive.frontLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Drive.frontLeftEncoderOffset)
+                .withEncoderOffset(Degrees.of(Drive.frontLeftEncoderOffset))
                 .withOffset(new Translation2d(dx, dy));
 
         frModuleConfig = getDefaultModuleConfig()
@@ -71,9 +74,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.frontRightDriveID)
                 .withSteerID(Drive.frontRightSteerID)
                 .withEncoderID(Drive.frontRightEncoderID)
-                .withWheelDiameter(Drive.frontRightDiameter)
+                .withWheelDiameter(Inches.of(Drive.frontRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Drive.frontRightEncoderOffset)
+                .withEncoderOffset(Degrees.of(Drive.frontRightEncoderOffset))
                 .withOffset(new Translation2d(dx, -dy));
 
         blModuleConfig = getDefaultModuleConfig()
@@ -81,9 +84,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.backLeftDriveID)
                 .withSteerID(Drive.backLeftSteerID)
                 .withEncoderID(Drive.backLeftEncoderID)
-                .withWheelDiameter(Drive.backLeftDiameter)
+                .withWheelDiameter(Inches.of(Drive.backLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Drive.backLeftEncoderOffset)
+                .withEncoderOffset(Degrees.of(Drive.backLeftEncoderOffset))
                 .withOffset(new Translation2d(-dx, dy));
 
         brModuleConfig = getDefaultModuleConfig()
@@ -91,9 +94,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.backRightDriveID)
                 .withSteerID(Drive.backRightSteerID)
                 .withEncoderID(Drive.backRightEncoderID)
-                .withWheelDiameter(Drive.backRightDiameter)
+                .withWheelDiameter(Inches.of(Drive.backRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Drive.backRightEncoderOffset)
+                .withEncoderOffset(Degrees.of(Drive.backRightEncoderOffset))
                 .withOffset(new Translation2d(-dx, -dy));
     }
 
