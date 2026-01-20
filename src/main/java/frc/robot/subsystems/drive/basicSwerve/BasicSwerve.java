@@ -1,5 +1,7 @@
 package frc.robot.subsystems.drive.basicSwerve;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -12,6 +14,8 @@ import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.IMUFactory;
 
+import frc.robot.subsystems.drive.SimplePoseTelemetry;
+
 import static edu.wpi.first.units.Units.*;
 
 public class BasicSwerve extends DrivetrainBase {
@@ -19,11 +23,15 @@ public class BasicSwerve extends DrivetrainBase {
     final SwerveModuleGroup moduleGroup;
     final SwerveModuleBase[] modules;
     final SwerveDriveKinematics kinematics;
+    private final SimplePoseTelemetry robotTelemetry;
     private final DriveOptions options;
     private final IMU imu;
+    private final SwerveDrivePoseEstimator poseEstimator;
+    private Pose2d currentPose;
 
     public BasicSwerve() {
         super();
+        robotTelemetry = new SimplePoseTelemetry("robotPose");
 
         imu = IMUFactory.createIMU();
         imu.reset();
@@ -36,6 +44,15 @@ public class BasicSwerve extends DrivetrainBase {
 
         kinematics = new SwerveDriveKinematics(moduleGroup.getModuleTranslations());
         modules = moduleGroup.getModules();
+
+        // Initialize pose estimator with starting pose at origin
+        poseEstimator = new SwerveDrivePoseEstimator(
+            kinematics,
+            imu.getRotation(),
+            moduleGroup.getModulePositions(),
+            new Pose2d()  // Start at origin (0, 0, 0°)
+        );
+        currentPose = poseEstimator.getEstimatedPosition();
 
         SmartDashboard.putData("Swerve Drive", builder -> {
             builder.setSmartDashboardType("SwerveDrive");
@@ -63,6 +80,14 @@ public class BasicSwerve extends DrivetrainBase {
         } else {
             driveWithoutRotation();
         }
+
+        // Update pose estimator with current gyro reading and module positions
+        currentPose = poseEstimator.update(
+            imu.getRotation(),
+            moduleGroup.getModulePositions()
+        );
+
+        robotTelemetry.telemeterize(currentPose);
     }
 
     public void setModuleStates(SwerveModuleState[] states) {
@@ -80,8 +105,7 @@ public class BasicSwerve extends DrivetrainBase {
                 Math.atan2(m_chassisSpeeds.vyMetersPerSecond, m_chassisSpeeds.vxMetersPerSecond));
 
         for (SwerveModuleBase m : modules) {
-            m.setDriveVelocity(speed);
-            m.setSteerAngle(angle);
+            m.setTargets(speed, angle);
         }
     }
 
@@ -98,6 +122,12 @@ public class BasicSwerve extends DrivetrainBase {
     @Override
     public void resetOrientation() {
         imu.reset();
+        // Reset pose to origin with current field-relative heading
+        poseEstimator.resetPosition(
+            imu.getRotation(),
+            moduleGroup.getModulePositions(),
+            new Pose2d()
+        );
     }
 
     public void stop() {

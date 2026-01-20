@@ -1,6 +1,7 @@
 package frc.robot.subsystems.drive.basicSwerve;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
@@ -89,6 +90,14 @@ public class SwerveModuleGroup {
         double moduleRadius = swerveModules[FRONT_LEFT].config.offset.getNorm();
         double maxRadiansPerSecond = getMaxLinearVelocity().in(MetersPerSecond) / moduleRadius;
         return RadiansPerSecond.of(maxRadiansPerSecond);
+    }
+
+    public SwerveModulePosition[] getModulePositions() {
+        SwerveModulePosition[] positions = new SwerveModulePosition[NUM_MODULES];
+        for (int i = 0; i < NUM_MODULES; i++) {
+            positions[i] = swerveModules[i].getPosition();
+        }
+        return positions;
     }
 
     public void setSwerveModuleStates(edu.wpi.first.math.kinematics.SwerveModuleState[] states) {
