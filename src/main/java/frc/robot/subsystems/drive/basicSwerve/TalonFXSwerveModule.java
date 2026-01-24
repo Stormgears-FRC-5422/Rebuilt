@@ -105,6 +105,7 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
 
         slot0.kV = drivePidConfig.kV;
         slot0.kS = drivePidConfig.kS;
+        slot0.kA = drivePidConfig.kA;
 
         // Current limits
         CurrentLimitsConfigs currentLimits = driveConfig.CurrentLimits;
@@ -254,14 +255,14 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
 
         // Note: Dynamic PID tuning is commented out for now
         // Uncomment if you want to change PID gains without redeploying
-//        if (drivePidConfig.isDirty()) {
-//            configureDriveMotor();
-//            drivePidConfig.clearDirty();
-//        }
-//        if (steerPidConfig.isDirty()) {
-//            configureSteerMotor();
-//            steerPidConfig.clearDirty();
-//        }
+        if (drivePidConfig.isDirty()) {
+            configureDriveMotor();
+            drivePidConfig.clearDirty();
+        }
+        if (steerPidConfig.isDirty()) {
+            configureSteerMotor();
+            steerPidConfig.clearDirty();
+        }
     }
 
     // ==================== CONTROL METHODS (Called by Commands to SET Targets) ====================
@@ -275,7 +276,7 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
 
         // Set steer target using nearest equivalent rotation
         // Convert desired angle to rotations (normalized 0..1)
-        double desired = steerAngle.in(Degrees) / 360.0;
+        double desired = steerAngle.in(Rotations);
 
         // Get current position (unbounded - can be > 1 or < 0 with continuous wrap)
         double current = steerMotor.getPosition().getValueAsDouble();
