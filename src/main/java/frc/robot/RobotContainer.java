@@ -8,7 +8,9 @@ import frc.robot.Constants.Toggles;
 import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.SwerveModuleTuner;
+import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -39,7 +41,7 @@ public class RobotContainer {
             console("[Init] RobotContainer");
 
             console("Making joystick!");
-            joystick = new RebuiltJoystick(Constants.ButtonBoard.driveJoystickPort);
+            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
 
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
@@ -60,6 +62,8 @@ public class RobotContainer {
             console("Error: Invalid drive type specified: " + e.getMessage());
         } catch (RuntimeException e) {
             console("Error initializing RobotContainer: " + e.getMessage());
+        } catch (IllegalJoystickTypeException e) {
+            console("Error: Invalid joystick type specified: " + e.getMessage());
         }
     }
 
