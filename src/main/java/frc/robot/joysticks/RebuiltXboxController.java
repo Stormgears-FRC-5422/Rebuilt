@@ -3,45 +3,34 @@ package frc.robot.joysticks;
 import frc.utils.joysticks.StormXboxController;
 
 public class RebuiltXboxController extends RebuiltJoystick {
-    StormXboxController XboxController;
+    private final StormXboxController xboxController;
 
     RebuiltXboxController(int port) {
-        super(port);
-        XboxController = new StormXboxController(port);
+        super(new StormXboxController(port));
+        this.xboxController = (StormXboxController) driveJoystick;
     }
+
+    // Core driving inherited from base class via DriveJoystick
 
     @Override
-    public double getWpiX() {
-        return XboxController.getWpiXSpeed();
-    }
-
-    @Override
-    public double getWpiY() {
-        return XboxController.getWpiYSpeed();
-    }
-
-    @Override
-    public double getOmegaSpeed() {
-        return XboxController.getOmegaSpeed();
-    }
-
-    //@Override
     public boolean getRobotRelative() {
-        return XboxController.getLeftTrigger() > 0.2;
+        return xboxController.getLeftTrigger() > 0.2;
     }
 
-    //@Override
+    @Override
     public double getTurbo() {
-        return XboxController.getRightTrigger();
+        return xboxController.getRightTrigger();
     }
 
-    //@Override
+    @Override
     public boolean zeroGyro() {
-        return XboxController.getRightBumperIsPressed();
+        return xboxController.getRightBumperIsPressed();
     }
 
-    //@Override
+    @Override
     public boolean wheelRadiusCharacterization() {
-        return XboxController.getYButtonIsHeld();
+        return xboxController.getYButtonIsHeld();
     }
+
+    // getSlider() uses base default (0.0)
 }

@@ -40,12 +40,10 @@ public class StormXboxController extends Joystick implements DriveJoystick {
         return MathUtil.applyDeadband(value, ButtonBoard.stickNullSize);
     }
 
-    @Override
     public double getRightTrigger() {
         return getRawAxis(rightTrigger);
     }
 
-    @Override
     public double getLeftTrigger() {
         return getRawAxis(leftTrigger);
     }
@@ -65,7 +63,6 @@ public class StormXboxController extends Joystick implements DriveJoystick {
         return -getRightJoystickX();
     }
 
-    @Override
     public double getTriggerSpeed(){ return getRawAxis(rightTrigger) - getRawAxis(leftTrigger); }
 
     public boolean getAButtonIsHeld() {
