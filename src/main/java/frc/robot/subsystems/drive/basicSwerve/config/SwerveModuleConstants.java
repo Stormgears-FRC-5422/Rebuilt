@@ -46,12 +46,14 @@ public final class SwerveModuleConstants {
                 .withKP(Drive.driveKP)
                 .withKI(Drive.driveKI)
                 .withKD(Drive.driveKD)
+                .withKA(Drive.driveKA)
                 .withKMinMax(Drive.driveKMin, Drive.driveKMax);
 
         steerPidConfig = new PidConfig()
                 .withKP(Drive.steerKP)
                 .withKI(Drive.steerKI)
                 .withKD(Drive.steerKD)
+                .withKA(Drive.steerKA)
                 .withKMinMax(Drive.steerKMin, Drive.steerKMax);
 
         // Save some space with these convenience variables
