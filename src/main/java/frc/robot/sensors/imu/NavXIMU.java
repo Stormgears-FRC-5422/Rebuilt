@@ -1,6 +1,7 @@
 package frc.robot.sensors.imu;
 
 import com.studica.frc.AHRS;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 
 /**
@@ -10,6 +11,8 @@ import frc.robot.Constants;
 public class NavXIMU extends IMUBase {
     private final AHRS navx;
     private final boolean ownsHardware;
+    private double yawOffset = 0.0;
+    private double simAngleDegrees = 0.0;
 
     /**
      * Creates a new NavXIMU using default MXP SPI configuration.
@@ -39,11 +42,36 @@ public class NavXIMU extends IMUBase {
 
     @Override
     protected double getRawAngle() {
-        return navx.getAngle();
+        if (isSimulation) {
+            return simAngleDegrees;
+        }
+        return navx.getAngle() + yawOffset;
     }
 
     @Override
     public void reset() {
         navx.zeroYaw();
+        yawOffset = 0.0;
+        if (isSimulation) {
+            simAngleDegrees = 0.0;
+        }
+    }
+
+    @Override
+    public void setYaw(double angleDegrees) {
+        // NavX doesn't support setting yaw directly, so store offset
+        if (isSimulation) {
+            simAngleDegrees = angleDegrees;
+        } else {
+            yawOffset = angleDegrees - navx.getAngle();
+        }
+    }
+
+    @Override
+    public void updateSimulation(double deltaAngleRadians) {
+        if (isSimulation) {
+            // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
+            simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+        }
     }
 }

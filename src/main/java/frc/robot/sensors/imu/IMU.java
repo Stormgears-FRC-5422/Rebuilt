@@ -18,4 +18,16 @@ public interface IMU {
      * Reset/zero the gyro orientation
      */
     void reset();
+
+    /**
+     * Set the gyro yaw to a specific angle in degrees.
+     * @param angleDegrees The target yaw angle in degrees
+     */
+    void setYaw(double angleDegrees);
+
+    /**
+     * Update simulated gyro angle.
+     * @param deltaAngleRadians Change in angle since last update
+     */
+    void updateSimulation(double deltaAngleRadians);
 }

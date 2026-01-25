@@ -2,6 +2,7 @@ package frc.robot.subsystems.drive.basicSwerve;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
@@ -113,6 +114,20 @@ public class SwerveModuleGroup {
     public void stop() {
         for (SwerveModuleBase m : swerveModules) {
             m.stop();
+        }
+    }
+
+    public SwerveModuleState[] getModuleStates() {
+        SwerveModuleState[] states = new SwerveModuleState[NUM_MODULES];
+        for (int i = 0; i < NUM_MODULES; i++) {
+            states[i] = swerveModules[i].getState();
+        }
+        return states;
+    }
+
+    public void updateSimState(double deltaTime, double batteryVoltage) {
+        for (SwerveModuleBase module : swerveModules) {
+            module.updateSimState(deltaTime, batteryVoltage);
         }
     }
 }

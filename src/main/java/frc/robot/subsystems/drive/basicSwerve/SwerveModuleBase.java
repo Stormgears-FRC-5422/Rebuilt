@@ -158,10 +158,28 @@ public abstract class SwerveModuleBase {
     }
 
     /**
+     * Get the module's current state (velocity + angle) for kinematics
+     * @return SwerveModuleState with current velocity and angle
+     */
+    public SwerveModuleState getState() {
+        return new SwerveModuleState(
+            getDriveVelocity().in(MetersPerSecond),
+            new Rotation2d(getSteerAngle().in(Radians))
+        );
+    }
+
+    /**
      * Get the maximum linear velocity this module can achieve
      * @return Maximum linear velocity in m/s
      */
     public abstract LinearVelocity getMaxLinearVelocity();
+
+    /**
+     * Update simulation state. Called at 200 Hz during simulation.
+     * @param deltaTime Time since last update in seconds
+     * @param batteryVoltage Current battery voltage
+     */
+    public abstract void updateSimState(double deltaTime, double batteryVoltage);
 
     // ==================== DIAGNOSTIC & TESTING METHODS ====================
 

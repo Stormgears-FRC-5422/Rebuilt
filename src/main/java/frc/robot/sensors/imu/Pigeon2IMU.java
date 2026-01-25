@@ -2,8 +2,10 @@ package frc.robot.sensors.imu;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 
 /**
@@ -13,6 +15,7 @@ import frc.robot.Constants;
 public class Pigeon2IMU extends IMUBase {
     private final Pigeon2 pigeon;
     private final boolean ownsHardware;
+    private double simAngleDegrees = 0.0;
 
     /**
      * Creates a new Pigeon2IMU using configuration from Constants.
@@ -65,5 +68,25 @@ public class Pigeon2IMU extends IMUBase {
     @Override
     public void reset() {
         pigeon.reset();
+        if (isSimulation) {
+            simAngleDegrees = 0.0;
+        }
+    }
+
+    @Override
+    public void setYaw(double angleDegrees) {
+        pigeon.getConfigurator().setYaw(angleDegrees);
+        if (isSimulation) {
+            simAngleDegrees = angleDegrees;
+        }
+    }
+
+    @Override
+    public void updateSimulation(double deltaAngleRadians) {
+        if (isSimulation) {
+            // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
+            simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+            pigeon.getSimState().setRawYaw(simAngleDegrees);
+        }
     }
 }

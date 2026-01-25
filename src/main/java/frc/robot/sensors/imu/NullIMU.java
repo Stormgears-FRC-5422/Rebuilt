@@ -16,4 +16,14 @@ public class NullIMU implements IMU {
     public void reset() {
         // No-op
     }
+
+    @Override
+    public void setYaw(double angleDegrees) {
+        // No-op
+    }
+
+    @Override
+    public void updateSimulation(double deltaAngleRadians) {
+        // No-op
+    }
 }
