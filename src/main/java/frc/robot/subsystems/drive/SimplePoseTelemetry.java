@@ -12,7 +12,6 @@ public class SimplePoseTelemetry {
     private final DoubleArrayPublisher fieldPub;
 
     private final double[] poseArray = new double[3];
-//    private int count = 0;
 
     public SimplePoseTelemetry(String name) {
         // Set the NetworkTables type for visualization in Glass
@@ -32,8 +31,5 @@ public class SimplePoseTelemetry {
         poseArray[1] = pose.getY();
         poseArray[2] = pose.getRotation().getDegrees();
         fieldPub.set(poseArray);
-//        if (count++ % 100 == 0) {
-//            System.out.println("Pose is " + pose);
-//        }
     }
 }

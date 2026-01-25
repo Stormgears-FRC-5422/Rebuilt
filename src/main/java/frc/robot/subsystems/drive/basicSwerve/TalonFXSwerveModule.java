@@ -253,15 +253,15 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         // 3. LOG TELEMETRY
         telemetry();
 
-        // Note: Dynamic PID tuning is commented out for now
-        // Uncomment if you want to change PID gains without redeploying
-        if (drivePidConfig.isDirty()) {
-            configureDriveMotor();
-            drivePidConfig.clearDirty();
-        }
-        if (steerPidConfig.isDirty()) {
-            configureSteerMotor();
-            steerPidConfig.clearDirty();
+        if (Constants.Toggles.usePidTuner) {
+            if (drivePidConfig.isDirty()) {
+                configureDriveMotor();
+                drivePidConfig.clearDirty();
+            }
+            if (steerPidConfig.isDirty()) {
+                configureSteerMotor();
+                steerPidConfig.clearDirty();
+            }
         }
     }
 
