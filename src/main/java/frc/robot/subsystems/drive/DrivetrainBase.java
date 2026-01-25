@@ -6,6 +6,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.Drive;
+import frc.robot.RobotState;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.NullIMU;
 import frc.utils.StormSubsystem;
@@ -15,6 +16,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 public abstract class DrivetrainBase extends StormSubsystem {
+    final protected RobotState state;
 
     public static boolean driveFlip = true;
     public static boolean fieldRelativeOn = true;
@@ -27,10 +29,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
     public DrivetrainBase() {
+        state = RobotState.getInstance();
         setDriveSpeedScale(Drive.driveSpeedScale);
         driveFlip = false;
         fieldRelativeOn = true;
-    }   
+    }
 
     protected final void setDriveFlip(boolean flip) {
         driveFlip = flip;
