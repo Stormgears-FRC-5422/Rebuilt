@@ -58,21 +58,6 @@ public class StormLogitechController extends Joystick implements DriveJoystick {
     }
 
     @Override
-    public double getTriggerSpeed() {
-        return 0;
-    }
-
-    @Override
-    public double getRightTrigger() {
-        return 0;
-    }
-
-    @Override
-    public double getLeftTrigger() {
-        return 0;
-    }
-
-    @Override
     public double getWpiXSpeed() {
         return getWpiXAxis();
     }

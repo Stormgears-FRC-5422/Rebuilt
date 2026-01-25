@@ -1,40 +1,45 @@
 package frc.robot.joysticks;
 
-import frc.utils.joysticks.StormLogitechController;
+import frc.utils.joysticks.DriveJoystick;
 
-public class RebuiltJoystick {
+public abstract class RebuiltJoystick {
+    protected final DriveJoystick driveJoystick;
 
-    StormLogitechController controller;
-
-    public RebuiltJoystick(int port) {
-        controller = new StormLogitechController(port);
+    protected RebuiltJoystick(DriveJoystick driveJoystick) {
+        this.driveJoystick = driveJoystick;
     }
 
+    // Core driving - implemented once using the DriveJoystick interface
     public double getWpiX() {
-        return controller.getWpiXSpeed();
+        return driveJoystick.getWpiXSpeed();
     }
 
     public double getWpiY() {
-        return controller.getWpiYSpeed();
+        return driveJoystick.getWpiYSpeed();
     }
 
     public double getOmegaSpeed() {
-        return controller.getOmegaSpeed();
+        return driveJoystick.getOmegaSpeed();
     }
 
-    public boolean shoot() {
-        return controller.getRawButton(1);
+    public boolean getRobotRelative() {
+        return true;
     }
 
-    public boolean outtake() {
-        return controller.getRawButton(2);
+    public double getTurbo() {
+        return 0.0;
     }
 
+    public boolean zeroGyro() {
+        return false;
+    }
+
+    public boolean wheelRadiusCharacterization() {
+        return false;
+    }
+
+    // Logitech-specific (slider only) - safe default for Xbox
     public double getSlider() {
-        return controller.getSliderAxis();
-    }
-
-    public boolean holdSwerveState() {
-        return controller.getRawButton(7);
+        return 0.0;
     }
 }
