@@ -1,6 +1,7 @@
 package frc.robot.sensors.imu;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 import static edu.wpi.first.units.Units.Degrees;
 
@@ -11,10 +12,12 @@ import static edu.wpi.first.units.Units.Degrees;
 public abstract class IMUBase implements IMU {
     protected final String name;
     protected final double invertMultiplier;
+    protected final boolean isSimulation;
 
     protected IMUBase(String name) {
         this.name = name;
         this.invertMultiplier = Constants.Imu.inverted ? 1.0 : -1.0;
+        this.isSimulation = RobotBase.isSimulation();
     }
 
     /**
@@ -26,6 +29,14 @@ public abstract class IMUBase implements IMU {
     @Override
     public Rotation2d getRotation() {
         return new Rotation2d(Degrees.of(invertMultiplier * getRawAngle()));
+    }
+
+    /**
+     * Update simulated gyro angle. Override in subclasses that support simulation.
+     * @param deltaAngleRadians Change in angle since last update
+     */
+    public void updateSimulation(double deltaAngleRadians) {
+        // Default: no-op (for IMUs that don't support simulation)
     }
 
     protected void console(String message) {

@@ -1,6 +1,7 @@
 package frc.robot.sensors.imu;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 
 /**
@@ -10,6 +11,8 @@ import frc.robot.Constants;
 public class ADXRS450IMU extends IMUBase {
     private final ADXRS450_Gyro gyro;
     private final boolean ownsHardware;
+    private double yawOffset = 0.0;
+    private double simAngleDegrees = 0.0;
 
     /**
      * Creates a new ADXRS450IMU using default SPI configuration.
@@ -40,11 +43,36 @@ public class ADXRS450IMU extends IMUBase {
 
     @Override
     protected double getRawAngle() {
-        return gyro.getAngle();
+        if (isSimulation) {
+            return simAngleDegrees;
+        }
+        return gyro.getAngle() + yawOffset;
     }
 
     @Override
     public void reset() {
         gyro.reset();
+        yawOffset = 0.0;
+        if (isSimulation) {
+            simAngleDegrees = 0.0;
+        }
+    }
+
+    @Override
+    public void setYaw(double angleDegrees) {
+        // ADXRS450 doesn't support setting yaw directly, so store offset
+        if (isSimulation) {
+            simAngleDegrees = angleDegrees;
+        } else {
+            yawOffset = angleDegrees - gyro.getAngle();
+        }
+    }
+
+    @Override
+    public void updateSimulation(double deltaAngleRadians) {
+        if (isSimulation) {
+            // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
+            simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+        }
     }
 }

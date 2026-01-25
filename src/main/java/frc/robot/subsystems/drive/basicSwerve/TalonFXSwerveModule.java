@@ -1,6 +1,7 @@
 package frc.robot.subsystems.drive.basicSwerve;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -8,8 +9,11 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
 import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
@@ -37,6 +41,7 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
     private final TalonFX driveMotor;
     private final TalonFX steerMotor;
     private final CANcoder steerCANCoder;
+    private final boolean isSimulation;
 
     // Control requests (reusable objects for performance)
     private final VelocityVoltage driveVelocityControl;
@@ -52,10 +57,20 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
     private double driveTarget = 0;  // RPS for PID_CONTROL, percent for DIRECT_CONTROL
     private double steerTarget = 0;  // Rotations for PID_CONTROL, percent for DIRECT_CONTROL
 
+    // ==================== SIMULATION STATE ====================
+
+    // Simulation physics models
+    private DCMotorSim driveSimMotor;
+    private DCMotorSim steerSimMotor;
+    private double driveSimPosition = 0.0; // rotations
+    private double steerSimPosition = 0.0; // rotations
+
     // ==================== CONSTRUCTOR (Runs Once at Startup) ====================
 
     public TalonFXSwerveModule(int index, ModuleConfig moduleConfig, PidConfig drivePidConfig, PidConfig steerPidConfig) {
         super(index, moduleConfig, drivePidConfig, steerPidConfig);
+
+        this.isSimulation = Utils.isSimulation();
 
         // CANBus setup
         String canBusName = Constants.Drive.canBusName;
@@ -77,6 +92,31 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         // Create control requests (reusable for performance)
         driveVelocityControl = new VelocityVoltage(0).withSlot(0);
         steerPositionControl = new PositionVoltage(0).withSlot(0);
+
+        // Initialize simulation physics models
+        if (isSimulation) {
+            // Create physics models for simulation using LinearSystemId
+            DCMotor driveGearbox = DCMotor.getKrakenX60(1);
+            DCMotor steerGearbox = DCMotor.getKrakenX60(1);
+
+            driveSimMotor = new DCMotorSim(
+                LinearSystemId.createDCMotorSystem(
+                    driveGearbox,
+                    0.025,  // MOI kg*m^2 (estimated)
+                    config.driveRatio
+                ),
+                driveGearbox
+            );
+
+            steerSimMotor = new DCMotorSim(
+                LinearSystemId.createDCMotorSystem(
+                    steerGearbox,
+                    0.004,  // MOI kg*m^2 (estimated, much lower for steer)
+                    config.steerRatio
+                ),
+                steerGearbox
+            );
+        }
 
         console("TalonFX module initialized");
     }
@@ -359,5 +399,47 @@ public class TalonFXSwerveModule extends SwerveModuleBase {
         Logger.recordOutput(basePath + "/Steer/ClosedLoopError", steerMotor.getClosedLoopError().getValueAsDouble());
         Logger.recordOutput(basePath + "/Steer/ClosedLoopOutput", steerMotor.getClosedLoopOutput().getValueAsDouble());
         Logger.recordOutput(basePath + "/Steer/RawPosition", steerMotor.getPosition().getValueAsDouble());
+    }
+
+    // ==================== SIMULATION ====================
+
+    @Override
+    public void updateSimState(double deltaTime, double batteryVoltage) {
+        if (!isSimulation) return;
+
+        // Get current motor commands (voltage or velocity)
+        double driveVoltage = driveMotor.getSimState().getMotorVoltage();
+        double steerVoltage = steerMotor.getSimState().getMotorVoltage();
+
+        // Update physics simulations
+        driveSimMotor.setInputVoltage(driveVoltage);
+        steerSimMotor.setInputVoltage(steerVoltage);
+
+        driveSimMotor.update(deltaTime);
+        steerSimMotor.update(deltaTime);
+
+        // Update simulated positions (output shaft rotations after gearing)
+        driveSimPosition += driveSimMotor.getAngularVelocityRadPerSec() * deltaTime / (2 * Math.PI);
+        steerSimPosition += steerSimMotor.getAngularVelocityRadPerSec() * deltaTime / (2 * Math.PI);
+
+        // Feed simulation state back to motor controllers
+        // Note: setRawRotorPosition expects MOTOR SHAFT rotations (before gearing)
+        // DCMotorSim simulates the output shaft (after gearing), so multiply by gear ratio
+        driveMotor.getSimState().setRawRotorPosition(driveSimPosition * config.driveRatio);
+        driveMotor.getSimState().setRotorVelocity(
+            driveSimMotor.getAngularVelocityRadPerSec() / (2 * Math.PI) * config.driveRatio
+        );
+
+        steerMotor.getSimState().setRawRotorPosition(steerSimPosition * config.steerRatio);
+        steerMotor.getSimState().setRotorVelocity(
+            steerSimMotor.getAngularVelocityRadPerSec() / (2 * Math.PI) * config.steerRatio
+        );
+
+        // Update CANcoder simulation
+        double steerAngleRotations = steerSimPosition / config.steerRatio;
+        steerCANCoder.getSimState().setRawPosition(steerAngleRotations + config.encoderOffset.in(Rotations));
+        steerCANCoder.getSimState().setVelocity(
+            steerSimMotor.getAngularVelocityRadPerSec() / (2 * Math.PI * config.steerRatio)
+        );
     }
 }

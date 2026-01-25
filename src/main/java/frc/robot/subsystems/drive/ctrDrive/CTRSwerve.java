@@ -83,10 +83,7 @@ public class CTRSwerve extends DrivetrainBase {
 
     @Override
     public void resetOrientation() {
-//        // Note that this behavior defaults to blue if alliance is missing.
-//        Rotation2d newRotation = m_state.isAllianceRed() ? new Rotation2d(-1, 0) : new Rotation2d(1, 0);
-//        console("Reset orientation at degrees: " + newRotation.getDegrees());
-//        drivetrain.getPigeon2().setYaw(newRotation.getDegrees());
+        // Note that this behavior defaults to blue if alliance is missing.
         Pose2d oldPose = getPose();
 
         // Note that this behavior defaults to blue if alliance is missing.

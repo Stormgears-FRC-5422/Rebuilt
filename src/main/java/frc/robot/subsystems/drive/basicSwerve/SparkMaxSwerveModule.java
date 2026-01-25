@@ -316,4 +316,15 @@ public class SparkMaxSwerveModule extends SwerveModuleBase {
             console("WARNING: " + motorType + " motor PID update failed: " + error);
         }
     }
+
+    // ==================== SIMULATION ====================
+
+    @Override
+    public void updateSimState(double deltaTime, double batteryVoltage) {
+        // SparkMax simulation support - REVLib handles this differently
+        // For now, this is a no-op stub. Full implementation would require:
+        // - DCMotorSim physics models for NEO motors
+        // - REVLib simulation API integration
+        // This is lower priority since TalonFX is the primary module type
+    }
 }
