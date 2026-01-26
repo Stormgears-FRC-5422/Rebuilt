@@ -3,6 +3,7 @@ package frc.utils;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.Constants;
 
 public class StormCommand extends Command {
     protected String _name = "StormCommand";
@@ -23,7 +24,7 @@ public class StormCommand extends Command {
 
     @Override public void execute() {
         _count++;
-        console("running",500);
+        console("running", 500);
     }
     @Override
     public void end(boolean interrupted) {
@@ -31,11 +32,17 @@ public class StormCommand extends Command {
     }
 
     public void console(String message) {
-        System.out.println(Timer.getFPGATimestamp() + ":Command " + _name + ": " + message);
+        if (_count <= 0) {
+            // Construction/initialization phase - print immediately
+            System.out.println(Timer.getFPGATimestamp() + ":Command " + _name + ": " + message);
+        } else {
+            // Periodic phase - throttle with configurable default
+            console(message, Constants.Console.defaultIterations);
+        }
     }
     public void console(String message, int iterations) {
         if (_count % iterations == 0) {
-            console(message);
+            System.out.println(Timer.getFPGATimestamp() + ":Command " + _name + ": " + message);
         }
     }
     public boolean safeAddRequirements(Subsystem... subsystems) {
