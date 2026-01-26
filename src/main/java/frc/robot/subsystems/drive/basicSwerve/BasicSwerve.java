@@ -8,35 +8,33 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.Options.DriveOptions;
-import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DrivetrainBase;
+import frc.robot.subsystems.drive.SimplePoseTelemetry;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.IMUFactory;
-
-import java.util.Optional;
-
-import frc.robot.subsystems.drive.SimplePoseTelemetry;
+import frc.robot.sensors.pose.PoseEstimator;
+import frc.robot.sensors.pose.WPILibPoseEstimator;
 
 import static edu.wpi.first.units.Units.*;
 
+/**
+ * Custom swerve drive implementation using WPILib's kinematics and pose estimation.
+ * Supports both SparkMax (NEO) and TalonFX (Kraken) modules via SwerveModuleFactory.
+ */
 public class BasicSwerve extends DrivetrainBase {
 
-    final SwerveModuleGroup moduleGroup;
-    final SwerveModuleBase[] modules;
-    final SwerveDriveKinematics kinematics;
+    private final SwerveModuleGroup moduleGroup;
+    private final SwerveModuleBase[] modules;
+    private final SwerveDriveKinematics kinematics;
     private final SimplePoseTelemetry robotTelemetry;
-    private final DriveOptions options;
     private final IMU imu;
-    private final SwerveDrivePoseEstimator poseEstimator;
+    private final SwerveDrivePoseEstimator internalPoseEstimator;
+    private final WPILibPoseEstimator poseEstimatorWrapper;
     private Pose2d currentPose;
 
     // Simulation support
@@ -51,8 +49,6 @@ public class BasicSwerve extends DrivetrainBase {
         imu = IMUFactory.createIMU();
         imu.reset();
 
-        options = DriveOptions.create();
-
         moduleGroup = new SwerveModuleGroup();
         setMaxVelocities(moduleGroup.getMaxLinearVelocity(),
                 moduleGroup.getMaxAngularVelocity());
@@ -61,13 +57,21 @@ public class BasicSwerve extends DrivetrainBase {
         modules = moduleGroup.getModules();
 
         // Initialize pose estimator with starting pose at origin
-        poseEstimator = new SwerveDrivePoseEstimator(
+        internalPoseEstimator = new SwerveDrivePoseEstimator(
             kinematics,
             imu.getRotation(),
             moduleGroup.getModulePositions(),
             new Pose2d()  // Start at origin (0, 0, 0°)
         );
-        currentPose = poseEstimator.getEstimatedPosition();
+
+        // Wrap in our PoseEstimator interface
+        poseEstimatorWrapper = new WPILibPoseEstimator(
+            internalPoseEstimator,
+            imu::getRotation,
+            moduleGroup::getModulePositions
+        );
+
+        currentPose = internalPoseEstimator.getEstimatedPosition();
 
         SmartDashboard.putData("Swerve Drive", builder -> {
             builder.setSmartDashboardType("SwerveDrive");
@@ -86,12 +90,8 @@ public class BasicSwerve extends DrivetrainBase {
 
     @Override
     public void periodic() {
-        super.periodic();
+        super.periodic();  // Handles resetOrientation option check
 
-        if (options.resetOrientation.get()) {
-            resetOrientation();
-            options.resetOrientation.setValue(false);
-        }
         moduleGroup.periodic();
 
         if (options.allowRotation.get()) {
@@ -102,13 +102,27 @@ public class BasicSwerve extends DrivetrainBase {
         }
 
         // Update pose estimator with current gyro reading and module positions
-        currentPose = poseEstimator.update(
+        currentPose = internalPoseEstimator.update(
             imu.getRotation(),
             moduleGroup.getModulePositions()
         );
 
         robotTelemetry.telemeterize(currentPose);
     }
+
+    // ==================== Core API Overrides ====================
+
+    @Override
+    public IMU getIMU() {
+        return imu;
+    }
+
+    @Override
+    public PoseEstimator getPoseEstimator() {
+        return poseEstimatorWrapper;
+    }
+
+    // ==================== Module Control ====================
 
     public void setModuleStates(SwerveModuleState[] states) {
         moduleGroup.setSwerveModuleStates(states);
@@ -129,45 +143,12 @@ public class BasicSwerve extends DrivetrainBase {
         }
     }
 
-    @Override
-    public IMU getIMU() {
-        return imu;
+    public void stop() {
+        moduleGroup.stop();
+        this.drive(new ChassisSpeeds(), false);
     }
 
-    @Override
-    public Rotation2d getRotation() {
-        return imu.getRotation();
-    }
-
-    @Override
-    public void resetOrientation() {
-        // Get alliance from DriverStation (with debug override support)
-        Rotation2d targetRotation;
-
-        if (!Constants.Debug.debug || Constants.Debug.defaultAlliance.toLowerCase().equals("auto")) {
-            // Use FMS alliance data
-            Optional<Alliance> alliance = DriverStation.getAlliance();
-            targetRotation = alliance.map(a ->
-                a == Alliance.Red ? new Rotation2d(Math.PI) : new Rotation2d()
-            ).orElse(new Rotation2d()); // Default to 0° if alliance unknown
-        } else {
-            // Debug override from RobotState
-            RobotState state = RobotState.getInstance();
-            targetRotation = state.isAllianceRed()
-                ? new Rotation2d(Math.PI)  // 180° for red
-                : new Rotation2d();         // 0° for blue
-        }
-
-        // Set IMU to target rotation
-        imu.setYaw(targetRotation.getDegrees());
-
-        // Reset pose estimator with new orientation
-        poseEstimator.resetPosition(
-            targetRotation,
-            moduleGroup.getModulePositions(),
-            new Pose2d()  // Reset to origin with alliance-appropriate heading
-        );
-    }
+    // ==================== Simulation ====================
 
     private void startSimThread() {
         lastSimTime = Timer.getFPGATimestamp();
@@ -194,10 +175,5 @@ public class BasicSwerve extends DrivetrainBase {
 
         // Simulate gyro rotation (IMUBase provides default no-op implementation)
         imu.updateSimulation(angularVelocityRadPerSec * deltaTime);
-    }
-
-    public void stop() {
-        moduleGroup.stop();
-        this.drive(new ChassisSpeeds(), false);
     }
 }

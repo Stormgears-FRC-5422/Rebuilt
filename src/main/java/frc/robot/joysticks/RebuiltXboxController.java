@@ -23,7 +23,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
 
     @Override
-    public boolean zeroGyro() {
+    public boolean resetGyro() {
         return xboxController.getRightBumperIsPressed();
     }
 

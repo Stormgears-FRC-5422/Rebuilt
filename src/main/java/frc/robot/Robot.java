@@ -5,7 +5,6 @@ package frc.robot;
 
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -138,6 +137,9 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void disabledPeriodic() {
+        if (robotContainer != null) {
+            robotContainer.updateAlliance();
+        }
     }
 
     @Override
@@ -193,6 +195,10 @@ public class Robot extends LoggedRobot {
     @Override
     public void simulationInit() {
         console("SimulationInit");
+        // Try to sync alliance early in simulation (may not be available yet from DriverStation)
+        if (robotContainer != null) {
+            robotContainer.updateAlliance();
+        }
     }
 
     @Override

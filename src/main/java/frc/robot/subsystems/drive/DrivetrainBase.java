@@ -1,47 +1,172 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.Drive;
+import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.NullIMU;
+import frc.robot.sensors.pose.NullPoseEstimator;
+import frc.robot.sensors.pose.PoseEstimator;
 import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.AutoLogOutput;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+/**
+ * Abstract base class for all drivetrain implementations.
+ * Provides common functionality for field-relative driving, pose estimation,
+ * and orientation management.
+ */
 public abstract class DrivetrainBase extends StormSubsystem {
-    final protected RobotState state;
+    protected final RobotState state;
+    protected final DriveOptions options;
 
-    public static boolean driveFlip = true;
-    public static boolean fieldRelativeOn = true;
     protected LinearVelocity m_maxVelocity = MetersPerSecond.of(1);
     protected AngularVelocity m_maxAngularVelocity = RadiansPerSecond.of(1);
     protected double m_driveSpeedScale = 0;
+
+    /** Stores whether the current drive command is field-relative (for child classes that handle conversion) */
     protected boolean m_fieldRelative = false;
+
+    /** Cached driver perspective - only updated when disabled */
+    private Rotation2d m_cachedDriverPerspective = null;
+    private boolean m_hasAppliedDriverPerspective = false;
 
     @AutoLogOutput
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
     public DrivetrainBase() {
         state = RobotState.getInstance();
+        options = DriveOptions.create();
         setDriveSpeedScale(Drive.driveSpeedScale);
-        driveFlip = false;
-        fieldRelativeOn = true;
     }
 
-    protected final void setDriveFlip(boolean flip) {
-        driveFlip = flip;
+    // ==================== Implementation Characteristics ====================
+    // These describe how the implementation is structured (NOT user-selectable options)
+
+    /**
+     * Returns true if the child handles field-relative conversion internally.
+     * When true, the base drive() method passes speeds through unchanged.
+     * Default: false (base class handles field-relative conversion)
+     */
+    protected boolean handlesFieldRelativeConversion() {
+        return false;
     }
 
-    protected final void setFieldRelativeOn(boolean flip) {
-        fieldRelativeOn = flip;
+    /**
+     * Returns true if the child handles driver perspective/alliance flip internally.
+     * When true, the base class does not apply driver perspective adjustments.
+     * Default: false (base class handles driver perspective)
+     */
+    protected boolean handlesDriverPerspective() {
+        return false;
     }
+
+    /**
+     * Get the driver perspective angle for field-relative driving.
+     * Returns the cached value that is only updated when disabled.
+     * This ensures driving behavior doesn't change mid-match.
+     *
+     * @return The driver perspective as a Rotation2d
+     */
+    public Rotation2d getDriverPerspective() {
+        // Return cached value if available, otherwise parse fresh (for first call before periodic)
+        if (m_cachedDriverPerspective != null) {
+            return m_cachedDriverPerspective;
+        }
+        return parseDriverPerspective();
+    }
+
+    /**
+     * Parse the driver perspective from options.
+     * If driverPerspective option is "auto", returns alliance-based default (0° blue, 180° red).
+     * Otherwise, parses the option as degrees and returns that angle.
+     */
+    private Rotation2d parseDriverPerspective() {
+        String configured = options.driverPerspective.get();
+        if (configured == null || configured.equalsIgnoreCase("auto")) {
+            // Default: alliance-based perspective (only if alliance is known)
+            if (state.getAlliance() == RobotState.StateAlliance.MISSING) {
+                return null;
+            }
+            return state.isAllianceRed() ? Rotation2d.k180deg : Rotation2d.kZero;
+        }
+        try {
+            double angle = Double.parseDouble(configured);
+            return Rotation2d.fromDegrees(angle);
+        } catch (NumberFormatException e) {
+            // Invalid value, fall back to alliance-based
+            console("Invalid driverPerspective value: " + configured + ", using auto");
+            if (state.getAlliance() == RobotState.StateAlliance.MISSING) {
+                return null;
+            }
+            return state.isAllianceRed() ? Rotation2d.k180deg : Rotation2d.kZero;
+        }
+    }
+
+    /**
+     * Returns true if the child manages its own IMU internally.
+     * When true, the child may still expose a wrapped IMU via getIMU().
+     * Default: false (child provides IMU directly)
+     */
+    protected boolean usesInternalIMU() {
+        return false;
+    }
+
+    // ==================== Core API ====================
+
+    /**
+     * Get the IMU used by this drivetrain.
+     * Subclasses should override to return their actual IMU (or wrapped internal IMU).
+     * @return IMU instance (NullIMU if not overridden)
+     */
+    public IMU getIMU() {
+        return new NullIMU();
+    }
+
+    /**
+     * Get the pose estimator used by this drivetrain.
+     * Subclasses should override to return their actual pose estimator.
+     * @return PoseEstimator instance (NullPoseEstimator if not overridden)
+     */
+    public PoseEstimator getPoseEstimator() {
+        return new NullPoseEstimator();
+    }
+
+    /**
+     * Get the current robot rotation from the IMU.
+     * @return Current rotation
+     */
+    public Rotation2d getRotation() {
+        return getIMU().getRotation();
+    }
+
+    /**
+     * Get the current estimated pose of the robot.
+     * @return Current pose estimate
+     */
+    public Pose2d getPose() {
+        return getPoseEstimator().getPose();
+    }
+
+    /**
+     * Set the robot's pose to a specific value.
+     * Also sets the IMU yaw to match the pose rotation.
+     * @param pose The new pose
+     */
+    public void setPose(Pose2d pose) {
+        getIMU().setYaw(pose.getRotation().getDegrees());
+        getPoseEstimator().resetPose(pose);
+    }
+
+    // ==================== Velocity Configuration ====================
 
     protected final void setMaxVelocities(LinearVelocity maxVelocity, AngularVelocity maxAngularVelocity) {
         m_maxVelocity = maxVelocity;
@@ -54,67 +179,140 @@ public abstract class DrivetrainBase extends StormSubsystem {
         m_driveSpeedScale = MathUtil.clamp(scale, 0, Drive.driveSpeedScale);
     }
 
-    // Be careful scaling ChassisSpeeds. Need to scale X and Y the same or your robot will move in the wrong direction!
+    /**
+     * Scale chassis speeds uniformly. X and Y must be scaled the same
+     * or the robot will move in the wrong direction!
+     */
     public ChassisSpeeds scaleChassisSpeeds(ChassisSpeeds speeds, double scale) {
-        return new ChassisSpeeds(scale * speeds.vxMetersPerSecond,
-                scale * speeds.vyMetersPerSecond,
-                scale * speeds.omegaRadiansPerSecond);
+        return new ChassisSpeeds(
+            scale * speeds.vxMetersPerSecond,
+            scale * speeds.vyMetersPerSecond,
+            scale * speeds.omegaRadiansPerSecond
+        );
     }
 
+    // ==================== Drive Methods ====================
+
     /**
-     * Command the robot to drive. This method expects real speeds in
-     * meters/second. Speed may be limited by speedScale and / or slew rate
-     * limiter
+     * Command the robot to drive. This method expects real speeds in meters/second.
+     * Speed may be limited by speedScale.
      *
-     * @param speeds Chassis speedsSwerveDriveConfiguration for the swerve, esp
-     * from joystick.
+     * @param speeds Chassis speeds
      * @param fieldRelative True for field relative driving
      */
     public void drive(ChassisSpeeds speeds, boolean fieldRelative) {
         drive(speeds, fieldRelative, m_driveSpeedScale);
     }
 
+    /**
+     * Command the robot to drive with explicit speed scale.
+     * The fieldRelative parameter comes from the caller (e.g., joystick command reading options.useFieldRelative).
+     * The base class checks whether it should handle the conversion or pass it through to the child.
+     *
+     * @param speeds Chassis speeds
+     * @param fieldRelative True for field relative driving
+     * @param speedScale Speed scale factor
+     */
     public void drive(ChassisSpeeds speeds, boolean fieldRelative, double speedScale) {
-        if (fieldRelativeOn && fieldRelative) {
-            Rotation2d rotation = getRotation();
-            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, rotation);
+        // Store fieldRelative for child classes that handle conversion themselves
+        m_fieldRelative = fieldRelative;
+
+        if (!handlesFieldRelativeConversion() && fieldRelative) {
+            // Base class handles the conversion
+            // Apply driver perspective: rotate input speeds so "forward" from driver's POV
+            // maps to field-forward (0 degrees), then convert to robot-relative
+            ChassisSpeeds fieldSpeeds = speeds;
+            if (!handlesDriverPerspective()) {
+                Rotation2d driverPerspective = getDriverPerspective();
+                if (driverPerspective != null) {
+                    // Rotate the field-relative speeds by the driver perspective
+                    // This transforms from driver-relative to field-relative coordinates
+                    fieldSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, driverPerspective.unaryMinus());
+                }
+            }
+            Rotation2d robotRotation = getRotation();
+            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(fieldSpeeds, robotRotation);
         } else {
+            // Either not field-relative, or child handles conversion
             m_chassisSpeeds = speeds;
         }
         m_chassisSpeeds = scaleChassisSpeeds(m_chassisSpeeds, speedScale);
     }
 
     /**
-     * Command the robot to drive, especially from Joystick This method expects
-     * units from -1 to 1, and then scales them to the max speeds You should
-     * call setMaxVelocities() before calling this method
+     * Command the robot to drive using percent output (-1 to 1).
+     * Scales inputs to the configured max speeds.
      *
-     * @param speeds Chassis speeds, especially from joystick.
+     * @param speeds Chassis speeds as percent output (-1 to 1)
      * @param fieldRelative True for field relative driving
      */
     public void percentOutputDrive(ChassisSpeeds speeds, boolean fieldRelative) {
-        drive(new ChassisSpeeds(speeds.vxMetersPerSecond * m_maxVelocity.in(MetersPerSecond),
+        drive(
+            new ChassisSpeeds(
+                speeds.vxMetersPerSecond * m_maxVelocity.in(MetersPerSecond),
                 speeds.vyMetersPerSecond * m_maxVelocity.in(MetersPerSecond),
-                speeds.omegaRadiansPerSecond * m_maxAngularVelocity.in(RadiansPerSecond)),
-                fieldRelative);
+                speeds.omegaRadiansPerSecond * m_maxAngularVelocity.in(RadiansPerSecond)
+            ),
+            fieldRelative
+        );
     }
 
-    public Rotation2d getRotation() {
-        return getIMU().getRotation();
+    // ==================== Orientation Reset ====================
+
+    /**
+     * Reset orientation to face the correct direction for the current alliance.
+     * Uses RobotState for alliance detection (handles both FMS and debug modes).
+     *
+     * For blue alliance: 0 degrees (facing red wall)
+     * For red alliance: 180 degrees (facing blue wall)
+     */
+    public void resetOrientation() {
+        // Get target rotation based on alliance from RobotState
+        Rotation2d targetRotation = state.isAllianceRed()
+            ? Rotation2d.k180deg  // 180 degrees for red
+            : Rotation2d.kZero;   // 0 degrees for blue
+
+        resetOrientationTo(targetRotation);
     }
 
     /**
-     * Get the IMU used by this drivetrain.
-     * Subclasses should override to return their actual IMU.
-     * @return IMU instance (NullIMU if not overridden)
+     * Reset orientation to a specific target rotation.
+     * Subclasses can override for implementation-specific behavior.
+     *
+     * @param targetRotation The target rotation to reset to
      */
-    public IMU getIMU() {
-        return new NullIMU();
+    protected void resetOrientationTo(Rotation2d targetRotation) {
+        // Set IMU yaw and reset pose estimator rotation
+        getIMU().setYaw(targetRotation.getDegrees());
+
+        Pose2d currentPose = getPose();
+        getPoseEstimator().resetPose(new Pose2d(
+            currentPose.getTranslation(),
+            targetRotation
+        ));
     }
 
-    // Teach the drive that the current orientation is facing the opposite end of the field
-    // this function is ideally alliance aware, and manages the pose and gyro as needed
-    public void resetOrientation() {
-    }
+    // ==================== Periodic ====================
 
+    @Override
+    public void periodic() {
+        super.periodic();
+
+        // Check resetOrientation option (centralized here)
+        if (options.resetOrientation.get()) {
+            resetOrientation();
+            options.resetOrientation.setValue(false);
+        }
+
+        // Update driver perspective only when disabled (matches CTRDriveInternal behavior)
+        // This ensures driving behavior doesn't change until an explicit disable event
+        if (!handlesDriverPerspective()) {
+            if (!m_hasAppliedDriverPerspective || edu.wpi.first.wpilibj.DriverStation.isDisabled()) {
+                m_cachedDriverPerspective = parseDriverPerspective();
+                if (m_cachedDriverPerspective != null) {
+                    m_hasAppliedDriverPerspective = true;
+                }
+            }
+        }
+    }
 }
