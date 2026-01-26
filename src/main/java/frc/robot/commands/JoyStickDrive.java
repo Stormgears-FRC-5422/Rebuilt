@@ -10,6 +10,7 @@ import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import static java.util.Objects.isNull;
@@ -19,12 +20,12 @@ public class JoyStickDrive extends StormCommand {
     private final DoubleSupplier txSupplier;
     private final DoubleSupplier tySupplier;
     private final DoubleSupplier omegaSupplier;
+    private final BooleanSupplier fieldRelativeSupplier;
 
     private SlewRateLimiter xScaleLimiter;
     private SlewRateLimiter yScaleLimiter;
     private SlewRateLimiter omegaScaleLimiter;
 
-    private boolean fieldRelative;
     private DriveOptions options;
 
     // Note that we want the joystick to mostly work even if there is no drive.
@@ -46,13 +47,17 @@ public class JoyStickDrive extends StormCommand {
         omegaSupplier = joystick::getOmegaSpeed;
 
         options = DriveOptions.create();
+
+        // Field-relative when option is enabled AND trigger is NOT pressed
+        // Trigger pressed = robot-relative override
+        fieldRelativeSupplier = () -> options.useFieldRelative.get() && !joystick.getRobotRelative();
     }
 
     @Override
     public void initialize() {
         super.initialize();
         drivetrain.setDriveSpeedScale(Drive.driveSpeedScale);
-        xScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter); //make it into a constant
+        xScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
         yScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
         omegaScaleLimiter = new SlewRateLimiter(Drive.turnRateLimiter);
     }
@@ -60,7 +65,6 @@ public class JoyStickDrive extends StormCommand {
     @Override
     public void execute() {
         super.execute();
-        fieldRelative = options.useFieldRelative.get();
 
         double x = txSupplier.getAsDouble();
         double y = tySupplier.getAsDouble();
@@ -77,7 +81,7 @@ public class JoyStickDrive extends StormCommand {
         }
 
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
-        drivetrain.percentOutputDrive(speeds, fieldRelative);
+        drivetrain.percentOutputDrive(speeds, fieldRelativeSupplier.getAsBoolean());
 
         Logger.recordOutput("x", x);
         Logger.recordOutput("y", y);

@@ -1,7 +1,6 @@
 package frc.robot.sensors.imu;
 
 import com.studica.frc.AHRS;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 
 /**
@@ -13,6 +12,7 @@ public class NavXIMU extends IMUBase {
     private final boolean ownsHardware;
     private double yawOffset = 0.0;
     private double simAngleDegrees = 0.0;
+    private final Object simLock = new Object(); // Synchronize sim angle access between main and Notifier threads
 
     /**
      * Creates a new NavXIMU using default MXP SPI configuration.
@@ -43,7 +43,9 @@ public class NavXIMU extends IMUBase {
     @Override
     protected double getRawAngle() {
         if (isSimulation) {
-            return simAngleDegrees;
+            synchronized (simLock) {
+                return simAngleDegrees;
+            }
         }
         return navx.getAngle() + yawOffset;
     }
@@ -61,7 +63,11 @@ public class NavXIMU extends IMUBase {
     public void setYaw(double angleDegrees) {
         // NavX doesn't support setting yaw directly, so store offset
         if (isSimulation) {
-            simAngleDegrees = angleDegrees;
+            synchronized (simLock) {
+                // Account for inversion: getRotation() multiplies by invertMultiplier,
+                // so we need to store the inverse to get the desired angle back
+                simAngleDegrees = angleDegrees * invertMultiplier;
+            }
         } else {
             yawOffset = angleDegrees - navx.getAngle();
         }
@@ -70,8 +76,10 @@ public class NavXIMU extends IMUBase {
     @Override
     public void updateSimulation(double deltaAngleRadians) {
         if (isSimulation) {
-            // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
-            simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+            synchronized (simLock) {
+                // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
+                simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+            }
         }
     }
 }

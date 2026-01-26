@@ -2,10 +2,8 @@ package frc.robot.sensors.imu;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants;
 
 /**
@@ -16,6 +14,7 @@ public class Pigeon2IMU extends IMUBase {
     private final Pigeon2 pigeon;
     private final boolean ownsHardware;
     private double simAngleDegrees = 0.0;
+    private final Object simLock = new Object(); // Synchronize sim angle access between main and Notifier threads
 
     /**
      * Creates a new Pigeon2IMU using configuration from Constants.
@@ -62,6 +61,11 @@ public class Pigeon2IMU extends IMUBase {
 
     @Override
     protected double getRawAngle() {
+        if (isSimulation) {
+            synchronized (simLock) {
+                return simAngleDegrees;
+            }
+        }
         return pigeon.getYaw().getValueAsDouble();
     }
 
@@ -77,16 +81,23 @@ public class Pigeon2IMU extends IMUBase {
     public void setYaw(double angleDegrees) {
         pigeon.getConfigurator().setYaw(angleDegrees);
         if (isSimulation) {
-            simAngleDegrees = angleDegrees;
+            synchronized (simLock) {
+                // Account for inversion: getRotation() multiplies by invertMultiplier,
+                // so we need to store the inverse to get the desired angle back
+                simAngleDegrees = angleDegrees * invertMultiplier;
+                pigeon.getSimState().setRawYaw(simAngleDegrees);
+            }
         }
     }
 
     @Override
     public void updateSimulation(double deltaAngleRadians) {
         if (isSimulation) {
-            // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
-            simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
-            pigeon.getSimState().setRawYaw(simAngleDegrees);
+            synchronized (simLock) {
+                // Apply inversion to the raw angle update (invertMultiplier is applied on read in getRotation())
+                simAngleDegrees += Math.toDegrees(deltaAngleRadians) * invertMultiplier;
+                pigeon.getSimState().setRawYaw(simAngleDegrees);
+            }
         }
     }
 }

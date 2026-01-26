@@ -30,7 +30,7 @@ public abstract class RebuiltJoystick {
         return 0.0;
     }
 
-    public boolean zeroGyro() {
+    public boolean resetGyro() {
         return false;
     }
 
