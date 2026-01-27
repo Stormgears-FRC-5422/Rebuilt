@@ -5,6 +5,8 @@ import frc.robot.Constants.Drive;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
 
 public final class SwerveModuleConstants {
     public static final int FRONT_LEFT = 0;
@@ -57,8 +59,9 @@ public final class SwerveModuleConstants {
                 .withKMinMax(Drive.steerKMin, Drive.steerKMax);
 
         // Save some space with these convenience variables
-        double dx = Drive.drivetrainTrackwidthMeters / 2.0;
-        double dy = Drive.drivetrainWheelbaseMeters / 2.0;
+        // Convert inches to meters for Translation2d
+        double dx = Inches.of(Drive.trackwidthInches).in(Meters) / 2.0;
+        double dy = Inches.of(Drive.wheelbaseInches).in(Meters) / 2.0;
 
         // Initialize module configs
         flModuleConfig = getDefaultModuleConfig()
@@ -68,7 +71,7 @@ public final class SwerveModuleConstants {
                 .withEncoderID(Drive.frontLeftEncoderID)
                 .withWheelDiameter(Inches.of(Drive.frontLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Degrees.of(Drive.frontLeftEncoderOffset))
+                .withEncoderOffset(Rotations.of(Drive.frontLeftEncoderOffsetRotations))
                 .withOffset(new Translation2d(dx, dy));
 
         frModuleConfig = getDefaultModuleConfig()
@@ -78,7 +81,7 @@ public final class SwerveModuleConstants {
                 .withEncoderID(Drive.frontRightEncoderID)
                 .withWheelDiameter(Inches.of(Drive.frontRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Degrees.of(Drive.frontRightEncoderOffset))
+                .withEncoderOffset(Rotations.of(Drive.frontRightEncoderOffsetRotations))
                 .withOffset(new Translation2d(dx, -dy));
 
         blModuleConfig = getDefaultModuleConfig()
@@ -88,7 +91,7 @@ public final class SwerveModuleConstants {
                 .withEncoderID(Drive.backLeftEncoderID)
                 .withWheelDiameter(Inches.of(Drive.backLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Degrees.of(Drive.backLeftEncoderOffset))
+                .withEncoderOffset(Rotations.of(Drive.backLeftEncoderOffsetRotations))
                 .withOffset(new Translation2d(-dx, dy));
 
         brModuleConfig = getDefaultModuleConfig()
@@ -98,7 +101,7 @@ public final class SwerveModuleConstants {
                 .withEncoderID(Drive.backRightEncoderID)
                 .withWheelDiameter(Inches.of(Drive.backRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Degrees.of(Drive.backRightEncoderOffset))
+                .withEncoderOffset(Rotations.of(Drive.backRightEncoderOffsetRotations))
                 .withOffset(new Translation2d(-dx, -dy));
     }
 

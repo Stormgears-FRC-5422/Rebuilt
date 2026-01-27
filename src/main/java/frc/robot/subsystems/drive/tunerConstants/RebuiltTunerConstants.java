@@ -17,6 +17,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.*;
+import frc.robot.Constants;
 import frc.robot.subsystems.drive.ctrDrive.CTRDriveInternal;
 
 import static edu.wpi.first.units.Units.*;
@@ -28,15 +29,16 @@ public class RebuiltTunerConstants {
 
     // The steer motor uses any SwerveModule.SteerRequestType control request with the
     // output type specified by SwerveModuleConstants.SteerMotorClosedLoopOutput
+    // PID gains read from properties
     private static final Slot0Configs steerGains = new Slot0Configs()
-        .withKP(100).withKI(0).withKD(0.5)
-        .withKS(0.1).withKV(2.66).withKA(0)
+        .withKP(Constants.Drive.steerKP).withKI(Constants.Drive.steerKI).withKD(Constants.Drive.steerKD)
+        .withKS(Constants.Drive.steerKS).withKV(Constants.Drive.steerKV).withKA(0)
         .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
     // When using closed-loop control, the drive motor uses the control
     // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
     private static final Slot0Configs driveGains = new Slot0Configs()
-        .withKP(0.1).withKI(0).withKD(0)
-        .withKS(0).withKV(0.124);
+        .withKP(Constants.Drive.driveKP).withKI(Constants.Drive.driveKI).withKD(Constants.Drive.driveKD)
+        .withKS(Constants.Drive.driveKS);
 
     // The closed-loop output type to use for the steer motors;
     // This affects the PID/FF gains for the steer motors
@@ -85,14 +87,17 @@ public class RebuiltTunerConstants {
     // This may need to be tuned to your individual robot
     private static final double kCoupleRatio = 3.5714285714285716;
 
-    private static final double kDriveGearRatio = 6.746031746031747;
-    private static final double kSteerGearRatio = 21.428571428571427;
-    private static final Distance kWheelRadius = Inches.of(2);
+    // Gear ratios and wheel dimensions from properties
+    private static final double kDriveGearRatio = Constants.Drive.driveRatio;
+    private static final double kSteerGearRatio = Constants.Drive.steerRatio;
+    private static final Distance kWheelRadius = Inches.of(Constants.Drive.frontLeftDiameter / 2.0);
 
+    // Inversion flags from properties
     private static final boolean kInvertLeftSide = false;
-    private static final boolean kInvertRightSide = true;
+    private static final boolean kInvertRightSide = Constants.Drive.invertRight;
 
-    private static final int kPigeonId = 0;
+    // Pigeon ID from properties
+    private static final int kPigeonId = Constants.Imu.pigeonID;
 
     // These are only used for simulation
     private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.01);
@@ -130,49 +135,54 @@ public class RebuiltTunerConstants {
             .withDriveFrictionVoltage(kDriveFrictionVoltage);
 
 
-    // Front Left
-    private static final int kFrontLeftDriveMotorId = 11;
-    private static final int kFrontLeftSteerMotorId = 10;
-    private static final int kFrontLeftEncoderId = 1;
-    private static final Angle kFrontLeftEncoderOffset = Rotations.of(-0.145263671875);
-    private static final boolean kFrontLeftSteerMotorInverted = true;
-    private static final boolean kFrontLeftEncoderInverted = false;
+    // Front Left - Motor IDs and encoder offsets from properties
+    private static final int kFrontLeftDriveMotorId = Constants.Drive.frontLeftDriveID;
+    private static final int kFrontLeftSteerMotorId = Constants.Drive.frontLeftSteerID;
+    private static final int kFrontLeftEncoderId = Constants.Drive.frontLeftEncoderID;
+    // CTR uses opposite sign convention - negate property value
+    private static final Angle kFrontLeftEncoderOffset = Rotations.of(-Constants.Drive.frontLeftEncoderOffsetRotations);
+    private static final boolean kFrontLeftSteerMotorInverted = Constants.Drive.invertSteer;
+    private static final boolean kFrontLeftEncoderInverted = Constants.Drive.invertEncoder;
 
-    private static final Distance kFrontLeftXPos = Inches.of(11.125);
-    private static final Distance kFrontLeftYPos = Inches.of(11.125);
+    // Module positions calculated from trackwidth/wheelbase
+    private static final Distance kFrontLeftXPos = Inches.of(Constants.Drive.wheelbaseInches / 2.0);
+    private static final Distance kFrontLeftYPos = Inches.of(Constants.Drive.trackwidthInches / 2.0);
 
     // Front Right
-    private static final int kFrontRightDriveMotorId = 21;
-    private static final int kFrontRightSteerMotorId = 20;
-    private static final int kFrontRightEncoderId = 2;
-    private static final Angle kFrontRightEncoderOffset = Rotations.of(0.223876953125);
-    private static final boolean kFrontRightSteerMotorInverted = true;
-    private static final boolean kFrontRightEncoderInverted = false;
+    private static final int kFrontRightDriveMotorId = Constants.Drive.frontRightDriveID;
+    private static final int kFrontRightSteerMotorId = Constants.Drive.frontRightSteerID;
+    private static final int kFrontRightEncoderId = Constants.Drive.frontRightEncoderID;
+    // CTR uses opposite sign convention - negate property value
+    private static final Angle kFrontRightEncoderOffset = Rotations.of(-Constants.Drive.frontRightEncoderOffsetRotations);
+    private static final boolean kFrontRightSteerMotorInverted = Constants.Drive.invertSteer;
+    private static final boolean kFrontRightEncoderInverted = Constants.Drive.invertEncoder;
 
-    private static final Distance kFrontRightXPos = Inches.of(11.125);
-    private static final Distance kFrontRightYPos = Inches.of(-11.125);
+    private static final Distance kFrontRightXPos = Inches.of(Constants.Drive.wheelbaseInches / 2.0);
+    private static final Distance kFrontRightYPos = Inches.of(-Constants.Drive.trackwidthInches / 2.0);
 
     // Back Left
-    private static final int kBackLeftDriveMotorId = 41;
-    private static final int kBackLeftSteerMotorId = 40;
-    private static final int kBackLeftEncoderId = 4;
-    private static final Angle kBackLeftEncoderOffset = Rotations.of(0.376220703125);
-    private static final boolean kBackLeftSteerMotorInverted = true;
-    private static final boolean kBackLeftEncoderInverted = false;
+    private static final int kBackLeftDriveMotorId = Constants.Drive.backLeftDriveID;
+    private static final int kBackLeftSteerMotorId = Constants.Drive.backLeftSteerID;
+    private static final int kBackLeftEncoderId = Constants.Drive.backLeftEncoderID;
+    // CTR uses opposite sign convention - negate property value
+    private static final Angle kBackLeftEncoderOffset = Rotations.of(-Constants.Drive.backLeftEncoderOffsetRotations);
+    private static final boolean kBackLeftSteerMotorInverted = Constants.Drive.invertSteer;
+    private static final boolean kBackLeftEncoderInverted = Constants.Drive.invertEncoder;
 
-    private static final Distance kBackLeftXPos = Inches.of(-11.125);
-    private static final Distance kBackLeftYPos = Inches.of(11.125);
+    private static final Distance kBackLeftXPos = Inches.of(-Constants.Drive.wheelbaseInches / 2.0);
+    private static final Distance kBackLeftYPos = Inches.of(Constants.Drive.trackwidthInches / 2.0);
 
     // Back Right
-    private static final int kBackRightDriveMotorId = 31;
-    private static final int kBackRightSteerMotorId = 30;
-    private static final int kBackRightEncoderId = 3;
-    private static final Angle kBackRightEncoderOffset = Rotations.of(-0.274658203125);
-    private static final boolean kBackRightSteerMotorInverted = true;
-    private static final boolean kBackRightEncoderInverted = false;
+    private static final int kBackRightDriveMotorId = Constants.Drive.backRightDriveID;
+    private static final int kBackRightSteerMotorId = Constants.Drive.backRightSteerID;
+    private static final int kBackRightEncoderId = Constants.Drive.backRightEncoderID;
+    // CTR uses opposite sign convention - negate property value
+    private static final Angle kBackRightEncoderOffset = Rotations.of(-Constants.Drive.backRightEncoderOffsetRotations);
+    private static final boolean kBackRightSteerMotorInverted = Constants.Drive.invertSteer;
+    private static final boolean kBackRightEncoderInverted = Constants.Drive.invertEncoder;
 
-    private static final Distance kBackRightXPos = Inches.of(-11.125);
-    private static final Distance kBackRightYPos = Inches.of(-11.125);
+    private static final Distance kBackRightXPos = Inches.of(-Constants.Drive.wheelbaseInches / 2.0);
+    private static final Distance kBackRightYPos = Inches.of(-Constants.Drive.trackwidthInches / 2.0);
 
 
     public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> FrontLeft =
