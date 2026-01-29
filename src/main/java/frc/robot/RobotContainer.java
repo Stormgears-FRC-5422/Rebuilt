@@ -7,15 +7,15 @@ import frc.robot.Constants.Toggles;
 import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.TestShooterTuner;
-import frc.robot.elastic.MotorTestTuner;
+import frc.robot.elastic.ElasticMotorController;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.subsystems.KrakenPID;
+import frc.robot.subsystems.KrakenShooter;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 import frc.robot.subsystems.drive.config.SwerveModuleConstants;
-import frc.robot.elastic.MotorTestTuner;
+import frc.robot.elastic.ElasticMotorController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -32,12 +32,13 @@ public class RobotContainer {
     RebuiltJoystick joystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
-    private TestShooterTuner tuner;
+
+    // private TestShooterTuner tuner;
     //elastic control
-    private final MotorTestTuner motorTestTuner = new MotorTestTuner();
+    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
     // private final SparkMax motor1 = new SparkMax(1, MotorType.kBrushless);
 
-    private final KrakenPID krakenPID = new KrakenPID();
+    private final KrakenShooter krakenShooter = new KrakenShooter();
 
     // private final SparkMax motor2 = new SparkMax(2, MotorType.kBrushless);
 
@@ -59,9 +60,9 @@ public class RobotContainer {
             if (Toggles.useLights) {
                 lights = new Lights();
             }
-            if (Toggles.usePidTuner) {
-                tuner = new TestShooterTuner("PID Tuning", SwerveModuleConstants.drivePidConfig);
-            }
+            // if (Toggles.usePidTuner) {
+            //     tuner = new TestShooterTuner("PID Tuning", SwerveModuleConstants.drivePidConfig);
+            // }
             configureBindings();
             console("[DONE] RobotContainer");
         } catch (IllegalDriveTypeException e) {
@@ -83,17 +84,18 @@ public class RobotContainer {
     private static double slider(double x, double low, double high) {
         return Math.max(low, Math.min(high, x));
     }
+
     public void periodic() {
-        if (tuner != null) {
-            tuner.periodic();
-        }
+        // if (tuner != null) {
+        //     tuner.periodic();
+        // }
         Options.periodic();
 
-        if (motorTestTuner.enabled.get()) {
-            double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-            krakenPID.setPercentVelocityClosedLoop(percent);
+        if (elasticMotorController.enabled.get()) {
+            // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+            krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*50);
         } else {
-            krakenPID.stop();
+            krakenShooter.stop();
         }
 
         // if (motorTestTuner.enabled.get()) {

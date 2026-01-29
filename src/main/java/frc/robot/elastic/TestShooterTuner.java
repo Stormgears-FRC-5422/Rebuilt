@@ -10,7 +10,7 @@ public class TestShooterTuner extends DashboardTuner {
 
     public TestShooterTuner(String name, PidConfig shootPIDConfig) {
         super(name);
-        this.shooterPIDTuning = new PidTuningGroup(this, "shooter", shootPIDConfig);
+        this.shooterPIDTuning = new PidTuningGroup(this, "Test Group", shootPIDConfig);
     }
 
     public void periodic() {
