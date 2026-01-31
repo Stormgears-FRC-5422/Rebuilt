@@ -76,6 +76,7 @@ public final class PidTuningGroup {
         kMinPub.set(config.kMin);
         kMaxPub.set(config.kMax);
         kVPub.set(config.kV);
+        pidApplyPub.set(config.pidApply);
     }
 
     public void updateConfig(PidConfig config) {
@@ -83,6 +84,7 @@ public final class PidTuningGroup {
                 .withKI(kiSub.get())
                 .withKD(kdSub.get())
                 .withKMinMax(kMinSub.get(), kMaxSub.get())
-                .withKV(kVSub.get());
+                .withKV(kVSub.get())
+                .withPidApply(pidApplySub.get());
     }
 }
