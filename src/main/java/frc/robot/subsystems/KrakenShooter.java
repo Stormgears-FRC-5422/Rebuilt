@@ -26,6 +26,7 @@ public class KrakenShooter extends StormSubsystem {
                 .withKI(Shooter.shootKI)
                 .withKD(Shooter.shootKD)
                 .withKV(Shooter.shootKV)
+                .withKS(Shooter.shootKS)
                 .withKMinMax(Shooter.shootKMin, Shooter.shootKMax);
 
         configMotor();

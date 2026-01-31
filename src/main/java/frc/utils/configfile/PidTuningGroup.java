@@ -16,6 +16,7 @@ public final class PidTuningGroup {
     private final DoublePublisher kMinPub;
     private final DoublePublisher kMaxPub;
     private final DoublePublisher kVPub;
+    private final DoublePublisher kSPub;
 
     private final DoubleSubscriber kpSub;
     private final DoubleSubscriber kiSub;
@@ -23,6 +24,8 @@ public final class PidTuningGroup {
     private final DoubleSubscriber kMinSub;
     private final DoubleSubscriber kMaxSub;
     private final DoubleSubscriber kVSub;
+    private final DoubleSubscriber kSSub;
+
 
     private final PidConfig config;
 
@@ -35,6 +38,7 @@ public final class PidTuningGroup {
         var kMinTopic = tuner.getTable().getDoubleTopic(prefix + "/kMin");
         var kMaxTopic = tuner.getTable().getDoubleTopic(prefix + "/kMax");
         var kVTopic = tuner.getTable().getDoubleTopic(prefix + "/kV");
+        var kSTopic = tuner.getTable().getDoubleTopic(prefix + "/kS");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();
@@ -42,6 +46,7 @@ public final class PidTuningGroup {
         kMinPub = kMinTopic.publish();
         kMaxPub = kMaxTopic.publish();
         kVPub = kVTopic.publish();
+        kSPub = kSTopic.publish();
 
         kpSub = kpTopic.subscribe(config.kP);
         kiSub = kiTopic.subscribe(config.kI);
@@ -49,6 +54,7 @@ public final class PidTuningGroup {
         kMinSub = kMinTopic.subscribe(config.kMin);
         kMaxSub = kMaxTopic.subscribe(config.kMax);
         kVSub = kVTopic.subscribe(config.kV);
+        kSSub = kSTopic.subscribe(config.kS);
 
         // Set initial values
         doPublishConfig(config);
@@ -69,6 +75,7 @@ public final class PidTuningGroup {
         kMinPub.set(config.kMin);
         kMaxPub.set(config.kMax);
         kVPub.set(config.kV);
+        kSPub.set(config.kS);
     }
 
     public void updateConfig(PidConfig config) {
@@ -76,6 +83,7 @@ public final class PidTuningGroup {
                 .withKI(kiSub.get())
                 .withKD(kdSub.get())
                 .withKMinMax(kMinSub.get(), kMaxSub.get())
-                .withKV(kVSub.get());
+                .withKV(kVSub.get())
+                .withKS(kSSub.get());
     }
 }
