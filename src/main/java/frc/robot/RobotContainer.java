@@ -6,25 +6,18 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
-import frc.robot.elastic.TestShooterTuner;
 import frc.robot.elastic.ElasticMotorController;
+import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.KrakenShooter;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.config.SwerveModuleConstants;
-import frc.robot.elastic.ElasticMotorController;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import edu.wpi.first.wpilibj.DriverStation;
+
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import org.littletonrobotics.junction.Logger;
-
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 
 public class RobotContainer {
     // **********
@@ -34,14 +27,11 @@ public class RobotContainer {
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
 
-    // private TestShooterTuner tuner;
+    private SingleMotorTuner shooterTuner;
+    private KrakenShooter krakenShooter;
+
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
-    // private final SparkMax motor1 = new SparkMax(1, MotorType.kBrushless);
-
-    private final KrakenShooter krakenShooter = new KrakenShooter();
-
-    // private final SparkMax motor2 = new SparkMax(2, MotorType.kBrushless);
 
     // **********
     // Commands
@@ -54,16 +44,23 @@ public class RobotContainer {
             console("[Init] RobotContainer");
             console("Making joystick!");
             joystick = new RebuiltJoystick(Constants.ButtonBoard.driveJoystickPort);
+
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, "");
             }
+
+            if (Toggles.useShooter) {
+                console("Create shooter");
+                krakenShooter = new KrakenShooter();
+                if (Toggles.usePidTuner) {
+                    shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
+                }
+            }
+
             if (Toggles.useLights) {
                 lights = new Lights();
             }
-            // if (Toggles.usePidTuner) {
-            //     tuner = new TestShooterTuner("PID Tuning", SwerveModuleConstants.drivePidConfig);
-            // }
             configureBindings();
             console("[DONE] RobotContainer");
         } catch (IllegalDriveTypeException e) {
@@ -87,30 +84,21 @@ public class RobotContainer {
     }
 
     public void periodic() {
-        // if (tuner != null) {
-        //     tuner.periodic();
-        // }
-        Options.periodic();
-
-        if (elasticMotorController.enabled.get()) {
-            // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-            krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
-            Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
-        } else {
-            krakenShooter.stop();
+        if (shooterTuner != null) {
+            shooterTuner.periodic();
         }
 
-        // if (motorTestTuner.enabled.get()) {
-        // double m1 = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-        // // double m2 = slider(motorTestTuner.motor2.get(), -1.0, 1.0);
-
-        // motor1.set(m1);
-        // // motor2.set(m2);
-        // } else {
-        //     motor1.set(0.0);
-        //     // motor2.set(0.0);
-        // }
+        if (Toggles.useShooter && krakenShooter != null) {
+            if (elasticMotorController.enabled.get()) {
+                // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+                krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
+                Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
+            } else {
+                krakenShooter.stop();
+            }
+        }
     }
+
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
     }

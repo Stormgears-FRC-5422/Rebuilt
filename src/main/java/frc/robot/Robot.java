@@ -2,6 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
+
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -17,10 +18,12 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
 public class Robot extends LoggedRobot {
     private RobotContainer robotContainer;
     private RobotState state;
     private int iteration = 0;
+
     public Robot() {
         state = RobotState.getInstance();
         switch (state.getSimMode()) {
@@ -60,6 +63,7 @@ public class Robot extends LoggedRobot {
             e.printStackTrace();
         }
     }
+
     @Override
     public void startCompetition() {
         boolean hold = false;
@@ -90,6 +94,7 @@ public class Robot extends LoggedRobot {
             }
         }
     }
+
     private void logBuildDetails() {
         Logger.recordMetadata("ProjectName", Constants.robotName); // Set a metadata value
         Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
@@ -97,86 +102,101 @@ public class Robot extends LoggedRobot {
         Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
         Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
         Logger.recordMetadata("GitDirty", switch (BuildConstants.DIRTY) {
-            case 0 ->
-                "All changes committed";
-            case 1 ->
-                "Uncommitted changes";
-            default ->
-                "Unknown";
+            case 0 -> "All changes committed";
+            case 1 -> "Uncommitted changes";
+            default -> "Unknown";
         });
     }
+
     @Override
     public void robotInit() {
         if (Constants.Toggles.useWebServer) {
             WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
         }
     }
+
     @Override
     public void robotPeriodic() {
-        CommandScheduler.getInstance().run();
+        OptionsRegistry.periodic();
         if (robotContainer != null) {
             robotContainer.periodic();
         }
-        OptionsRegistry.periodic();
+        CommandScheduler.getInstance().run();
     }
+
     @Override
     public void disabledInit() {
         console("DisabledInit");
         state.setPeriod(StatePeriod.DISABLED);
     }
+
     @Override
     public void disabledPeriodic() {
     }
+
     @Override
     public void disabledExit() {
         console("DisabledExit");
     }
+
     @Override
     public void autonomousInit() {
         console("AutoInit");
         state.setPeriod(StatePeriod.AUTONOMOUS);
     }
+
     @Override
     public void autonomousExit() {
         console("AutoExit");
     }
+
     @Override
     public void autonomousPeriodic() {
     }
+
     @Override
     public void teleopInit() {
         console("TeleopInit");
         state.setPeriod(StatePeriod.TELEOP);
     }
+
     @Override
     public void teleopPeriodic() {
     }
+
     @Override
     public void teleopExit() {
         console("TeleopExit");
     }
+
     @Override
     public void testInit() {
         console("TestInit");
         state.setPeriod(StatePeriod.TEST);
     }
+
     @Override
     public void testPeriodic() {
     }
+
     @Override
     public void testExit() {
         console("TestExit");
     }
+
     @Override
     public void simulationInit() {
         console("SimulationInit");
     }
+
     @Override
     public void simulationPeriodic() {
     }
+
     public void console(String message) {
         System.out.println("Robot : " + message);
     }
+
     public void console(String message, int iterations) {
         if (iteration % iterations == 0) {
             console(message);

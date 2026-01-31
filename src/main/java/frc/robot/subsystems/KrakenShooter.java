@@ -6,25 +6,20 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.Logger;
 import frc.robot.Constants.Shooter;
 
-import frc.robot.Options.ShooterOptions;
-import frc.robot.elastic.TestShooterTuner;
 import frc.robot.subsystems.drive.config.PidConfig;
 
-public class KrakenShooter extends SubsystemBase {
+public class KrakenShooter extends StormSubsystem {
     public final TalonFX motor = new TalonFX(1);
 
     private final PidConfig pid;
-    private final TestShooterTuner tuner;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
-    private final ShooterOptions options;
     int num = 0;
 
     public KrakenShooter() {
-        options = ShooterOptions.create();
-
         // Initialize PID configs
         pid = new PidConfig()
                 .withKP(Shooter.shootKP)
@@ -33,27 +28,30 @@ public class KrakenShooter extends SubsystemBase {
                 .withKV(Shooter.shootKV)
                 .withKMinMax(Shooter.shootKMin, Shooter.shootKMax);
 
-        tuner = new TestShooterTuner("Shooter PID", pid);
-
         configMotor();
     }
 
     @Override
     public void periodic() {
-        tuner.periodic();
-
-        if (options.pidApply.get()) {
-            pid.setDirty();
-            options.pidApply.setValue(false);
-        }
-
         if (pid.isDirty() || num++ % 500 == 0) {
             configMotor();
             pid.clearDirty();
-            System.out.println(pid);
+            console(String.valueOf(pid),1);
         }
 
-        Logger.recordOutput("vel",motor.getVelocity().getValueAsDouble());
+        Logger.recordOutput("vel", motor.getVelocity().getValueAsDouble());
+    }
+
+    public PidConfig getPidConfig() {
+        return pid;
+    }
+
+    public void setVelocityClosedLoop(double velocityRps) {
+        motor.setControl(velocityVoltage.withVelocity(velocityRps));
+    }
+
+    public void stop() {
+        motor.set(0.0);
     }
 
     void configMotor() {
@@ -79,13 +77,5 @@ public class KrakenShooter extends SubsystemBase {
         out.PeakForwardDutyCycle = pid.kMax;
         out.PeakReverseDutyCycle = pid.kMin;
         motor.getConfigurator().apply(out);
-    }
-
-    public void setVelocityClosedLoop(double velocityRps) {
-        motor.setControl(velocityVoltage.withVelocity(velocityRps));
-    }
-
-    public void stop() {
-        motor.set(0.0);
     }
 }
