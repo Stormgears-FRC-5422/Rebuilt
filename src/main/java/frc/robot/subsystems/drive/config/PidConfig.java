@@ -1,7 +1,7 @@
 package frc.robot.subsystems.drive.config;
 /*
  * This class was shamelessly stolen from the Slot0Configs class from CTRE.
- * Simplified for the outreach robot
+ * Simplified
  */
 
 public class PidConfig {
@@ -15,6 +15,7 @@ public class PidConfig {
     public double kA = 0;
     public double kMin = 0;
     public double kMax = 0;
+    public boolean pidApply = false;
 
     public void setDirty() {
         isDirty = true;
@@ -39,6 +40,7 @@ public class PidConfig {
                 kA = value.kA;
                 kMin = value.kMin;
                 kMax = value.kMax;
+                pidApply = value.pidApply;
             }
         };
     }
@@ -79,6 +81,11 @@ public class PidConfig {
         return this;
     }
 
+    public PidConfig withPidApply(boolean newPidApply) {
+        pidApply = newPidApply;
+        return this;
+    }
+
     @Override
     public String toString() {
         String ss = "PID Config:\n";
@@ -90,6 +97,7 @@ public class PidConfig {
         ss += "       kA: " + kA + "\n";
         ss += "  kMinOut: " + kMin + "\n";
         ss += "  kMaxOut: " + kMax + "\n";
+        ss += " pidApply: " + pidApply + "\n";
         return ss;
     }
 }

@@ -1,5 +1,7 @@
 package frc.utils.configfile;
 
+import edu.wpi.first.networktables.BooleanSubscriber;
+import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.subsystems.drive.config.PidConfig;
@@ -16,6 +18,7 @@ public final class PidTuningGroup {
     private final DoublePublisher kMinPub;
     private final DoublePublisher kMaxPub;
     private final DoublePublisher kVPub;
+    private final BooleanPublisher pidApplyPub;
 
     private final DoubleSubscriber kpSub;
     private final DoubleSubscriber kiSub;
@@ -23,6 +26,7 @@ public final class PidTuningGroup {
     private final DoubleSubscriber kMinSub;
     private final DoubleSubscriber kMaxSub;
     private final DoubleSubscriber kVSub;
+    private final BooleanSubscriber pidApplySub;
 
     private final PidConfig config;
 
@@ -35,6 +39,7 @@ public final class PidTuningGroup {
         var kMinTopic = tuner.getTable().getDoubleTopic(prefix + "/kMin");
         var kMaxTopic = tuner.getTable().getDoubleTopic(prefix + "/kMax");
         var kVTopic = tuner.getTable().getDoubleTopic(prefix + "/kV");
+        var pidApplyTopic = tuner.getTable().getBooleanTopic(prefix + "/pidApply");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();
@@ -42,6 +47,7 @@ public final class PidTuningGroup {
         kMinPub = kMinTopic.publish();
         kMaxPub = kMaxTopic.publish();
         kVPub = kVTopic.publish();
+        pidApplyPub = pidApplyTopic.publish();
 
         kpSub = kpTopic.subscribe(config.kP);
         kiSub = kiTopic.subscribe(config.kI);
@@ -49,6 +55,7 @@ public final class PidTuningGroup {
         kMinSub = kMinTopic.subscribe(config.kMin);
         kMaxSub = kMaxTopic.subscribe(config.kMax);
         kVSub = kVTopic.subscribe(config.kV);
+        pidApplySub = pidApplyTopic.subscribe((config.pidApply));
 
         // Set initial values
         doPublishConfig(config);
