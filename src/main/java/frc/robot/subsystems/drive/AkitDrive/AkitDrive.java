@@ -98,6 +98,10 @@ public class AkitDrive extends DrivetrainBase {
                     (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
                 new SysIdRoutine.Mechanism(
                     (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+
+
+        setMaxVelocities(getMaxLinearSpeedMetersPerSec(), getMaxAngularSpeedRadPerSec());
+
     }
 
     @Override

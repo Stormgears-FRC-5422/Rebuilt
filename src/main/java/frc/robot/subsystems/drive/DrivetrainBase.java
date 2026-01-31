@@ -13,6 +13,7 @@ public abstract class DrivetrainBase extends StormSubsystem {
     public static boolean fieldRelativeOn = true;
     protected double m_maxVelocityMetersPerSecond = 1;
     protected double m_maxAngularVelocityRadiansPerSecond = 1;
+    @AutoLogOutput
     protected double m_driveSpeedScale = 0;
     protected boolean m_fieldRelative = false;
 
