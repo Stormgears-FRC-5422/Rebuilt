@@ -14,7 +14,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
-import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
+import frc.utils.pid.PidConfig;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;

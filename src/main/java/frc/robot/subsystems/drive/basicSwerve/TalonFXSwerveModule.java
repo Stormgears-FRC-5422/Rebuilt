@@ -16,7 +16,7 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
-import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
+import frc.utils.pid.PidConfig;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.*;

@@ -1,5 +1,7 @@
 package frc.utils.configfile;
 
+import frc.utils.pid.DashboardTuner;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
