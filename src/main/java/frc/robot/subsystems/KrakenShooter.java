@@ -8,7 +8,7 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.controls.VelocityVoltage;
-
+import org.littletonrobotics.junction.Logger;
 import frc.robot.Constants.Drive;
 import frc.robot.Constants.Shooter;
 
@@ -19,6 +19,8 @@ public class KrakenShooter extends SubsystemBase {
     public final TalonFX motor = new TalonFX(1);
 
     private final PidConfig pid;
+
+    int num =0;
 
     private final TestShooterTuner tuner;
     
@@ -32,6 +34,7 @@ public class KrakenShooter extends SubsystemBase {
                 .withKP(Shooter.driveKP)
                 .withKI(Shooter.driveKI)
                 .withKD(Shooter.driveKD)
+                .withKV(Shooter.driveKV)
                 .withKMinMax(Shooter.driveKMin, Shooter.driveKMax);
 
         tuner = new TestShooterTuner("Shooter PID", pid);
@@ -43,10 +46,13 @@ public class KrakenShooter extends SubsystemBase {
     public void periodic() {
         tuner.periodic(); 
 
-        if (pid.isDirty()) {
+        if (pid.isDirty() || num++ % 500 == 0) {
             configMotor();
             pid.clearDirty();
-        }
+            System.out.println(pid);
+        } 
+        Logger.recordOutput("vel",motor.getVelocity().getValueAsDouble());
+
     }
 
     void configMotor() {
@@ -79,6 +85,8 @@ public class KrakenShooter extends SubsystemBase {
         // double targetRps = percent * maxrps;
 
         motor.setControl(m_velocityVoltage.withVelocity(velocityRps));
+        
+        
     }
 
     public void stop() {

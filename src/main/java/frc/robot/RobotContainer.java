@@ -21,6 +21,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DriverStation;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.controls.DutyCycleOut;
@@ -93,7 +94,8 @@ public class RobotContainer {
 
         if (elasticMotorController.enabled.get()) {
             // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-            krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*50);
+            krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
+            Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
         } else {
             krakenShooter.stop();
         }
