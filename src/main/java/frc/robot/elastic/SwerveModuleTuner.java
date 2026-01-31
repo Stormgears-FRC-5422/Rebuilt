@@ -2,12 +2,11 @@ package frc.robot.elastic;
 
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
-import frc.robot.subsystems.drive.config.PidConfig;
-import frc.utils.configfile.DashboardTuner;
-import frc.utils.configfile.PidTuningGroup;
+import frc.utils.pid.PidConfig;
+import frc.utils.pid.DashboardTuner;
+import frc.utils.pid.PidTuningGroup;
 
 public class SwerveModuleTuner extends DashboardTuner {
-
     private final PidTuningGroup drivePidTuning;
     private final PidTuningGroup steerPidTuning;
     private final BooleanPublisher driveApplyPub;

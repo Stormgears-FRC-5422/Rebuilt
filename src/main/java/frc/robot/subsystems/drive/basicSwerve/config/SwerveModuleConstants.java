@@ -1,7 +1,12 @@
-package frc.robot.subsystems.drive.config;
+package frc.robot.subsystems.drive.basicSwerve.config;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.Constants.Drive;
+import frc.utils.pid.PidConfig;
+
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
 
 public final class SwerveModuleConstants {
     public static final int FRONT_LEFT = 0;
@@ -43,17 +48,20 @@ public final class SwerveModuleConstants {
                 .withKP(Drive.driveKP)
                 .withKI(Drive.driveKI)
                 .withKD(Drive.driveKD)
+                .withKA(Drive.driveKA)
                 .withKMinMax(Drive.driveKMin, Drive.driveKMax);
 
         steerPidConfig = new PidConfig()
                 .withKP(Drive.steerKP)
                 .withKI(Drive.steerKI)
                 .withKD(Drive.steerKD)
+                .withKA(Drive.steerKA)
                 .withKMinMax(Drive.steerKMin, Drive.steerKMax);
 
         // Save some space with these convenience variables
-        double dx = Drive.drivetrainTrackwidthMeters / 2.0;
-        double dy = Drive.drivetrainWheelbaseMeters / 2.0;
+        // Convert inches to meters for Translation2d
+        double dx = Inches.of(Drive.trackwidthInches).in(Meters) / 2.0;
+        double dy = Inches.of(Drive.wheelbaseInches).in(Meters) / 2.0;
 
         // Initialize module configs
         flModuleConfig = getDefaultModuleConfig()
@@ -61,9 +69,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.frontLeftDriveID)
                 .withSteerID(Drive.frontLeftSteerID)
                 .withEncoderID(Drive.frontLeftEncoderID)
-                .withWheelDiameter(Drive.frontLeftDiameter)
+                .withWheelDiameter(Inches.of(Drive.frontLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Drive.frontLeftEncoderOffset)
+                .withEncoderOffset(Rotations.of(Drive.frontLeftEncoderOffsetRotations))
                 .withOffset(new Translation2d(dx, dy));
 
         frModuleConfig = getDefaultModuleConfig()
@@ -71,9 +79,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.frontRightDriveID)
                 .withSteerID(Drive.frontRightSteerID)
                 .withEncoderID(Drive.frontRightEncoderID)
-                .withWheelDiameter(Drive.frontRightDiameter)
+                .withWheelDiameter(Inches.of(Drive.frontRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Drive.frontRightEncoderOffset)
+                .withEncoderOffset(Rotations.of(Drive.frontRightEncoderOffsetRotations))
                 .withOffset(new Translation2d(dx, -dy));
 
         blModuleConfig = getDefaultModuleConfig()
@@ -81,9 +89,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.backLeftDriveID)
                 .withSteerID(Drive.backLeftSteerID)
                 .withEncoderID(Drive.backLeftEncoderID)
-                .withWheelDiameter(Drive.backLeftDiameter)
+                .withWheelDiameter(Inches.of(Drive.backLeftDiameter))
                 .withDriveInverted(!Drive.invertRight)
-                .withEncoderOffset(Drive.backLeftEncoderOffset)
+                .withEncoderOffset(Rotations.of(Drive.backLeftEncoderOffsetRotations))
                 .withOffset(new Translation2d(-dx, dy));
 
         brModuleConfig = getDefaultModuleConfig()
@@ -91,9 +99,9 @@ public final class SwerveModuleConstants {
                 .withDriveID(Drive.backRightDriveID)
                 .withSteerID(Drive.backRightSteerID)
                 .withEncoderID(Drive.backRightEncoderID)
-                .withWheelDiameter(Drive.backRightDiameter)
+                .withWheelDiameter(Inches.of(Drive.backRightDiameter))
                 .withDriveInverted(Drive.invertRight)
-                .withEncoderOffset(Drive.backRightEncoderOffset)
+                .withEncoderOffset(Rotations.of(Drive.backRightEncoderOffsetRotations))
                 .withOffset(new Translation2d(-dx, -dy));
     }
 

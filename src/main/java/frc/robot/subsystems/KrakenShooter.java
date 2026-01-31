@@ -10,7 +10,7 @@ import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.Logger;
 import frc.robot.Constants.Shooter;
 
-import frc.robot.subsystems.drive.config.PidConfig;
+import frc.utils.pid.PidConfig;
 
 public class KrakenShooter extends StormSubsystem {
     public final TalonFX motor = new TalonFX(1);

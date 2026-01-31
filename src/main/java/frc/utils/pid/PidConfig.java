@@ -1,4 +1,4 @@
-package frc.robot.subsystems.drive.config;
+package frc.utils.pid;
 /*
  * This class was shamelessly stolen from the Slot0Configs class from CTRE.
  * Simplified
