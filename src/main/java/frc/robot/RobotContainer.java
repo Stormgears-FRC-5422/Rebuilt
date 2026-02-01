@@ -23,6 +23,7 @@ import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
+import frc.robot.commands.RunShooter;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -95,6 +96,10 @@ public class RobotContainer {
             new Trigger(() -> joystick.resetGyro())
                 .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
 
+                //uses the ElasticMotorController slider
+            new Trigger(() -> elasticMotorController.enabled.get())
+                .whileTrue(new RunShooter(krakenShooter,() -> -slider(elasticMotorController.motor1.get(), -1.0, 1.0) * 100.0
+        ));
             // Need a test here to allow this based on the drive type.
 //            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 //            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);

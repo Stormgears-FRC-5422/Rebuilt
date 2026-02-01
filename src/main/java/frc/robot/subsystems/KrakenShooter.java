@@ -53,7 +53,7 @@ public class KrakenShooter extends StormSubsystem {
 
     public void stop() {
         motor.set(0.0);
-    }
+    } 
 
     void configMotor() {
         Slot0Configs slot0 = new Slot0Configs();
