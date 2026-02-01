@@ -50,6 +50,10 @@ public class KrakenShooter extends StormSubsystem {
     public void setVelocityClosedLoop(double velocityRps) {
         motor.setControl(velocityVoltage.withVelocity(velocityRps));
     }
+    
+    public void setTargetVelocity(double targetRps) {
+        setVelocityClosedLoop(targetRps);
+    }
 
     public void stop() {
         motor.set(0.0);
