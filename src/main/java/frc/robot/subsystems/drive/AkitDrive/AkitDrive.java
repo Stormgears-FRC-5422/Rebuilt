@@ -100,8 +100,8 @@ public class AkitDrive extends DrivetrainBase {
                     (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
 
 
-        setMaxVelocities(getMaxLinearSpeedMetersPerSec(), getMaxAngularSpeedRadPerSec());
-
+        setMaxVelocities(MetersPerSecond.of(getMaxLinearSpeedMetersPerSec()),
+                         RadiansPerSecond.of(getMaxAngularSpeedRadPerSec()));
     }
 
     @Override

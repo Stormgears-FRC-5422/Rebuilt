@@ -5,9 +5,11 @@ package frc.robot;
 
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
+import frc.utils.configfile.OptionsRegistry;
+import frc.utils.configfile.OptionsRegistry;
+
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -17,14 +19,12 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-
     private RobotContainer robotContainer;
     private RobotState state;
     private int iteration = 0;
 
     public Robot() {
         state = RobotState.getInstance();
-
         switch (state.getSimMode()) {
             case REAL:
                 console("This is a REAL robot");
@@ -49,12 +49,10 @@ public class Robot extends LoggedRobot {
                 console("This is a SIMULATION robot");
                 break;
         }
-
         if (Constants.Toggles.useAdvantageKit) {
             Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may be added.
             logBuildDetails();
         }
-
         try {
             robotContainer = new RobotContainer();
         } catch (Exception e) {
@@ -69,7 +67,6 @@ public class Robot extends LoggedRobot {
     public void startCompetition() {
         boolean hold = false;
         Exception tmpException = null;
-
         try {
             super.startCompetition();
         } catch (Exception e) {
@@ -80,7 +77,6 @@ public class Robot extends LoggedRobot {
                 throw e; // Normal behavior to crash and restart program
             }
         }
-
         if (hold) {
             console("Holding console after crash due to unhandled exception");
             console("You will need to RESTART ROBOT CODE, REDEPLOY, or REBOOT ROBORIO to proceed");
@@ -105,12 +101,9 @@ public class Robot extends LoggedRobot {
         Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
         Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
         Logger.recordMetadata("GitDirty", switch (BuildConstants.DIRTY) {
-            case 0 ->
-                "All changes committed";
-            case 1 ->
-                "Uncommitted changes";
-            default ->
-                "Unknown";
+            case 0 -> "All changes committed";
+            case 1 -> "Uncommitted changes";
+            default -> "Unknown";
         });
     }
 
@@ -123,11 +116,11 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void robotPeriodic() {
-        CommandScheduler.getInstance().run();
+        OptionsRegistry.periodic();
         if (robotContainer != null) {
             robotContainer.periodic();
         }
-        Options.periodic();
+        CommandScheduler.getInstance().run();
     }
 
     @Override
@@ -138,6 +131,9 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void disabledPeriodic() {
+        if (robotContainer != null) {
+            robotContainer.updateAlliance();
+        }
     }
 
     @Override
@@ -193,6 +189,10 @@ public class Robot extends LoggedRobot {
     @Override
     public void simulationInit() {
         console("SimulationInit");
+        // Try to sync alliance early in simulation (may not be available yet from DriverStation)
+        if (robotContainer != null) {
+            robotContainer.updateAlliance();
+        }
     }
 
     @Override

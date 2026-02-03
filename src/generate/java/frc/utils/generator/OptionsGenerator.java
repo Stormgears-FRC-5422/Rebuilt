@@ -16,9 +16,6 @@ public class OptionsGenerator {
         import frc.utils.configfile.OptionsRegistry;
 
         public final class Options {
-            public static void periodic() {
-                OptionsRegistry.periodic();
-            }
         """;
 
     private static String generateOptionsClass(String prefix, Map<String, PropItem> props) {
@@ -96,7 +93,7 @@ public class OptionsGenerator {
 
         StringBuilder optionsFile = new StringBuilder();
         optionsFile.append(String.format(CLASS_HEADER,
-                java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
 
         // Group properties by prefix and filter for those with options
         for (Map.Entry<String, Map<String, PropItem>> entry : constants.entrySet()) {

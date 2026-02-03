@@ -3,9 +3,10 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.DriveCommands;
@@ -13,20 +14,24 @@ import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.SwerveModuleTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
+import frc.robot.elastic.ElasticMotorController;
+import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
-import frc.robot.joysticks.RebuiltLogitechJoystick;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.config.SwerveModuleConstants;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import org.littletonrobotics.junction.Logger;
+import java.util.Optional;
 
 public class RobotContainer {
     // **********
@@ -35,7 +40,12 @@ public class RobotContainer {
     RebuiltJoystick joystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
-    private SwerveModuleTuner tuner;
+
+    private SingleMotorTuner shooterTuner;
+    private KrakenShooter krakenShooter;
+
+    //elastic control
+    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     // **********
     // Commands
@@ -49,21 +59,24 @@ public class RobotContainer {
             console("[Init] RobotContainer");
 
             console("Making joystick!");
-            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.drivePort);
+            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
 
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
-                drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, "");
+                drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
+            }
+
+            if (Toggles.useShooter) {
+                console("Create shooter");
+                krakenShooter = new KrakenShooter();
+                if (Toggles.usePidTuner) {
+                    shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
+                }
             }
 
             if (Toggles.useLights) {
                 lights = new Lights();
             }
-
-            if (Toggles.usePidTuner) {
-                tuner = new SwerveModuleTuner("PID Tuning", SwerveModuleConstants.drivePidConfig, SwerveModuleConstants.steerPidConfig);
-            }
-
             configureBindings();
             console("[DONE] RobotContainer");
         } catch (IllegalDriveTypeException e) {
@@ -71,7 +84,7 @@ public class RobotContainer {
         } catch (RuntimeException e) {
             console("Error initializing RobotContainer: " + e.getMessage());
         } catch (IllegalJoystickTypeException e) {
-            throw new RuntimeException(e);
+            console("Error: Invalid joystick type specified: " + e.getMessage());
         }
     }
 
@@ -80,7 +93,6 @@ public class RobotContainer {
 
         if (Toggles.useDrive) {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
-//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 
             drivetrain.setDefaultCommand(driveWithJoystick);
             new Trigger(() -> joystick.wheelRadiusCharacterization())
@@ -88,16 +100,106 @@ public class RobotContainer {
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
+            new Trigger(() -> joystick.resetGyro())
+                .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
+
+            // Need a test here to allow this based on the drive type.
+//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 //            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
         console("[DONE] configureBindings");
     }
+    private static double slider(double x, double low, double high) {
+        return Math.max(low, Math.min(high, x));
+    }
 
     public void periodic() {
-        if (tuner != null) {
-            tuner.periodic();
+        if (shooterTuner != null) {
+            shooterTuner.periodic();
         }
+
+        if (Toggles.useShooter && krakenShooter != null) {
+            if (elasticMotorController.enabled.get()) {
+                // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+                krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
+                Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
+            } else {
+                krakenShooter.stop();
+            }
+        }
+    }
+
+    /**
+     * Updates alliance state from DriverStation/FMS.
+     * Respects debug override when Constants.Debug.debug is true and defaultAlliance is set.
+     * When alliance becomes available (or changes), calls onAllianceUpdated().
+     */
+    public void updateAlliance() {
+        RobotState robotState = RobotState.getInstance();
+        RobotState.StateAlliance newAlliance = RobotState.StateAlliance.MISSING;
+        String defaultAlliance = Constants.Debug.defaultAlliance.toLowerCase();
+
+        if (!Constants.Debug.debug || defaultAlliance.equals("auto")) {
+            // Use DriverStation/FMS
+            DriverStation.refreshData();
+            Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+
+            if (alliance.isPresent()) {
+                newAlliance = alliance.get() == DriverStation.Alliance.Blue
+                    ? RobotState.StateAlliance.BLUE
+                    : RobotState.StateAlliance.RED;
+            }
+        } else {
+            // Debug override active
+            newAlliance = defaultAlliance.equals("blue")
+                ? RobotState.StateAlliance.BLUE
+                : RobotState.StateAlliance.RED;
+        }
+
+        RobotState.StateAlliance previousAlliance = robotState.getAlliance();
+
+        // Call onAllianceUpdated when alliance first becomes known or changes
+        if (newAlliance != RobotState.StateAlliance.MISSING
+            && (previousAlliance == RobotState.StateAlliance.MISSING || previousAlliance != newAlliance)) {
+            robotState.setAlliance(newAlliance);
+            onAllianceUpdated();
+        }
+    }
+
+    /**
+     * Called when alliance is first set or changes.
+     * Resets initial pose and performs any other alliance-dependent initialization.
+     */
+    private void onAllianceUpdated() {
+        console("Alliance updated to " + RobotState.getInstance().getAlliance());
+        resetInitialPose();
+    }
+
+    /**
+     * Resets the drivetrain pose to the initial pose from debug config,
+     * remapped for the current alliance.
+     */
+    public void resetInitialPose() {
+        RobotState robotState = RobotState.getInstance();
+        if (!Toggles.useDrive || drivetrain == null) {
+            return;
+        }
+
+        Pose2d initialPose;
+        if (Constants.Debug.debug && !robotState.getAlliance().equals(RobotState.StateAlliance.MISSING)) {
+            // Use debug pose settings, remapped for alliance
+            Pose2d bluePose = new Pose2d(
+                Constants.Debug.initPoseX,
+                Constants.Debug.initPoseY,
+                Rotation2d.fromDegrees(Constants.Debug.initPoseDegrees)
+            );
+            initialPose = RebuiltField.remapPose(bluePose, robotState.getAlliance());
+        } else {
+            // Default pose - AutoChooser should set the pose itself for matches
+            initialPose = new Pose2d();
+        }
+        drivetrain.setPose(initialPose);
     }
 
     private void console(String message) {

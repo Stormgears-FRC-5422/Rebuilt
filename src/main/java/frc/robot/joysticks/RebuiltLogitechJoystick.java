@@ -2,39 +2,20 @@ package frc.robot.joysticks;
 
 import frc.utils.joysticks.StormLogitechController;
 
-public class RebuiltLogitechJoystick extends RebuiltJoystick{
-
-    StormLogitechController controller;
+public class RebuiltLogitechJoystick extends RebuiltJoystick {
+    private final StormLogitechController controller;
 
     public RebuiltLogitechJoystick(int port) {
-        controller = new StormLogitechController(port);
+        super(new StormLogitechController(port));
+        this.controller = (StormLogitechController) driveJoystick;
     }
 
-    public double getWpiX() {
-        return controller.getWpiXSpeed();
-    }
+    // Core driving inherited from base class via DriveJoystick
 
-    public double getWpiY() {
-        return controller.getWpiYSpeed();
-    }
-
-    public double getOmegaSpeed() {
-        return controller.getOmegaSpeed();
-    }
-
-    public boolean shoot() {
-        return controller.getRawButton(1);
-    }
-
-    public boolean outtake() {
-        return controller.getRawButton(2);
-    }
-
+    @Override
     public double getSlider() {
         return controller.getSliderAxis();
     }
 
-    public boolean holdSwerveState() {
-        return controller.getRawButton(7);
-    }
+
 }

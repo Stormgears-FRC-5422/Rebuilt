@@ -107,7 +107,7 @@ public class DriveCommands {
 //    }
 
     /** Measures the robot's wheel radius per wheel, updating every iteration. */
-    public static Command wheelRadiusCharacterization(DrivetrainBase drive) {
+    public static Command wheelRadiusCharacterization(DrivetrainBase drivetrain) {
         SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
         WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
@@ -118,27 +118,27 @@ public class DriveCommands {
                 Commands.run(
                     () -> {
                         double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
-                        drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
+                        drivetrain.drive(new ChassisSpeeds(0.0, 0.0, speed), false);
                     },
-                    drive)),
+                    drivetrain)),
 
             // Measurement sequence
             Commands.sequence(
                 Commands.waitSeconds(1.0), // wait for modules to orient
 
                 Commands.runOnce(() -> {
-                    state.positions = drive.getWheelRadiusCharacterizationPositions();
-                    state.lastAngle = drive.getRotation();
+                    state.positions = drivetrain.getWheelRadiusCharacterizationPositions();
+                    state.lastAngle = drivetrain.getRotation();
                     state.gyroDelta = 0.0;
                 }),
 
                 // Update wheel radii every iteration
                 Commands.run(() -> {
-                        Rotation2d rotation = drive.getRotation();
+                        Rotation2d rotation = drivetrain.getRotation();
                         state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
                         state.lastAngle = rotation;
 
-                        double[] currentPositions = drive.getWheelRadiusCharacterizationPositions();
+                        double[] currentPositions = drivetrain.getWheelRadiusCharacterizationPositions();
                         double[] wheelDeltas = new double[4];
                         double[] wheelRadii = new double[4];
 
@@ -154,7 +154,7 @@ public class DriveCommands {
 
                     // Final print on command end
                     .finallyDo(() -> {
-                        double[] finalPositions = drive.getWheelRadiusCharacterizationPositions();
+                        double[] finalPositions = drivetrain.getWheelRadiusCharacterizationPositions();
                         double[] finalDeltas = new double[4];
                         double[] finalRadii = new double[4];
 
@@ -187,7 +187,7 @@ public class DriveCommands {
 
 
     /** Measures the robot's wheel radius by spinning in a circle. */
-    public static Command wheelRadiusCharacterizationAll(DrivetrainBase drive) {
+    public static Command wheelRadiusCharacterizationAll(DrivetrainBase drivetrain) {
         SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
         WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 
@@ -204,9 +204,9 @@ public class DriveCommands {
                 Commands.run(
                     () -> {
                         double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
-                        drive.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
+                        drivetrain.drive(new ChassisSpeeds(0.0, 0.0, speed), false);
                     },
-                    drive)),
+                    drivetrain)),
 
             // Measurement sequence
             Commands.sequence(
@@ -216,15 +216,15 @@ public class DriveCommands {
                 // Record starting measurement
                 Commands.runOnce(
                     () -> {
-                        state.positions = drive.getWheelRadiusCharacterizationPositions();
-                        state.lastAngle = drive.getRotation();
+                        state.positions = drivetrain.getWheelRadiusCharacterizationPositions();
+                        state.lastAngle = drivetrain.getRotation();
                         state.gyroDelta = 0.0;
                     }),
 
                 // Update gyro delta
                 Commands.run(
                         () -> {
-                            var rotation = drive.getRotation();
+                            var rotation = drivetrain.getRotation();
                             state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
                             state.lastAngle = rotation;
                         })
@@ -232,7 +232,7 @@ public class DriveCommands {
                     // When cancelled, calculate and print results
                     .finallyDo(
                         () -> {
-                            double[] positions = drive.getWheelRadiusCharacterizationPositions();
+                            double[] positions = drivetrain.getWheelRadiusCharacterizationPositions();
                             double wheelDelta = 0.0;
                             for (int i = 0; i < 4; i++) {
                                 wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;

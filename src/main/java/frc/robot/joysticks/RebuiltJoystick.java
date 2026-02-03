@@ -1,16 +1,25 @@
 package frc.robot.joysticks;
 
+import frc.utils.joysticks.DriveJoystick;
+
 public abstract class RebuiltJoystick {
+    protected final DriveJoystick driveJoystick;
+
+    protected RebuiltJoystick(DriveJoystick driveJoystick) {
+        this.driveJoystick = driveJoystick;
+    }
+
+    // Core driving - implemented once using the DriveJoystick interface
     public double getWpiX() {
-        return 0;
+        return driveJoystick.getWpiXSpeed();
     }
 
     public double getWpiY() {
-        return 0;
+        return driveJoystick.getWpiYSpeed();
     }
 
     public double getOmegaSpeed() {
-        return 0;
+        return driveJoystick.getOmegaSpeed();
     }
 
     public boolean getRobotRelative() {
@@ -21,19 +30,16 @@ public abstract class RebuiltJoystick {
         return 0.0;
     }
 
-    public boolean zeroGyro() {
-        return false;
-    }
-
-    public boolean zeroWheels() {
-        return false;
-    }
-
-    public boolean holdSwerveState() {
+    public boolean resetGyro() {
         return false;
     }
 
     public boolean wheelRadiusCharacterization() {
         return false;
+    }
+
+    // Logitech-specific (slider only) - safe default for Xbox
+    public double getSlider() {
+        return 0.0;
     }
 }

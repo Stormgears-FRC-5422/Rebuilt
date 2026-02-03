@@ -1,8 +1,7 @@
-package frc.utils.configfile;
+package frc.utils.pid;
 
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import frc.robot.subsystems.drive.config.PidConfig;
 
 /**
  * Groups related NetworkTable entries for PID tuning. Each group manages the P,
@@ -13,16 +12,21 @@ public final class PidTuningGroup {
     private final DoublePublisher kpPub;
     private final DoublePublisher kiPub;
     private final DoublePublisher kdPub;
+    private final DoublePublisher kAPub;
     private final DoublePublisher kMinPub;
     private final DoublePublisher kMaxPub;
     private final DoublePublisher kVPub;
+    private final DoublePublisher kSPub;
 
     private final DoubleSubscriber kpSub;
     private final DoubleSubscriber kiSub;
     private final DoubleSubscriber kdSub;
+    private final DoubleSubscriber kASub;
     private final DoubleSubscriber kMinSub;
     private final DoubleSubscriber kMaxSub;
     private final DoubleSubscriber kVSub;
+    private final DoubleSubscriber kSSub;
+
 
     private final PidConfig config;
 
@@ -32,23 +36,29 @@ public final class PidTuningGroup {
         var kpTopic = tuner.getTable().getDoubleTopic(prefix + "/kP");
         var kiTopic = tuner.getTable().getDoubleTopic(prefix + "/kI");
         var kdTopic = tuner.getTable().getDoubleTopic(prefix + "/kD");
+        var kATopic = tuner.getTable().getDoubleTopic(prefix + "/kA");
         var kMinTopic = tuner.getTable().getDoubleTopic(prefix + "/kMin");
         var kMaxTopic = tuner.getTable().getDoubleTopic(prefix + "/kMax");
         var kVTopic = tuner.getTable().getDoubleTopic(prefix + "/kV");
+        var kSTopic = tuner.getTable().getDoubleTopic(prefix + "/kS");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();
         kdPub = kdTopic.publish();
+        kAPub = kATopic.publish();
         kMinPub = kMinTopic.publish();
         kMaxPub = kMaxTopic.publish();
         kVPub = kVTopic.publish();
+        kSPub = kSTopic.publish();
 
         kpSub = kpTopic.subscribe(config.kP);
         kiSub = kiTopic.subscribe(config.kI);
         kdSub = kdTopic.subscribe(config.kD);
+        kASub = kATopic.subscribe(config.kA);
         kMinSub = kMinTopic.subscribe(config.kMin);
         kMaxSub = kMaxTopic.subscribe(config.kMax);
         kVSub = kVTopic.subscribe(config.kV);
+        kSSub = kSTopic.subscribe(config.kS);
 
         // Set initial values
         doPublishConfig(config);
@@ -66,16 +76,20 @@ public final class PidTuningGroup {
         kpPub.set(config.kP);
         kiPub.set(config.kI);
         kdPub.set(config.kD);
+        kAPub.set(config.kA);
         kMinPub.set(config.kMin);
         kMaxPub.set(config.kMax);
         kVPub.set(config.kV);
+        kSPub.set(config.kS);
     }
 
     public void updateConfig(PidConfig config) {
         config.withKP(kpSub.get())
                 .withKI(kiSub.get())
                 .withKD(kdSub.get())
+                .withKA(kASub.get())
                 .withKMinMax(kMinSub.get(), kMaxSub.get())
-                .withKV(kVSub.get());
+                .withKV(kVSub.get())
+                .withKS(kSSub.get());
     }
 }
