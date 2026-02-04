@@ -9,10 +9,14 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.elastic.SwerveModuleTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
+import frc.robot.elastic.ElasticMotorController;
+import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
@@ -20,6 +24,9 @@ import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import org.littletonrobotics.junction.Logger;
 import java.util.Optional;
 
 public class RobotContainer {
@@ -29,7 +36,12 @@ public class RobotContainer {
     RebuiltJoystick joystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
-    private SwerveModuleTuner tuner;
+
+    private SingleMotorTuner shooterTuner;
+    private KrakenShooter krakenShooter;
+
+    //elastic control
+    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     // **********
     // Commands
@@ -50,14 +62,17 @@ public class RobotContainer {
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
             }
 
+            if (Toggles.useShooter) {
+                console("Create shooter");
+                krakenShooter = new KrakenShooter();
+                if (Toggles.usePidTuner) {
+                    shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
+                }
+            }
+
             if (Toggles.useLights) {
                 lights = new Lights();
             }
-
-            if (Toggles.usePidTuner) {
-                tuner = new SwerveModuleTuner("PID Tuning", SwerveModuleConstants.drivePidConfig, SwerveModuleConstants.steerPidConfig);
-            }
-
             configureBindings();
             console("[DONE] RobotContainer");
         } catch (IllegalDriveTypeException e) {
@@ -87,10 +102,23 @@ public class RobotContainer {
 
         console("[DONE] configureBindings");
     }
+    private static double slider(double x, double low, double high) {
+        return Math.max(low, Math.min(high, x));
+    }
 
     public void periodic() {
-        if (tuner != null) {
-            tuner.periodic();
+        if (shooterTuner != null) {
+            shooterTuner.periodic();
+        }
+
+        if (Toggles.useShooter && krakenShooter != null) {
+            if (elasticMotorController.enabled.get()) {
+                // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+                krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
+                Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
+            } else {
+                krakenShooter.stop();
+            }
         }
     }
 

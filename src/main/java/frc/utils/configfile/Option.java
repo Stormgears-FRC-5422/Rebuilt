@@ -1,14 +1,11 @@
 package frc.utils.configfile;
-
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StringSubscriber;
-
 import java.util.Objects;
-
 /**
  * Represents a single configurable option that can be modified through Elastic
  * dashboard. Each option has a value, label, and tracks whether it has been
@@ -17,35 +14,30 @@ import java.util.Objects;
  * @param <T> The type of the option value (Boolean, Double, Integer, or String)
  */
 public class Option<T> {
-
     private final String label;
     private final String tableName;
     private T value;
     private boolean dirty;
     private Object publisher;
     private Object subscriber;
-
     public Option(String label, T defaultValue, String tableName) {
         this.label = label;
         this.value = defaultValue;
         this.tableName = tableName;
         this.dirty = false;
     }
-
     /**
      * Get the current value of the option
      */
     public T get() {
         return value;
     }
-
     /**
      * Implicit conversion to the underlying type
      */
     public T value() {
         return value;
     }
-
     /**
      * Update the value and mark as dirty if changed
      */
@@ -57,7 +49,6 @@ public class Option<T> {
         } else {
             changed = !Objects.equals(newValue, value);
         }
-
         if (changed) {
             value = newValue;
             dirty = true;
@@ -65,12 +56,10 @@ public class Option<T> {
             console("updated to " + value);
         }
     }
-
     private void updatePublisher() {
         if (publisher == null || value == null) {
             return;
         }
-
         if (value instanceof Boolean boolVal) {
             ((BooleanPublisher) publisher).set(boolVal);
         } else if (value instanceof Double doubleVal) {
@@ -84,14 +73,12 @@ public class Option<T> {
                     "Unsupported option type: " + (value != null ? value.getClass().getName() : "null"));
         }
     }
-
     /**
      * Check if the value has been modified since last clearDirty()
      */
     public boolean isDirty() {
         return dirty;
     }
-
     /**
      * Clear the dirty flag. This should be called by the developer after
      * handling the change.
@@ -99,29 +86,23 @@ public class Option<T> {
     public void clearDirty() {
         dirty = false;
     }
-
     String getLabel() {
         return label;
     }
-
     void setPublisherAndSubscriber(Object publisher, Object subscriber) {
         this.publisher = publisher;
         this.subscriber = subscriber;
         updatePublisher(); // Publish initial value
     }
-
     BooleanSubscriber getBooleanSubscriber() {
         return (BooleanSubscriber) subscriber;
     }
-
     DoubleSubscriber getDoubleSubscriber() {
         return (DoubleSubscriber) subscriber;
     }
-
     StringSubscriber getStringSubscriber() {
         return (StringSubscriber) subscriber;
     }
-
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -135,21 +116,17 @@ public class Option<T> {
         }
         return value.equals(obj);
     }
-
     @Override
     public int hashCode() {
         return value.hashCode();
     }
-
     @Override
     public String toString() {
         return value.toString();
     }
-
     private void console(String message) {
         System.out.println("Option [" + tableName + "/" + label + "]: " + message);
     }
-
     /**
      * Set a new value and publish it to NetworkTables
      *
@@ -158,5 +135,4 @@ public class Option<T> {
     public void setValue(T newValue) {
         updateValue(newValue);
     }
-
 }

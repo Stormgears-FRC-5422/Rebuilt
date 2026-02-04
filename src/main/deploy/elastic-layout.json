@@ -7,40 +7,121 @@
       "grid_layout": {
         "layouts": [
           {
-            "title": "Drive Options",
+            "title": "PID",
             "x": 0.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 256.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 640.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
             },
             "children": [
               {
-                "title": "Field Relative",
+                "title": "kD",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Toggle Switch",
+                "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Drive Options/useFieldRelative",
+                  "topic": "/Elastic/Shooter Tuner/PID/kD",
                   "period": 0.06,
-                  "data_type": "boolean"
+                  "data_type": "double",
+                  "show_submit_button": false
                 }
               },
               {
-                "title": "resetOrientation",
+                "title": "kI",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Toggle Button",
+                "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Drive Options/resetOrientation",
+                  "topic": "/Elastic/Shooter Tuner/PID/kI",
                   "period": 0.06,
-                  "data_type": "boolean"
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "kMax",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Shooter Tuner/PID/kMax",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "kMin",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Shooter Tuner/PID/kMin",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "kP",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Number Slider",
+                "properties": {
+                  "topic": "/Elastic/Shooter Tuner/PID/kP",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "min_value": -1.0,
+                  "max_value": 1.0,
+                  "divisions": 5,
+                  "update_continuously": false
+                }
+              },
+              {
+                "title": "kS",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Number Slider",
+                "properties": {
+                  "topic": "/Elastic/Shooter Tuner/PID/kS",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "min_value": -1.0,
+                  "max_value": 1.0,
+                  "divisions": 5,
+                  "update_continuously": false
+                }
+              },
+              {
+                "title": "kV",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Number Slider",
+                "properties": {
+                  "topic": "/Elastic/Shooter Tuner/PID/kV",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "min_value": -1.0,
+                  "max_value": 1.0,
+                  "divisions": 5,
+                  "update_continuously": false
                 }
               }
             ]
@@ -48,35 +129,46 @@
         ],
         "containers": [
           {
-            "title": "Swerve Drive",
+            "title": "Motor 1 Output",
             "x": 512.0,
-            "y": 128.0,
-            "width": 384.0,
-            "height": 384.0,
-            "type": "SwerveDrive",
-            "properties": {
-              "topic": "/SmartDashboard/Swerve Drive",
-              "period": 0.06,
-              "show_robot_rotation": true,
-              "rotation_unit": "Degrees"
-            }
-          },
-          {
-            "title": "Voltage",
-            "x": 384.0,
             "y": 0.0,
             "width": 640.0,
             "height": 128.0,
-            "type": "Voltage View",
+            "type": "Number Slider",
             "properties": {
-              "topic": "/AdvantageKit/PowerDistribution/Voltage",
+              "topic": "/Elastic/Motor tester with elastic/Motor 1 Output",
               "period": 0.06,
               "data_type": "double",
-              "min_value": 9.0,
-              "max_value": 13.0,
+              "min_value": -1.0,
+              "max_value": 1.0,
               "divisions": 5,
-              "inverted": false,
-              "orientation": "horizontal"
+              "update_continuously": false
+            }
+          },
+          {
+            "title": "Enabled",
+            "x": 512.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/Enabled",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Apply",
+            "x": 640.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Shooter Tuner/Apply",
+              "period": 0.06,
+              "data_type": "boolean"
             }
           }
         ]
@@ -86,222 +178,6 @@
       "name": "Autonomous",
       "grid_layout": {
         "layouts": [],
-        "containers": []
-      }
-    },
-    {
-      "name": "PID Tuning",
-      "grid_layout": {
-        "layouts": [
-          {
-            "title": "Drive PID",
-            "x": 0.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 512.0,
-            "type": "List Layout",
-            "properties": {
-              "label_position": "TOP"
-            },
-            "children": [
-              {
-                "title": "Drive kP",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kP",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kI",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kI",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kD",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kD",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kA",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kA",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kMin",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kMin",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kMax",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kMax",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Drive kV",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Drive/kV",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              }
-            ]
-          },
-          {
-            "title": "Steer PID",
-            "x": 384.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 512.0,
-            "type": "List Layout",
-            "properties": {
-              "label_position": "TOP"
-            },
-            "children": [
-              {
-                "title": "Steer kP",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kP",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kI",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kI",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kD",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kD",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kA",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kA",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kMin",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kMin",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kMax",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kMax",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              },
-              {
-                "title": "Steer kV",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 64.0,
-                "type": "Text View",
-                "properties": {
-                  "topic": "/Elastic/PID Tuning/Steer/kV",
-                  "period": 0.06,
-                  "data_type": "double"
-                }
-              }
-            ]
-          }
-        ],
         "containers": []
       }
     }

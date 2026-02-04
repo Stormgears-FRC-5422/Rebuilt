@@ -1,7 +1,7 @@
-package frc.robot.subsystems.drive.basicSwerve.config;
+package frc.utils.pid;
 /*
  * This class was shamelessly stolen from the Slot0Configs class from CTRE.
- * Simplified for the outreach robot
+ * Simplified
  */
 
 public class PidConfig {

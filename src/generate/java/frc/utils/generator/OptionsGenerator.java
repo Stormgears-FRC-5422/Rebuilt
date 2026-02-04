@@ -16,9 +16,6 @@ public class OptionsGenerator {
         import frc.utils.configfile.OptionsRegistry;
 
         public final class Options {
-            public static void periodic() {
-                OptionsRegistry.periodic();
-            }
         """;
 
     private static String generateOptionsClass(String prefix, Map<String, PropItem> props) {

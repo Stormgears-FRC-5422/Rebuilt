@@ -11,7 +11,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
 import frc.robot.Options.DriveOptions;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
-import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
+import frc.utils.pid.PidConfig;
 import org.littletonrobotics.junction.Logger;
 
 import static edu.wpi.first.units.Units.Degrees;

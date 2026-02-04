@@ -6,7 +6,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.drive.basicSwerve.config.ModuleConfig;
-import frc.robot.subsystems.drive.basicSwerve.config.PidConfig;
+import frc.utils.pid.PidConfig;
 import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
