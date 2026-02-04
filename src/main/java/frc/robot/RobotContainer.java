@@ -3,32 +3,27 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
-import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
-import frc.robot.elastic.SwerveModuleTuner;
-import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
+import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.Lights;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
-import frc.robot.commands.RunShooter;
-
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import org.littletonrobotics.junction.Logger;
-import java.util.Optional;
+import frc.robot.commands.SetShooterVelocity;
 
 public class RobotContainer {
     // **********
@@ -39,7 +34,7 @@ public class RobotContainer {
     private DrivetrainBase drivetrain;
 
     private SingleMotorTuner shooterTuner;
-    private KrakenShooter krakenShooter;
+    private ShooterSubsystem krakenShooter;
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -65,7 +60,7 @@ public class RobotContainer {
 
             if (Toggles.useShooter) {
                 console("Create shooter");
-                krakenShooter = new KrakenShooter();
+                krakenShooter = new ShooterSubsystem();
                 if (Toggles.usePidTuner) {
                     shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
                 }
@@ -96,10 +91,11 @@ public class RobotContainer {
             new Trigger(() -> joystick.resetGyro())
                 .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
 
-                //uses the ElasticMotorController slider
-            new Trigger(() -> elasticMotorController.enabled.get())
-                .whileTrue(new RunShooter(krakenShooter,() -> -slider(elasticMotorController.motor1.get(), -1.0, 1.0) * 100.0
-        ));
+                //this code is only for running the command RunShoot
+        //     new Trigger(() -> elasticMotorController.enabled.get())
+        //         .whileTrue(new RunShooter(krakenShooter,() -> -slider(elasticMotorController.motor1.get(), -1.0, 1.0) * 100.0
+        // )); 
+        
             // Need a test here to allow this based on the drive type.
 //            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
 //            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
@@ -116,15 +112,13 @@ public class RobotContainer {
             shooterTuner.periodic();
         }
 
-        if (Toggles.useShooter && krakenShooter != null) {
-            if (elasticMotorController.enabled.get()) {
-                // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-                krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
-                Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
-            } else {
-                krakenShooter.stop();
-            }
-        }
+    new Trigger(() -> elasticMotorController.enabled.get())
+        .whileTrue(
+            new SetShooterVelocity(
+                krakenShooter, -elasticMotorController.motor1.get() * 100.0 // not dynamic at all like the last one
+            )
+        );
+
     }
 
     /**

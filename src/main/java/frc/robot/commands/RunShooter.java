@@ -2,15 +2,16 @@ package frc.robot.commands;
 
 import java.util.function.DoubleSupplier;
 
-import frc.robot.subsystems.KrakenShooter;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class RunShooter extends StormCommand {
-    private final KrakenShooter shooter;
+    private final ShooterSubsystem shooter;
     private final DoubleSupplier targetVelocityRpsgiver;
 
-    public RunShooter(KrakenShooter shooter, DoubleSupplier targetVelocityRpsgiver) {
+    public RunShooter(ShooterSubsystem shooter, DoubleSupplier targetVelocityRpsgiver) {
         this.shooter = shooter;
         this.targetVelocityRpsgiver = targetVelocityRpsgiver;
         addRequirements(shooter);
@@ -25,7 +26,7 @@ public class RunShooter extends StormCommand {
 
     @Override
     public void end(boolean interrupted) {
-        shooter.stop();
+        shooter.stopShooter();
     }
 
     @Override
