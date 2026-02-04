@@ -11,10 +11,12 @@ public class SetShooterVelocity extends StormCommand {
         this.velocity = velocity;
         addRequirements(shooter);
     }
-
+    @Override
+    public void initialize() {
+        shooter.setState(ShooterSubsystem.ShooterState.SPEEDING_UP);
+    }
     @Override
     public void execute() {
-        shooter.setState(ShooterSubsystem.ShooterState.SPEEDING_UP);
         shooter.setTargetVelocity(velocity);
     }
 
