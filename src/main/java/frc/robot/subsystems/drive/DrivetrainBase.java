@@ -42,10 +42,16 @@ public abstract class DrivetrainBase extends StormSubsystem {
     @AutoLogOutput
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
+    /** Collision manager for simulation (null on real robot or if disabled) */
+    private frc.robot.simulation.collision.CollisionManager collisionManager;
+
     public DrivetrainBase() {
         state = RobotState.getInstance();
         options = DriveOptions.create();
         setDriveSpeedScale(Drive.driveSpeedScale);
+
+        // Initialize collision detection for simulation only
+        collisionManager = frc.robot.simulation.collision.CollisionManager.createIfEnabled();
     }
 
     // ==================== Implementation Characteristics ====================
@@ -313,6 +319,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
                     m_hasAppliedDriverPerspective = true;
                 }
             }
+        }
+
+        // Collision constraint (simulation only)
+        if (collisionManager != null) {
+            collisionManager.updateAndConstrain(getPose(), this::setPose);
         }
     }
 }
