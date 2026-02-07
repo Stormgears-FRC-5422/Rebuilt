@@ -10,10 +10,19 @@ import frc.utils.StormSubsystem;
 import static edu.wpi.first.units.Units.*;
 
 public class Lights extends StormSubsystem {
+    public enum lightStates{
+        IDLE,
+        HOPPER_EMPTY,
+        HOPPER_HALF,
+        HOPPER_FULL
+    };
+    lightStates state = lightStates.IDLE;
     // Alliance variables
     private final RobotState robotState;
     Color RED_COLOR = Color.kRed;
     Color BLUE_COLOR = Color.kBlue;
+    Color YELLOW_COLOR = Color.kYellow;
+    Color GREEN_COLOR = Color.kGreen;
     Color ORANGE_COLOR = new Color(255, 32, 0);
     Color PINK_COLOR = new Color(225,105,180);
 
@@ -32,14 +41,25 @@ public class Lights extends StormSubsystem {
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
         setViews();
-
+        state = lightStates.IDLE;
         robotState = RobotState.getInstance();
     }
 
     @Override
     public void periodic() {
         super.periodic();
-        setSolid(BLUE_COLOR);
+
+        switch(state){
+            case IDLE:
+                setRainbow(pulse);
+            case HOPPER_EMPTY:
+                setSolid(RED_COLOR);
+            case HOPPER_HALF:
+                setSolid(YELLOW_COLOR);
+            case HOPPER_FULL:
+                setSolid(GREEN_COLOR);
+        }
+
 
         // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
@@ -78,5 +98,8 @@ public class Lights extends StormSubsystem {
         // Right view is reversed because LED strips are wired in series
         m_left = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
         m_right = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
+    }
+    public void setLightState(lightStates newState){
+        state = newState;
     }
 }
