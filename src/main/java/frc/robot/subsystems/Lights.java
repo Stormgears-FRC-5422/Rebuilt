@@ -35,7 +35,7 @@ public class Lights extends StormSubsystem {
     private double pulsePeriod = 5.0;
 
     public Lights() {
-        addressableLED = new AddressableLED(Constants.Lights.port);
+        addressableLED = new AddressableLED(Constants.Lights.port); 
         addressableLEDBuffer = new AddressableLEDBuffer(Constants.Lights.ledLength);
 
         addressableLED.setLength(addressableLEDBuffer.getLength());
@@ -48,7 +48,7 @@ public class Lights extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
-
+        // setSolid(RED_COLOR);
         switch(state){
             case IDLE:
                 setRainbow(pulse);
@@ -63,6 +63,7 @@ public class Lights extends StormSubsystem {
 
         // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
+        addressableLED.start();
     }
 
     // Wrapper function to allow pulse effect to be applied to any pattern. Call this function rather
