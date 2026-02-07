@@ -28,8 +28,9 @@ public class VisionSubsystem extends StormSubsystem {
     private final DrivetrainBase drivetrain;
     private final PoseEstimator drivetrainPoseEstimator;
 
-    /** Maximum distance to accept a tag measurement (9 feet in meters) */
-    private static final double MAX_TAG_DISTANCE_METERS = 9.0 * 0.3048; // 2.7432 m
+    /** Maximum distance to accept a tag measurement, in feet */
+    private static final double MAX_TAG_DISTANCE_FEET = 9.0;
+    private static final double MAX_TAG_DISTANCE_METERS = MAX_TAG_DISTANCE_FEET * 0.3048;
 
     /** Vision measurement standard deviations [x(m), y(m), theta(rad)].
      *  theta is set very high because MegaTag2 already uses the gyro for heading. */
