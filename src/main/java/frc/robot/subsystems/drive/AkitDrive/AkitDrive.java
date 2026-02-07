@@ -33,22 +33,22 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import frc.robot.subsystems.drive.AkitDrive.ctrGenerated.TunerConstants;
+import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class AkitDrive extends DrivetrainBase {
     // TunerConstants doesn't include these constants, so they are declared locally
-    static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
+    static final double ODOMETRY_FREQUENCY = RebuiltTorqueFOC.kCANBus.isNetworkFD() ? 250.0 : 100.0;
     public static final double DRIVE_BASE_RADIUS =
         Math.max(
             Math.max(
-                Math.hypot(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
-                Math.hypot(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY)),
+                Math.hypot(RebuiltTorqueFOC.FrontLeft.LocationX, RebuiltTorqueFOC.FrontLeft.LocationY),
+                Math.hypot(RebuiltTorqueFOC.FrontRight.LocationX, RebuiltTorqueFOC.FrontRight.LocationY)),
             Math.max(
-                Math.hypot(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
-                Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
+                Math.hypot(RebuiltTorqueFOC.BackLeft.LocationX, RebuiltTorqueFOC.BackLeft.LocationY),
+                Math.hypot(RebuiltTorqueFOC.BackRight.LocationX, RebuiltTorqueFOC.BackRight.LocationY)));
 
     static final Lock odometryLock = new ReentrantLock();
     private final GyroIO gyroIO;
@@ -72,14 +72,14 @@ public class AkitDrive extends DrivetrainBase {
 
     public AkitDrive() {
         this.gyroIO = new GyroIOPigeon2();
-        modules[0] = new Module(new ModuleIOTalonFX(TunerConstants.FrontLeft),
-            0, TunerConstants.FrontLeft);
-        modules[1] = new Module(new ModuleIOTalonFX(TunerConstants.FrontRight),
-            1, TunerConstants.FrontRight);
-        modules[2] = new Module(new ModuleIOTalonFX(TunerConstants.BackLeft),
-            2, TunerConstants.BackLeft);
-        modules[3] = new Module(new ModuleIOTalonFX(TunerConstants.BackRight),
-            3, TunerConstants.BackRight);
+        modules[0] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontLeft),
+            0, RebuiltTorqueFOC.FrontLeft);
+        modules[1] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontRight),
+            1, RebuiltTorqueFOC.FrontRight);
+        modules[2] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.BackLeft),
+            2, RebuiltTorqueFOC.BackLeft);
+        modules[3] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.BackRight),
+            3, RebuiltTorqueFOC.BackRight);
 
         // Usage reporting for swerve template
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
@@ -173,7 +173,7 @@ public class AkitDrive extends DrivetrainBase {
         // Calculate module setpoints
         ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
         SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, TunerConstants.kSpeedAt12Volts);
+        SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, RebuiltTorqueFOC.kSpeedAt12Volts);
 
         // Log unoptimized setpoints and setpoint speeds
         Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -325,7 +325,7 @@ public class AkitDrive extends DrivetrainBase {
      * Returns the maximum linear speed in meters per sec.
      */
     public double getMaxLinearSpeedMetersPerSec() {
-        return TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        return RebuiltTorqueFOC.kSpeedAt12Volts.in(MetersPerSecond);
     }
 
     /**
@@ -340,10 +340,10 @@ public class AkitDrive extends DrivetrainBase {
      */
     public static Translation2d[] getModuleTranslations() {
         return new Translation2d[]{
-            new Translation2d(TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY),
-            new Translation2d(TunerConstants.FrontRight.LocationX, TunerConstants.FrontRight.LocationY),
-            new Translation2d(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
-            new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
+            new Translation2d(RebuiltTorqueFOC.FrontLeft.LocationX, RebuiltTorqueFOC.FrontLeft.LocationY),
+            new Translation2d(RebuiltTorqueFOC.FrontRight.LocationX, RebuiltTorqueFOC.FrontRight.LocationY),
+            new Translation2d(RebuiltTorqueFOC.BackLeft.LocationX, RebuiltTorqueFOC.BackLeft.LocationY),
+            new Translation2d(RebuiltTorqueFOC.BackRight.LocationX, RebuiltTorqueFOC.BackRight.LocationY)
         };
     }
 

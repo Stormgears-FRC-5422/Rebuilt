@@ -30,7 +30,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.subsystems.drive.AkitDrive.ctrGenerated.TunerConstants;
+import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 
 import java.util.Queue;
 
@@ -82,9 +82,9 @@ public class ModuleIOTalonFXS implements ModuleIO {
   public ModuleIOTalonFXS(
       SwerveModuleConstants<TalonFXSConfiguration, TalonFXSConfiguration, CANdiConfiguration>
           constants) {
-    driveTalon = new TalonFXS(constants.DriveMotorId, TunerConstants.kCANBus);
-    turnTalon = new TalonFXS(constants.SteerMotorId, TunerConstants.kCANBus);
-    candi = new CANdi(constants.EncoderId, TunerConstants.kCANBus);
+    driveTalon = new TalonFXS(constants.DriveMotorId, RebuiltTorqueFOC.kCANBus);
+    turnTalon = new TalonFXS(constants.SteerMotorId, RebuiltTorqueFOC.kCANBus);
+    candi = new CANdi(constants.EncoderId, RebuiltTorqueFOC.kCANBus);
 
     // Configure drive motor
     var driveConfig = constants.DriveMotorInitialConfigs;
