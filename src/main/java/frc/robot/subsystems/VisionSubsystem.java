@@ -28,6 +28,9 @@ public class VisionSubsystem extends StormSubsystem {
     private final DrivetrainBase drivetrain;
     private final PoseEstimator drivetrainPoseEstimator;
 
+    /** Maximum distance to accept a tag measurement (9 feet in meters) */
+    private static final double MAX_TAG_DISTANCE_METERS = 9.0 * 0.3048; // 2.7432 m
+
     /** Vision measurement standard deviations [x(m), y(m), theta(rad)].
      *  theta is set very high because MegaTag2 already uses the gyro for heading. */
     private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(0.7, 0.7, 9999999);
@@ -97,6 +100,13 @@ public class VisionSubsystem extends StormSubsystem {
         // Reject bad measurements
         if (estimate == null || estimate.tagCount == 0) {
             Logger.recordOutput("Vision/HasTarget", false);
+            return;
+        }
+
+        // Reject tags that are too far away (unreliable at distance)
+        if (estimate.avgTagDist > MAX_TAG_DISTANCE_METERS) {
+            Logger.recordOutput("Vision/HasTarget", false);
+            Logger.recordOutput("Vision/RejectedDist", estimate.avgTagDist);
             return;
         }
 
