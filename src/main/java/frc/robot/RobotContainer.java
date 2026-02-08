@@ -8,22 +8,23 @@ import java.util.Optional;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.JoyStickDrive;
+import frc.robot.commands.SetShooterVelocity;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
-import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.Lights;
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ballControl.Intake;
+import frc.robot.subsystems.ballControl.ShooterSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.commands.SetShooterVelocity;
 
 public class RobotContainer {
     // **********
@@ -35,6 +36,7 @@ public class RobotContainer {
 
     private SingleMotorTuner shooterTuner;
     private ShooterSubsystem krakenShooter;
+    private Intake intake = new Intake();
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -81,6 +83,15 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        Trigger elasticEnabled = new Trigger(() -> elasticMotorController.enabled.get());
+
+        elasticEnabled.onTrue(
+            Commands.runOnce(() -> intake.setAngleDegrees(90.0), intake)
+        );
+
+        elasticEnabled.onFalse(
+            Commands.runOnce(() -> intake.setAngleDegrees(0.0), intake)
+        );
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
@@ -111,14 +122,6 @@ public class RobotContainer {
         if (shooterTuner != null) {
             shooterTuner.periodic();
         }
-
-    new Trigger(() -> elasticMotorController.enabled.get())
-        .whileTrue(
-            new SetShooterVelocity(
-                krakenShooter, -elasticMotorController.motor1.get() * 100.0 // not dynamic at all like the last one
-            )
-        );
-
     }
 
     /**

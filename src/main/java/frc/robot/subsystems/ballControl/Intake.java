@@ -1,97 +1,67 @@
 package frc.robot.subsystems.ballControl;
 
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
-import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import frc.robot.Constants.Shooter;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import frc.utils.StormSubsystem;
 
-import com.revrobotics.spark.SparkMax;
-
-import edu.wpi.first.math.controller.ArmFeedforward;
-
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.ClosedLoopConfig;
-
+import static edu.wpi.first.units.Units.Degrees;
 
 public class Intake extends StormSubsystem {
-    
-    // TalonFX updownIntakeMotor;
-    // TalonFX rollerIntakeMotor;
-    
-    SparkMax updownIntakeMotor;
-    RelativeEncoder updownEncoder;
-    SparkClosedLoopController updownPID;
-    ArmFeedforward feedforward;
 
-    double targetPositionRotations = 0.0;
+    private final TalonFX updownIntakeMotor;
+    // private final TalonFX rollerIntakeMotor;
 
+    private final MotionMagicVoltage mmRequest;
+
+    private double targetDeg = 0.0;
 
     public Intake() {
-        // updownIntakeMotor = new TalonFX(Shooter.intakeUpDownID);
-        // rollerIntakeMotor = new TalonFX(Shooter.intakeRollerID);
-
-        // Slot0Configs slot0 = new Slot0Configs();
-        // slot0.kP = 0;
-        // slot0.kI = 0.0;
-        // slot0.kD = 0.0;
-        // slot0.kG = 0.1;
-        // slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    
-        // TalonFXConfiguration config = new TalonFXConfiguration();
-        // config.Slot0 = slot0;
+        updownIntakeMotor = new TalonFX(20);
         
-        // need gear ratio
-        // config.Feedback.SensorToMechanismRatio=;
-            
-        // config.withMotorOutput(new MotorOutputConfigs()
-        // .withInverted(InvertedValue.Clockwise_Positive)
-        // ); in case it starts moving the wrong way thru the robot
-        // updownIntakeMotor.getConfigurator().apply(config);
-
-        // updownIntakeMotor.setPosition(0.25); // p sure this is in rotations, so 0.25 = 90degrees
-    
-        updownIntakeMotor = new SparkMax(Shooter.intakeUpDownID, MotorType.kBrushless);
-
-        feedforward = new ArmFeedforward(
-            0.0,  // kS
-            0.1,  // kG 
-            0.0,  // kV
-            0.0   // kA
-        );
+        TalonFXConfiguration config = new TalonFXConfiguration();
         
-        SparkMaxConfig config = new SparkMaxConfig();
+        mmRequest = new MotionMagicVoltage(0.0);
 
-        ClosedLoopConfig cl = config.closedLoop;
+        config.Feedback.SensorToMechanismRatio = 1.0;
+        config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        cl.pid(1.0, 0.0, 0.1, ClosedLoopSlot.kSlot0);
+        config.Slot0.kP = 1.0;
+        config.Slot0.kI = 0.0;
+        config.Slot0.kD = 0.0;
+        config.Slot0.kG = 0.5;
 
-        updownIntakeMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
-    }  
+        config.MotionMagic.MotionMagicCruiseVelocity = 1.0; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 2.0; // rot/s^2
 
-    public void goToWhatever(double targetPosition) {
-        this.targetPositionRotations = targetPosition;
+        updownIntakeMotor.getConfigurator().apply(config);
+        updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
 
-        // updownIntakeMotor.setControl(new PositionVoltage(targetPosition));    
+        updownIntakeMotor.getConfigurator().setPosition(0.0);
     }
-    
-    @Override
-    public void periodic() {
-        double positionRadians = updownEncoder.getPosition() * (2.0*Math.PI);
 
-        double ffVolts = feedforward.calculate(positionRadians, 0.0);
+    public void setAngleDegrees(double degrees) {
+        targetDeg = degrees;
 
-        updownPID.setReference(targetPositionRotations, SparkMax.ControlType.kPosition,ClosedLoopSlot.kSlot0,ffVolts);
+        double accRotations = degrees / 360.0;
 
+        updownIntakeMotor.setControl(mmRequest.withPosition(accRotations));
+    }
+
+    public void moveDeltaDegrees(double deltaDeg) {
+        setAngleDegrees(getAngleDegrees() + deltaDeg);
+    }
+
+    public void zeroHere() {
+        updownIntakeMotor.getConfigurator().setPosition(0.0);
+        targetDeg = 0.0;
+    }
+
+    public double getAngleDegrees() {
+        return updownIntakeMotor.getPosition().getValue().in(Degrees);
     }
 }
