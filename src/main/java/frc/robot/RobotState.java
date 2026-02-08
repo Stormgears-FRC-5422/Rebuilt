@@ -3,8 +3,11 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.subsystems.Intake.IntakePivotArm;
+import frc.robot.subsystems.Intake.IntakePivotArm.IntakeState;
 import frc.robot.subsystems.misc.BatteryMonitor;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
+
 
 public class RobotState {
     public enum StateAlliance {
@@ -31,6 +34,8 @@ public class RobotState {
     private final StateSimMode stateSimMode;
     private StatePeriod statePeriod;
     private BatteryState batteryState;
+    private boolean IntakeHasBeenHomed;
+    private IntakeState intakeState = IntakeState.UNKNOWN;
 
     private StateAlliance alliance = StateAlliance.MISSING;
 
@@ -105,6 +110,20 @@ public class RobotState {
 
     public Pose2d getPose() {
         return currentPose;
+    }
+    public void setIntakeHasBeenHomed(boolean hasBeenHomed) {
+        IntakeHasBeenHomed = hasBeenHomed;
+    }
+
+    public boolean IntakeHasBeenHomed() {
+        return IntakeHasBeenHomed;
+    }
+
+    public IntakeState getIntakeState() {
+        return intakeState;
+    }
+    public void setIntakeState(IntakeState state) {
+        intakeState = state;
     }
 
 
