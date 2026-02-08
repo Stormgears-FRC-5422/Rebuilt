@@ -21,7 +21,7 @@ import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ballControl.Intake;
-import frc.robot.subsystems.ballControl.ShooterSubsystem;
+import frc.robot.subsystems.ballControl.*;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
@@ -86,7 +86,7 @@ public class RobotContainer {
         Trigger elasticEnabled = new Trigger(() -> elasticMotorController.enabled.get());
 
         elasticEnabled.onTrue(
-            Commands.runOnce(() -> intake.setAngleDegrees(90.0), intake)
+            Commands.runOnce(() -> intake.setAngleDegrees(360.0), intake)
         );
 
         elasticEnabled.onFalse(

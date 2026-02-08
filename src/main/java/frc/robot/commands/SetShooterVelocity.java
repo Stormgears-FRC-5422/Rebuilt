@@ -1,6 +1,6 @@
 package frc.robot.commands;
 import frc.utils.StormCommand;
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ballControl.ShooterSubsystem;
 
 public class SetShooterVelocity extends StormCommand {
     private final ShooterSubsystem shooter;

@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.ballControl;
 
 import org.littletonrobotics.junction.Logger;
 
@@ -11,7 +11,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.Shooter;
-import frc.robot.subsystems.ShooterSubsystem.ShooterState;
+import frc.robot.subsystems.ballControl.ShooterSubsystem.ShooterState;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 

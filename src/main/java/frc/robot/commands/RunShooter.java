@@ -2,8 +2,7 @@ package frc.robot.commands;
 
 import java.util.function.DoubleSupplier;
 
-import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ballControl.*;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
 

@@ -1,15 +1,15 @@
 package frc.robot.subsystems.ballControl;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import frc.utils.StormSubsystem;
-
-import static edu.wpi.first.units.Units.Degrees;
 
 public class Intake extends StormSubsystem {
 
@@ -21,22 +21,23 @@ public class Intake extends StormSubsystem {
     private double targetDeg = 0.0;
 
     public Intake() {
-        updownIntakeMotor = new TalonFX(20);
+        updownIntakeMotor = new TalonFX(3);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
         
         mmRequest = new MotionMagicVoltage(0.0);
 
-        config.Feedback.SensorToMechanismRatio = 1.0;
+        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        config.Feedback.SensorToMechanismRatio = 32.0;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        config.Slot0.kP = 1.0;
-        config.Slot0.kI = 0.0;
-        config.Slot0.kD = 0.0;
-        config.Slot0.kG = 0.5;
+        config.Slot0.kP = 5.0; //23.0
+        config.Slot0.kI = 1.5; //2.0
+        config.Slot0.kD = 0.3; //0.5
+        config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 1.0; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 2.0; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 0.1; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 0.1; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
