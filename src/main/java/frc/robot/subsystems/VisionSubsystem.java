@@ -116,6 +116,13 @@ public class VisionSubsystem extends StormSubsystem {
         Logger.recordOutput("Vision/Pose", estimate.pose);
         Logger.recordOutput("Vision/AvgTagDist", estimate.avgTagDist);
 
+        // Log each individual tag ID and its distance to the robot
+        for (int i = 0; i < estimate.rawFiducials.length; i++) {
+            LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
+            Logger.recordOutput("Vision/Tags/Tag" + i + "_ID", fid.id);
+            Logger.recordOutput("Vision/Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+        }
+
         // Snapshot pose before vision correction
         Pose2d poseBefore = drivetrainPoseEstimator.getPose();
 
