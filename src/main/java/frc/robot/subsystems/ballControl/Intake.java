@@ -27,16 +27,17 @@ public class Intake extends StormSubsystem {
         
         mmRequest = new MotionMagicVoltage(0.0);
 
-        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        config.Feedback.SensorToMechanismRatio = 32.0;
+        // config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+        config.Feedback.SensorToMechanismRatio = 40.0;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        config.Slot0.kP = 5.0; //23.0
+        config.Slot0.kP = 5.0; //23.0 
         config.Slot0.kI = 1.5; //2.0
         config.Slot0.kD = 0.3; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 0.1; // rot /s
+        config.MotionMagic.MotionMagicCruiseVelocity = 0.1; // rot /s values should be much higher for the actual intake
         config.MotionMagic.MotionMagicAcceleration = 0.1; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
