@@ -117,6 +117,8 @@ public class VisionSubsystem extends StormSubsystem {
 
         limelightID = getClosestLL();
 
+        Logger.recordOutput("Vision/ActiveLL", limelightID);
+
         // Retrieve the MegaTag2 pose estimate (blue-origin field coordinates)
         PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
 
