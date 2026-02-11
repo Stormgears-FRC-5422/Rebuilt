@@ -59,24 +59,12 @@ public class VisionSubsystem extends StormSubsystem {
     }
 
     public double getDistFromTag(String limelightID) {
-        // Check if we see a valid tag first
-        int tagId = getBestTag(limelightID);
-        if (tagId < 1) {
-            return Double.MAX_VALUE;
-        }
-
         LimelightHelpers.PoseEstimate poseEstimate =
             LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
         if (poseEstimate == null || poseEstimate.tagCount == 0) {
             return Double.MAX_VALUE;
         }
-
-        Pose2d poseV = poseEstimate.pose;
-        Pose2d poseTag = FieldConstants.getPoseTag(tagId);
-        Translation2d diff = poseV.minus(poseTag).getTranslation();
-        double xDist = diff.getX();
-        double yDist = diff.getY();
-        return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+        return poseEstimate.avgTagDist;
     }
 
     public Transform2d getTurretOffset(double xDist1, double pivotDist, int pivotAngle, int planarAngle) {
