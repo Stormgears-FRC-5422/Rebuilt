@@ -8,57 +8,66 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.spark.SparkBase;
 
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.utils.StormSubsystem;
 
+
 public class Intake extends StormSubsystem {
+    public enum IntakeState {
+        UNKNOWN,
+        HOMING,
+        HOME,
+        IDLE, // brings intake arm back up, leaving it there
+        INTAKING, // in the position to intake
+        KICK, // brings intake up to top, then sends it back down to intaking
+    }
 
     private final TalonFX updownIntakeMotor;
-    // private final TalonFX rollerIntakeMotor;
-    private IntakeState currentState; 
+    private final TalonFX rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
 
     private double targetDeg = 0.0;
-    private boolean hasBeenHomed = false;
-    private final robotState
+
+
+    private IntakeState state = IntakeState.UNKNOWN;
+    private IntakeState lastState = null;
+    private final Timer stateTimer;
+    String canBusName = Constants.Imu.canBusName;
 
     public Intake() {
-        updownIntakeMotor = new TalonFX(3);
+        updownIntakeMotor = new TalonFX(25, canBusName);
+        rollerIntakeMotor = new TalonFX(26,canBusName); // this may be a neo? 
         
         TalonFXConfiguration config = new TalonFXConfiguration();
-        
         mmRequest = new MotionMagicVoltage(0.0);
-        robotState = RobotState.getInstance();
-        // config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-        config.Feedback.SensorToMechanismRatio = 40.0;
+        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        config.Feedback.SensorToMechanismRatio = 53.33;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        config.Slot0.kP = 5.0; //23.0 
-        config.Slot0.kI = 1.5; //2.0
-        config.Slot0.kD = 0.3; //0.5
+        config.Slot0.kP = 50.0; //23.0
+        config.Slot0.kI = 0.0; //2.0
+        config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 0.1; // rot /s values should be much higher for the actual intake
-        config.MotionMagic.MotionMagicAcceleration = 0.1; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 5.0; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 3.0; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
 
         updownIntakeMotor.getConfigurator().setPosition(0.0);
+
+        stateTimer = new Timer();
     }
 
     public void setAngleDegrees(double degrees) {
         targetDeg = degrees;
-
         double accRotations = degrees / 360.0;
 
         updownIntakeMotor.setControl(mmRequest.withPosition(accRotations));
-    }
-
-    public void moveDeltaDegrees(double deltaDeg) {
-        setAngleDegrees(getAngleDegrees() + deltaDeg);
     }
 
     public void zeroHere() {
@@ -69,85 +78,63 @@ public class Intake extends StormSubsystem {
     public double getAngleDegrees() {
         return updownIntakeMotor.getPosition().getValue().in(Degrees);
     }
-    public enum IntakeLevel {
-        UNKNOWN(-1.0),
-        FLOOR(Double.NEGATIVE_INFINITY),
-        
-        HOME(Constants.Intake.home),
-        
-        OUT1(Constants.Intake.level1),
-        
-        OUT2(Constants.Intake.level2),
-        
+    
+    private void setState(IntakeState newState) {
+        state = newState;
+    }
 
-        private double position;
-
-        IntakeLevel(double position) {
-            this.position = position;
+    private void updateStateMachine() {
+        if (state != lastState) {
+            stateTimer.restart();
+            lastState = state;
         }
-
-        public double getValue() {
-            return position;
-        }
-    }
-        public enum IntakeState {
-        UNKNOWN,
-        HOMING,
-        HOME,
-        IDLE,
-        KICK,
-        HOLD,
-    }
-    public void enableSoftLimits(boolean enable) {
-
-            config.ConfigForwardSoftLimitThreshold = IntakeLevel.HOME.getValue();
-            config.ForwardSoftLimitEnable = enable;
-            config.ConfigReverseSoftLimitThreshold = IntakeLevel.OUT2.getValue();
-            config.ReverseSoftLimitEnable = enable;
-
-        updownIntakeMotor.getConfigurator().apply(config);
-    }
-    public void stopIntake() {
-        
-        // This should be redundant, but for safety stop ASAP
-        updownIntakeMotor.set(0);
-    }   
- public void setState(IntakeState state) {
-        this.currentState = state;
-        robotState.setIntakeState(state);
 
         switch (state) {
-            case UNKNOWN:
-                console("***** UNKNOWN state *****");
-                hasBeenHomed = false;
-                robotState.setIntakeHasBeenHomed(hasBeenHomed);
-                enableSoftLimits(true);
-                targetPosition = IntakeLevel.UNKNOWN.position;
-                break;
-
-            case HOMING:
-                console("***** HOMING state *****");
-                enableSoftLimits(false);
-                break;
-
-            case HOME:
-                console("***** HOME state *****");
-                hasBeenHomed = true;
-                robotState.setIntakeHasBeenHomed(hasBeenHomed);
-                mmRequest.setPosition(IntakeLevel.HOME.getValue());
-                enableSoftLimits(true);
-                break;
-
-            case KICK:
-                console("***** KICK state *****");
-                hasBeenHomed = true;
-                robotState.setIntakeHasBeenHomed(hasBeenHomed);
-                mmRequest.setPosition(IntakeLevel.HOME.getValue());
-                enableSoftLimits(true);
-                break;
+            case UNKNOWN -> { //insta go home
+                setState(IntakeState.HOMING);
+            }
+            case HOMING -> { 
+                zeroHere();
+                setState(IntakeState.HOME);
+            }
+// combine these 2 later?
+            case HOME -> {
+                setAngleDegrees(0);
+                setState(IntakeState.IDLE);
+            }
+            case IDLE -> {
+                setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
+            }
+            case INTAKING -> {
+                setAngleDegrees(120);
+            }
+            case KICK -> {
+                setAngleDegrees(1);
+                if (atTargetDegrees(1) && stateTimer.hasElapsed(0.5)) {
+                    setState(IntakeState.INTAKING);
+                }
+            }
         }
     }
+    
+    private boolean atTargetDegrees(double deg) {
+        return Math.abs(getAngleDegrees() - deg) < 1.0; // some tolerance because this method returns a million sig figs
+    }
+    
+    // only methods to be used outside
+    public void requestHome() {
+        setState(IntakeState.HOMING);
+    }
+    public void requestIdle() {
+        setState(IntakeState.IDLE);
+    }
+    public void requestAKick() {
+        setState(IntakeState.KICK);
+    }
 
-}  
 
-
+    @Override
+    public void periodic() {
+        updateStateMachine();
+    }
+}
