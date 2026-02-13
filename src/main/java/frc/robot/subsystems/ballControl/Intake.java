@@ -35,6 +35,7 @@ public class Intake extends StormSubsystem {
     private IntakeState lastState = null;
     private final Timer stateTimer;
     String canBusName = Constants.Imu.canBusName;
+    private TalonFXConfiguration config;
 
     public Intake() {
         updownIntakeMotor = new TalonFX(25, canBusName);
@@ -61,6 +62,13 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
 
         stateTimer = new Timer();
+
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1/3; 
+        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;   
+
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true; 
+        
     }
 
     public void setAngleDegrees(double degrees) {
@@ -92,24 +100,33 @@ public class Intake extends StormSubsystem {
         switch (state) {
             case UNKNOWN -> { //insta go home
                 setState(IntakeState.HOMING);
+                enableSoftLimit(true);
             }
             case HOMING -> { 
+                enableSoftLimit(true);
                 zeroHere();
                 setState(IntakeState.HOME);
             }
-// combine these 2 later?
+// combine these 2 later? (Tushar: probably not i feel like we should keep it where it is)
             case HOME -> {
+                enableSoftLimit(true);
                 setAngleDegrees(0);
                 setState(IntakeState.IDLE);
             }
             case IDLE -> {
-                setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
+                enableSoftLimit(true);
+                setAngleDegrees(1);
+                 // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
             }
             case INTAKING -> {
+                enableSoftLimit(true);
                 setAngleDegrees(120);
+                
             }
             case KICK -> {
+                enableSoftLimit(true);
                 setAngleDegrees(1);
+                
                 if (atTargetDegrees(1) && stateTimer.hasElapsed(0.5)) {
                     setState(IntakeState.INTAKING);
                 }
@@ -131,7 +148,13 @@ public class Intake extends StormSubsystem {
     public void requestAKick() {
         setState(IntakeState.KICK);
     }
+    public void enableSoftLimit(boolean enable){
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1/3; 
+        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;   
 
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable; 
+    }
 
     @Override
     public void periodic() {
