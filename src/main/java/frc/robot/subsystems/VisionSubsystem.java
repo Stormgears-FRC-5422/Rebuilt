@@ -117,6 +117,8 @@ public class VisionSubsystem extends StormSubsystem {
 
         limelightID = getClosestLL();
 
+        Logger.recordOutput("Vision/ActiveLL", limelightID);
+
         // Retrieve the MegaTag2 pose estimate (blue-origin field coordinates)
         PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
 
@@ -138,11 +140,33 @@ public class VisionSubsystem extends StormSubsystem {
         Logger.recordOutput("Vision/Pose", estimate.pose);
         Logger.recordOutput("Vision/AvgTagDist", estimate.avgTagDist);
 
+        // Log each individual tag ID and its distance to the robot
+        for (int i = 0; i < estimate.rawFiducials.length; i++) {
+            LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
+            Logger.recordOutput("Vision/Tags/Tag" + i + "_ID", fid.id);
+            Logger.recordOutput("Vision/Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+        }
+
+        // Snapshot pose before vision correction
+        Pose2d poseBefore = drivetrainPoseEstimator.getPose();
+
         // Merge the vision measurement into the drivetrain's pose estimator
         drivetrainPoseEstimator.addVisionMeasurement(
             estimate.pose,
             estimate.timestampSeconds,
             VISION_STD_DEVS
         );
+
+        // Measure how much the pose estimator shifted after the vision update
+        Pose2d poseAfter = drivetrainPoseEstimator.getPose();
+        double dx = poseAfter.getX() - poseBefore.getX();
+        double dy = poseAfter.getY() - poseBefore.getY();
+        double correctionMeters = Math.sqrt(dx * dx + dy * dy);
+        double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
+
+        Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
+        Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
+        Logger.recordOutput("Vision/PoseBefore", poseBefore);
+        Logger.recordOutput("Vision/PoseAfter", poseAfter);
     }
 }
