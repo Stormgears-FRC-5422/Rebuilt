@@ -94,37 +94,36 @@ public class Intake extends StormSubsystem {
         if (state != lastState) {
             stateTimer.restart();
             lastState = state;
+        }
 
-            // if (state == IntakeState.INTAKING && rollerEnabled)
-            switch (state) {
-                case UNKNOWN -> { //insta go home
-                    setState(IntakeState.HOMING);
-                }
-                case HOMING -> { 
-                    zeroHere();
-                    setState(IntakeState.HOME);
-                    hasBeenHomed = true;
-                }
-                // combine these 2 later?
-                case HOME -> {
-                    setAngleDegrees(0);
-                    setState(IntakeState.IDLE);
-                }
-                case IDLE -> {
-                    setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
-                }
-                case INTAKING -> {
-                    setAngleDegrees(120);
-                }
-                case BUMP -> { // not sure if this is necessary
-                    setAngleDegrees(60);
-                }
-                case RUMBLE -> {
-                    setAngleDegrees(110);
-                    if (atTargetDegrees(1) && stateTimer.hasElapsed(0.5)) {
-                        setState(IntakeState.INTAKING);
-                    }// repeat this back and forth for trying to make it rumble
-                }
+        switch (state) {
+            case UNKNOWN -> { //insta go home
+                setState(IntakeState.HOMING);
+            }
+            case HOMING -> { 
+                zeroHere();
+                setState(IntakeState.HOME);
+                hasBeenHomed = true;
+            }
+            // combine these 2 later?
+            case HOME -> {
+                setAngleDegrees(0);
+                setState(IntakeState.IDLE);
+            }
+            case IDLE -> {
+                setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
+            }
+            case INTAKING -> {
+                setAngleDegrees(120);
+            }
+            case BUMP -> { // not sure if this is necessary
+                setAngleDegrees(60);
+            }
+            case RUMBLE -> {
+                setAngleDegrees(110);
+                if (atTargetDegrees(1) && stateTimer.hasElapsed(0.5)) {
+                    setState(IntakeState.INTAKING);
+                }// repeat this back and forth for trying to make it rumble
             }
         }
     }
