@@ -3,32 +3,28 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
-import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
-import frc.robot.elastic.SwerveModuleTuner;
-import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
+import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.KrakenShooter;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
-
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import org.littletonrobotics.junction.Logger;
-import java.util.Optional;
 
 public class RobotContainer {
     // **********
@@ -43,6 +39,7 @@ public class RobotContainer {
 
     private SingleMotorTuner shooterTuner;
     private KrakenShooter krakenShooter;
+    private Intake intake = new Intake();
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -94,6 +91,19 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
+                intake.requestHome();
+                elasticMotorController.homeButton.setValue(false);
+                System.out.println("is homed?: " + intake.hasBeenHomed);
+            }, intake));
+
+        // new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
+        //         intake.requestIdle();
+        //         elasticMotorController.homeButton.setValue(false);
+        //     }, intake));
+        // new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
+        // new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> intake.requestIntakeDown(), intake));
+
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
@@ -116,18 +126,19 @@ public class RobotContainer {
     }
 
     public void periodic() {
+        System.out.println(intake.updownIntakeMotor.getPosition());
         if (shooterTuner != null) {
             shooterTuner.periodic();
         }
 
         if (Toggles.useShooter && krakenShooter != null) {
-            if (elasticMotorController.enabled.get()) {
-                // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-                krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
-                Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
-            } else {
-                krakenShooter.stop();
-            }
+            // if (elasticMotorController.enabled.get()) {
+            //     // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
+                //-->// krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
+            //     Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
+            // } else {
+            //     krakenShooter.stop();
+            // }
         }
     }
 
