@@ -40,7 +40,7 @@ public class RobotContainer {
 
     private SingleMotorTuner shooterTuner;
     private ShooterSubsystem krakenShooter;
-    private Intake intake = new Intake();
+    private Intake intake;
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -72,6 +72,7 @@ public class RobotContainer {
             if (Toggles.useShooter) {
                 console("Create shooter");
                 krakenShooter = new ShooterSubsystem();
+                intake = new Intake();
                 if (Toggles.usePidTuner) {
                     shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
                 }
@@ -94,13 +95,15 @@ public class RobotContainer {
     private void configureBindings() {
         Trigger elasticEnabled = new Trigger(() -> elasticMotorController.enabled.get());
 
-        elasticEnabled.onTrue(
-            Commands.runOnce(() -> intake.setAngleDegrees(360.0), intake)
-        );
+        if (intake != null) {
+            elasticEnabled.onTrue(
+                Commands.runOnce(() -> intake.setAngleDegrees(360.0), intake)
+            );
 
-        elasticEnabled.onFalse(
-            Commands.runOnce(() -> intake.setAngleDegrees(0.0), intake)
-        );
+            elasticEnabled.onFalse(
+                Commands.runOnce(() -> intake.setAngleDegrees(0.0), intake)
+            );
+        }
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
