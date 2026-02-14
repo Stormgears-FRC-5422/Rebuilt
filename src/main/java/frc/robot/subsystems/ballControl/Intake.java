@@ -36,12 +36,13 @@ public class Intake extends StormSubsystem {
     private final Timer stateTimer;
     String canBusName = Constants.Imu.canBusName;
     private TalonFXConfiguration config;
+    private boolean softLimitEnabled = false;
 
     public Intake() {
         updownIntakeMotor = new TalonFX(25, canBusName);
         rollerIntakeMotor = new TalonFX(26,canBusName); // this may be a neo? 
         
-        TalonFXConfiguration config = new TalonFXConfiguration();
+        config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
 
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -63,12 +64,12 @@ public class Intake extends StormSubsystem {
 
         stateTimer = new Timer();
 
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1/3; 
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1.0 / 3.0; 
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;   
 
         config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
-        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true; 
-        
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
 
     public void setAngleDegrees(double degrees) {
@@ -149,11 +150,16 @@ public class Intake extends StormSubsystem {
         setState(IntakeState.KICK);
     }
     public void enableSoftLimit(boolean enable){
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1/3; 
+        if (enable == softLimitEnabled) return; // avoid CAN spam every cycle
+        softLimitEnabled = enable;
+
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1.0 / 3.0; 
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;   
 
         config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
-        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable; 
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
+
+        updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
 
     @Override
