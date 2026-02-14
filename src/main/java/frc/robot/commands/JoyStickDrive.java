@@ -6,6 +6,7 @@ import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Options.DriveOptions;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.joysticks.RebuiltLogitechJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
@@ -21,6 +22,7 @@ public class JoyStickDrive extends StormCommand {
     private final DoubleSupplier tySupplier;
     private final DoubleSupplier omegaSupplier;
     private final BooleanSupplier fieldRelativeSupplier;
+    private final DoubleSupplier turboSupplier;
 
     private SlewRateLimiter xScaleLimiter;
     private SlewRateLimiter yScaleLimiter;
@@ -45,6 +47,7 @@ public class JoyStickDrive extends StormCommand {
         txSupplier = joystick::getWpiX;
         tySupplier = joystick::getWpiY;
         omegaSupplier = joystick::getOmegaSpeed;
+        turboSupplier = joystick::getTurbo;
 
         options = DriveOptions.create();
 
@@ -65,6 +68,12 @@ public class JoyStickDrive extends StormCommand {
     @Override
     public void execute() {
         super.execute();
+
+        if (turboSupplier.getAsDouble() <= 0.2) {
+            drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
+        } else {
+            drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
+        }
 
         double x = txSupplier.getAsDouble();
         double y = tySupplier.getAsDouble();
