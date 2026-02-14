@@ -33,6 +33,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import frc.robot.sensors.pose.PoseEstimator;
+import frc.robot.sensors.pose.WPILibPoseEstimator;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -103,6 +105,8 @@ public class AkitDrive extends DrivetrainBase {
         setMaxVelocities(MetersPerSecond.of(getMaxLinearSpeedMetersPerSec()),
                          RadiansPerSecond.of(getMaxAngularSpeedRadPerSec()));
     }
+
+
 
     @Override
     public void periodic() {
@@ -347,5 +351,14 @@ public class AkitDrive extends DrivetrainBase {
         };
     }
 
+    @Override
+    protected void resetOrientationTo(Rotation2d targetRotation) {
+        poseEstimator.resetPose(new Pose2d(poseEstimator.getEstimatedPosition().getTranslation(),
+            targetRotation));
+    }
 
+    @Override
+    public PoseEstimator getPoseEstimator() {
+        return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+    }
 }
