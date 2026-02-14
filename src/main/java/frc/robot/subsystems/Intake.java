@@ -43,9 +43,13 @@ public class Intake extends StormSubsystem {
 
     public boolean hasBeenHomed = false;
 
+    private boolean rumbleHigh = false;
+    private final double RUMBLE_MIN = 40.0;
+    private final double RUMBLE_MAX = 50.0;
+
     public Intake() {
         updownIntakeMotor = new TalonFX(25, canBusName);
-        rollerIntakeMotor = new SparkMax(50,MotorType.kBrushless);
+        rollerIntakeMotor = new SparkMax(51,MotorType.kBrushless);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
@@ -59,8 +63,8 @@ public class Intake extends StormSubsystem {
         config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 5.0; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 3.0; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 0.2; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 0.2; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -114,18 +118,30 @@ public class Intake extends StormSubsystem {
                     setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
                 }
                 case INTAKING -> {
-                    setAngleDegrees(120);
+                    setAngleDegrees(110);
                 }
                 case BUMP -> { // not sure if this is necessary
                     setAngleDegrees(60);
                 }
                 case RUMBLE -> {
-                    setAngleDegrees(110);
-                    if (atTargetDegrees(1) && stateTimer.hasElapsed(0.5)) {
-                        setState(IntakeState.INTAKING);
-                    }// repeat this back and forth for trying to make it rumble
+                    rumbleHigh = false;
+                    setAngleDegrees(RUMBLE_MIN);
                 }
             }
+            if (state == IntakeState.RUMBLE) {
+                if (stateTimer.hasElapsed(0.5)) {
+                    stateTimer.restart();
+
+                    rumbleHigh = !rumbleHigh;
+
+                    if (rumbleHigh) {
+                        setAngleDegrees(RUMBLE_MAX);
+                    } else {
+                        setAngleDegrees(RUMBLE_MIN);
+                    }
+                }
+            }
+
         }
     }
     

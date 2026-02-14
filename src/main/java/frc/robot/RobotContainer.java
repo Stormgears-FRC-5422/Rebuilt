@@ -97,12 +97,13 @@ public class RobotContainer {
                 System.out.println("is homed?: " + intake.hasBeenHomed);
             }, intake));
 
-        // new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
-        //         intake.requestIdle();
-        //         elasticMotorController.homeButton.setValue(false);
-        //     }, intake));
-        // new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
-        // new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> intake.requestIntakeDown(), intake));
+        new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
+                intake.requestIdle();
+                elasticMotorController.homeButton.setValue(false);
+            }, intake));
+        new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
+        new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> intake.requestIntakeDown(), intake));
+        new Trigger(() -> elasticMotorController.tester.get()).onTrue(Commands.runOnce(() -> intake.runIntake(), intake));
 
         console("[Init] configureBindings");
 
