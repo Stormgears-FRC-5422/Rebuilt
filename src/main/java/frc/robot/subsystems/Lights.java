@@ -14,8 +14,16 @@ public class Lights extends StormSubsystem {
         IDLE,
         HOPPER_EMPTY,
         HOPPER_HALF,
-        HOPPER_FULL
+        HOPPER_FULL,
+        ALIGNED_TO_TAG,
+        SWITCHING_SHIFTS
     };
+
+
+    private final Timer lightTimer = new Timer();
+    private static final double lightTimerSeconds = 1.0;
+    private lightStates lastState;
+
     lightStates state = lightStates.IDLE;
     // Alliance variables
     private final RobotState robotState;
@@ -28,15 +36,22 @@ public class Lights extends StormSubsystem {
 
     private AddressableLED addressableLED;
     private AddressableLEDBuffer addressableLEDBuffer;
-    private AddressableLEDBufferView m_left;
-    private AddressableLEDBufferView m_right;
+    private AddressableLEDBufferView m_bottom;
+    private AddressableLEDBufferView m_top;
 
     private boolean pulse = false;
     private double pulsePeriod = 5.0;
 
+    private int lEDLength = Constants.Lights.ledLength;
+    private int halfLEDLength = Constants.Lights.ledLength/2;
+
+
     public Lights() {
-        addressableLED = new AddressableLED(Constants.Lights.port); 
+        addressableLED = new AddressableLED(Constants.Lights.port);
         addressableLEDBuffer = new AddressableLEDBuffer(Constants.Lights.ledLength);
+        m_bottom = addressableLEDBuffer.createView(0,halfLEDLength-1);
+        m_top = addressableLEDBuffer.createView(halfLEDLength, lEDLength-1);
+
 
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
@@ -48,16 +63,28 @@ public class Lights extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
-        // setSolid(RED_COLOR);
+        LEDPattern red = LEDPattern.solid(Color.kRed);
+        LEDPattern green = LEDPattern.solid(Color.kGreen);
         switch(state){
             case IDLE:
                 setRainbow(pulse);
             case HOPPER_EMPTY:
+                //red
                 setSolid(RED_COLOR);
             case HOPPER_HALF:
-                setSolid(YELLOW_COLOR);
+                //Half green and half red
+                red.applyTo(m_top);
+                green.applyTo(m_bottom);
             case HOPPER_FULL:
+                //All green
                 setSolid(GREEN_COLOR);
+            case ALIGNED_TO_TAG:
+                setSolid(BLUE_COLOR);
+                if (lightTimer.hasElapsed(lightTimerSeconds)) {
+                    setLightState(lastState);
+                }
+            case SWITCHING_SHIFTS:
+                setSolid(ORANGE_COLOR);
         }
 
 
@@ -85,8 +112,8 @@ public class Lights extends StormSubsystem {
         if (!forward)
             scrollingRainbow = scrollingRainbow.reversed();
 
-        patternApplyTo(scrollingRainbow, m_left);
-        patternApplyTo(scrollingRainbow, m_right);
+        patternApplyTo(scrollingRainbow, m_bottom);
+        patternApplyTo(scrollingRainbow, m_top);
     }
 
     public void setSolid(Color color) {
@@ -97,10 +124,17 @@ public class Lights extends StormSubsystem {
     public void setViews() {
         // Split led buffer into left and right views, so we can apply a different pattern to each strip
         // Right view is reversed because LED strips are wired in series
-        m_left = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
-        m_right = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
+        m_bottom = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
+        m_top = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
     }
     public void setLightState(lightStates newState){
+        lastState = state;
         state = newState;
+        if(newState == lightStates.ALIGNED_TO_TAG){
+            lightTimer.start();
+        }
+    }
+    public lightStates getLightState(){
+        return state;
     }
 }
