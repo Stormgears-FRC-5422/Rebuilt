@@ -63,6 +63,7 @@ public class Lights extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+        setLightState(lightStates.HOPPER_HALF);
         LEDPattern red = LEDPattern.solid(Color.kRed);
         LEDPattern green = LEDPattern.solid(Color.kGreen);
         switch(state){
@@ -73,6 +74,7 @@ public class Lights extends StormSubsystem {
                 setSolid(RED_COLOR);
             case HOPPER_HALF:
                 //Half green and half red
+                System.out.println("Attempting HOPPER_HALF");
                 red.applyTo(m_top);
                 green.applyTo(m_bottom);
             case HOPPER_FULL:
