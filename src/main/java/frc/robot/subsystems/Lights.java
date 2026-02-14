@@ -56,7 +56,7 @@ public class Lights extends StormSubsystem {
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
         setViews();
-        state = lightStates.IDLE;
+        //state = lightStates.IDLE;
         robotState = RobotState.getInstance();
     }
 
@@ -64,27 +64,38 @@ public class Lights extends StormSubsystem {
     public void periodic() {
         super.periodic();
         LEDPattern red = LEDPattern.solid(Color.kRed);
+        red.applyTo(m_top);
         LEDPattern green = LEDPattern.solid(Color.kGreen);
+        green.applyTo(m_top);
+        setLightState(lightStates.IDLE);
         switch(state){
             case IDLE:
                 setRainbow(pulse);
+                System.out.println("IDLE");
+                break;
             case HOPPER_EMPTY:
-                //red
                 setSolid(RED_COLOR);
+                System.out.println("HOPPER_EMPTY");
+                break;
             case HOPPER_HALF:
                 //Half green and half red
                 red.applyTo(m_top);
                 green.applyTo(m_bottom);
+                System.out.println("HOPPER_HALF");
+                break;
             case HOPPER_FULL:
-                //All green
                 setSolid(GREEN_COLOR);
+                System.out.println("FULL");
+                break;
             case ALIGNED_TO_TAG:
                 setSolid(BLUE_COLOR);
                 if (lightTimer.hasElapsed(lightTimerSeconds)) {
                     setLightState(lastState);
                 }
+                break;
             case SWITCHING_SHIFTS:
                 setSolid(ORANGE_COLOR);
+                break;
         }
 
 
