@@ -17,6 +17,11 @@ public class RunShooter extends StormCommand {
     }
 
     @Override
+    public void initialize() {
+        shooter.setState(ShooterSubsystem.ShooterState.SPEEDING_UP);
+    }
+
+    @Override
     public void execute() {
         double targetRps = targetVelocityRpsgiver.getAsDouble();
         
@@ -26,6 +31,7 @@ public class RunShooter extends StormCommand {
     @Override
     public void end(boolean interrupted) {
         shooter.stopShooter();
+        shooter.setState(ShooterSubsystem.ShooterState.IDLE);
     }
 
     @Override
