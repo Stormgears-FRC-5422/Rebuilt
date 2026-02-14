@@ -65,4 +65,8 @@ public class RebuiltField {
         Rotation2d rotationRotated = rotateRotation(pose.getRotation());
         return new Pose2d(translationRotated, rotationRotated);
     }
+
+    public static Translation2d rotateBlueToRed(Translation2d blueTranslation) {
+        return rotateTranslation(blueTranslation);
+    }
 }
