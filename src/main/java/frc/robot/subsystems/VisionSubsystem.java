@@ -119,6 +119,28 @@ public class VisionSubsystem extends StormSubsystem {
         }
     }
 
+    public void logLLs(){
+        for(String limelightId: limelightIDs){
+            // Creating a string that allows each different limelight to have their own start string for logging
+            String start = "Vision/" + limelightId + "/";
+
+            // Logging all the values from the PoseEstimae
+            PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
+            Logger.recordOutput(start + "HasTarget", true);
+            Logger.recordOutput(start + "TagCount", estimate.tagCount);
+            Logger.recordOutput(start + "Pose", estimate.pose);
+            Logger.recordOutput(start + "AvgTagDist", estimate.avgTagDist);
+            Logger.recordOutput(start + "ClosestTagDist", getDistFromTag(limelightID));
+
+            // Logging the locations of all the April Tags with their dist, id
+            for (int i = 0; i < estimate.rawFiducials.length; i++) {
+                LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
+                Logger.recordOutput(start + "Tags/Tag" + i + "_ID", fid.id);
+                Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+            }
+        }
+    }
+
     @Override
     public void periodic() {
         super.periodic();
@@ -128,6 +150,8 @@ public class VisionSubsystem extends StormSubsystem {
         setAllLimelightOrientations(robotYaw);
 
         limelightID = getClosestLL();
+
+        logLLs();
 
         Logger.recordOutput("Vision/ActiveLL", limelightID);
 
@@ -144,23 +168,18 @@ public class VisionSubsystem extends StormSubsystem {
 
         // Reject tags that are too far away (unreliable at distance)
         if (getDistFromTag(limelightID) > MAX_TAG_DISTANCE_METERS) {
-            Logger.recordOutput("Vision/HasTarget", false);
-            Logger.recordOutput("Vision/RejectedDist", getDistFromTag(limelightID));
+            Logger.recordOutput("Vision/Closest/HasTarget", false);
+            Logger.recordOutput("Vision/Closest/RejectedDist", getDistFromTag(limelightID));
             return;
         }
 
-        Logger.recordOutput("Vision/HasTarget", true);
-        Logger.recordOutput("Vision/TagCount", estimate.tagCount);
-        Logger.recordOutput("Vision/Pose", estimate.pose);
-        Logger.recordOutput("Vision/AvgTagDist", estimate.avgTagDist);
-        Logger.recordOutput("Vision/ClosestTagDist", getDistFromTag(limelightID));
+        Logger.recordOutput("Vision/Closest/HasTarget", true);
+        Logger.recordOutput("Vision/Closest/TagCount", estimate.tagCount);
+        Logger.recordOutput("Vision/Closest/Pose", estimate.pose);
+        Logger.recordOutput("Vision/Closest/AvgTagDist", estimate.avgTagDist);
+        Logger.recordOutput("Vision/Closest/ClosestTagDist", getDistFromTag(limelightID));
 
-        // Log each individual tag ID and its distance to the robot
-        for (int i = 0; i < estimate.rawFiducials.length; i++) {
-            LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
-            Logger.recordOutput("Vision/Tags/Tag" + i + "_ID", fid.id);
-            Logger.recordOutput("Vision/Tags/Tag" + i + "_DistMeters", fid.distToRobot);
-        }
+
 
         // Snapshot pose before vision correction
         Pose2d poseBefore = drivetrainPoseEstimator.getPose();
