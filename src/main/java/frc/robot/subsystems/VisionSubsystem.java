@@ -59,12 +59,24 @@ public class VisionSubsystem extends StormSubsystem {
     }
 
     public double getDistFromTag(String limelightID) {
+        // Check if we see a valid tag first
+        int tagId = getBestTag(limelightID);
+        if (tagId < 1) {
+            return Double.MAX_VALUE;
+        }
+
         LimelightHelpers.PoseEstimate poseEstimate =
             LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
         if (poseEstimate == null || poseEstimate.tagCount == 0) {
             return Double.MAX_VALUE;
         }
-        return poseEstimate.avgTagDist;
+        Pose2d poseV = poseEstimate.pose;
+        Pose2d poseTag = FieldConstants.getPoseTag(tagId);
+        Translation2d diff = poseV.minus(poseTag).getTranslation();
+        double xDist = diff.getX();
+        double yDist = diff.getY();
+        return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+
     }
 
     public Transform2d getTurretOffset(double xDist1, double pivotDist, int pivotAngle, int planarAngle) {
@@ -131,9 +143,9 @@ public class VisionSubsystem extends StormSubsystem {
         }
 
         // Reject tags that are too far away (unreliable at distance)
-        if (estimate.avgTagDist > MAX_TAG_DISTANCE_METERS) {
+        if (getDistFromTag(limelightID) > MAX_TAG_DISTANCE_METERS) {
             Logger.recordOutput("Vision/HasTarget", false);
-            Logger.recordOutput("Vision/RejectedDist", estimate.avgTagDist);
+            Logger.recordOutput("Vision/RejectedDist", getDistFromTag(limelightID));
             return;
         }
 
@@ -141,6 +153,7 @@ public class VisionSubsystem extends StormSubsystem {
         Logger.recordOutput("Vision/TagCount", estimate.tagCount);
         Logger.recordOutput("Vision/Pose", estimate.pose);
         Logger.recordOutput("Vision/AvgTagDist", estimate.avgTagDist);
+        Logger.recordOutput("Vision/ClosestTagDist", getDistFromTag(limelightID));
 
         // Log each individual tag ID and its distance to the robot
         for (int i = 0; i < estimate.rawFiducials.length; i++) {
