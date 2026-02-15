@@ -16,7 +16,7 @@ public class Lights extends StormSubsystem {
         HOPPER_HALF,
         HOPPER_FULL,
         ALIGNED_TO_TAG,
-        SWITCHING_SHIFTS
+        SWITCHING_SHIFTS,
     };
 
 
@@ -63,12 +63,8 @@ public class Lights extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
-        setLightState(lightStates.HOPPER_HALF);
         LEDPattern red = LEDPattern.solid(Color.kRed);
-        red.applyTo(m_top);
         LEDPattern green = LEDPattern.solid(Color.kGreen);
-        green.applyTo(m_top);
-        setLightState(lightStates.IDLE);
         switch(state){
             case IDLE:
                 setRainbow(pulse);
@@ -80,7 +76,6 @@ public class Lights extends StormSubsystem {
                 break;
             case HOPPER_HALF:
                 //Half green and half red
-                System.out.println("Attempting HOPPER_HALF");
                 red.applyTo(m_top);
                 green.applyTo(m_bottom);
                 System.out.println("HOPPER_HALF");
@@ -93,10 +88,15 @@ public class Lights extends StormSubsystem {
                 setSolid(BLUE_COLOR);
                 if (lightTimer.hasElapsed(lightTimerSeconds)) {
                     setLightState(lastState);
+                    lightTimer.reset();
                 }
                 break;
             case SWITCHING_SHIFTS:
                 setSolid(ORANGE_COLOR);
+                if (lightTimer.hasElapsed(lightTimerSeconds)) {
+                    setLightState(lastState);
+                    lightTimer.reset();
+                }
                 break;
         }
 
@@ -143,7 +143,7 @@ public class Lights extends StormSubsystem {
     public void setLightState(lightStates newState){
         lastState = state;
         state = newState;
-        if(newState == lightStates.ALIGNED_TO_TAG){
+        if(newState == lightStates.ALIGNED_TO_TAG || newState == lightStates.SWITCHING_SHIFTS){
             lightTimer.start();
         }
     }
