@@ -24,6 +24,11 @@ public class RobotState {
         TELEOP,
         TEST
     }
+    public enum HopperState{
+        hopperFull,
+        hopperHalf,
+        hopperEmpty,
+    }
 
     private static RobotState instance;
     private Pose2d currentPose;
@@ -31,6 +36,7 @@ public class RobotState {
     private final StateSimMode stateSimMode;
     private StatePeriod statePeriod;
     private BatteryState batteryState;
+    public HopperState hopperState;
 
     private StateAlliance alliance = StateAlliance.MISSING;
 
@@ -106,6 +112,11 @@ public class RobotState {
     public Pose2d getPose() {
         return currentPose;
     }
-
+    public void setHopperState(HopperState hopperState){
+        this.hopperState = hopperState;
+    }
+    public HopperState getHopperState(){
+        return hopperState;
+    }
 
 }
