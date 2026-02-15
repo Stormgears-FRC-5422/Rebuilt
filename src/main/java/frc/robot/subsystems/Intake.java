@@ -24,6 +24,7 @@ public class Intake extends StormSubsystem {
         INTAKING, // in the position to intake
         RUMBLE, // rumbles to funnel
         BUMP,
+        MOVING,
     }
 
     public final TalonFX updownIntakeMotor;
@@ -39,32 +40,35 @@ public class Intake extends StormSubsystem {
     String canBusName = Constants.Imu.canBusName;
 
     private boolean rollerEnabled = false;
-    private double rollerSpeed = 0.8;
+    private double rollerSpeed = Constants.Intake.rollerSpeed;
 
     public boolean hasBeenHomed = false;
 
     private boolean rumbleHigh = false;
-    private final double RUMBLE_MIN = 40.0;
-    private final double RUMBLE_MAX = 50.0;
+    private final double RUMBLE_MIN = Constants.Intake.RUMBLE_MIN;
+    private final double RUMBLE_MAX = Constants.Intake.RUMBLE_MAX;
+    private TalonFXConfiguration config;
+    private boolean softLimitEnabled = false;
 
     public Intake() {
-        updownIntakeMotor = new TalonFX(25, canBusName);
-        rollerIntakeMotor = new SparkMax(51,MotorType.kBrushless);
+        updownIntakeMotor = new TalonFX(Constants.Intake.updownIntakeID, canBusName);
+        rollerIntakeMotor = new SparkMax(Constants.Intake.rollerMaxID,MotorType.kBrushless);
         
-        TalonFXConfiguration config = new TalonFXConfiguration();
+        config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
 
+
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        config.Feedback.SensorToMechanismRatio = 53.33;
+        config.Feedback.SensorToMechanismRatio = Constants.Intake.sensorToMechanismRatio;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        config.Slot0.kP = 50.0; //23.0
-        config.Slot0.kI = 0.0; //2.0
-        config.Slot0.kD = 0.0; //0.5
-        config.Slot0.kG = 0.0;
+        config.Slot0.kP = Constants.Intake.kP; //23.0
+        config.Slot0.kI = Constants.Intake.kI; //2.0
+        config.Slot0.kD = Constants.Intake.kD; //0.5
+        config.Slot0.kG = Constants.Intake.kG;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 0.2; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 0.2; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = Constants.Intake.CruiseVeloc; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = Constants.Intake.Accel; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -72,6 +76,12 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
 
         stateTimer = new Timer();
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 130.0 / 360.0; 
+        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;   
+
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
 
     public void setAngleDegrees(double degrees) {
@@ -102,28 +112,36 @@ public class Intake extends StormSubsystem {
             // if (state == IntakeState.INTAKING && rollerEnabled)
             switch (state) {
                 case UNKNOWN -> { //insta go home
+                    enableSoftLimit(true);
                     setState(IntakeState.HOMING);
+
                 }
                 case HOMING -> { 
                     zeroHere();
+                    enableSoftLimit(true);
                     setState(IntakeState.HOME);
                     hasBeenHomed = true;
                 }
                 // combine these 2 later?
                 case HOME -> {
+                    enableSoftLimit(true);
                     setAngleDegrees(0);
                     setState(IntakeState.IDLE);
                 }
                 case IDLE -> {
+                    enableSoftLimit(true);
                     setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
                 }
                 case INTAKING -> {
+                    enableSoftLimit(true);
                     setAngleDegrees(110);
                 }
                 case BUMP -> { // not sure if this is necessary
+                    enableSoftLimit(true);
                     setAngleDegrees(60);
                 }
                 case RUMBLE -> {
+                    enableSoftLimit(true);
                     rumbleHigh = false;
                     setAngleDegrees(RUMBLE_MIN);
                 }
@@ -146,7 +164,7 @@ public class Intake extends StormSubsystem {
     }
     
     private boolean atTargetDegrees(double deg) {
-        return Math.abs(getAngleDegrees() - deg) < 1.0; // some tolerance because this method returns a million sig figs
+        return Math.abs(getAngleDegrees() - deg) < 10.0; // some tolerance because this method returns a million sig figs
     }
     
     // only methods to be used outside
@@ -170,9 +188,21 @@ public class Intake extends StormSubsystem {
     }
     public void runIntake() {
         // add a secondary if later on, in case it needs to be disabled even when it isnt in intaking
-        if (hasBeenHomed && state == IntakeState.INTAKING) {
+        if (hasBeenHomed && state == IntakeState.INTAKING && atTargetDegrees(110)) {
             rollerEnabled = !rollerEnabled;  // toggle on/off
         }
+    }
+     public void enableSoftLimit(boolean enable){
+        if (enable == softLimitEnabled) return; // avoid CAN spam every cycle
+        softLimitEnabled = enable;
+
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 130.0 / 360.0; 
+        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;   
+
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0; // might stop it after going down, not sure what to do here?
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
+
+        updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
 
     @Override
