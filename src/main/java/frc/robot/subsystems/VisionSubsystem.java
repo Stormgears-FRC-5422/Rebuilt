@@ -122,9 +122,9 @@ public class VisionSubsystem extends StormSubsystem {
     }
 
     public void logLLs(){
-        for(String limelightId: limelightIDs){
+        for(String limelightID: limelightIDs){
             // Creating a string that allows each different limelight to have their own start string for logging
-            String start = "Vision/" + limelightId + "/";
+            String start = "Vision/" + limelightID + "/";
 
             // Logging all the values from the PoseEstimae
             PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
