@@ -128,8 +128,12 @@ public class VisionSubsystem extends StormSubsystem {
             // Creating a string that allows each different limelight to have their own start string for logging
             String start = "Vision/" + limelightID + "/";
 
-            // Logging all the values from the PoseEstimae
+            // Logging all the values from the PoseEstimate
             PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
+            if (estimate == null || estimate.tagCount == 0) {
+                Logger.recordOutput(start + "HasTarget", false);
+                continue;
+            }
             Logger.recordOutput(start + "HasTarget", true);
             Logger.recordOutput(start + "TagCount", estimate.tagCount);
             Logger.recordOutput(start + "Pose", estimate.pose);
@@ -181,9 +185,10 @@ public class VisionSubsystem extends StormSubsystem {
         }
 
         // Reject tags that are too far away (unreliable at distance)
-        if (getDistFromTag(limelightID) > MAX_TAG_DISTANCE_METERS) {
+        double closestTagDist = getDistFromTag(limelightID);
+        if (closestTagDist > MAX_TAG_DISTANCE_METERS) {
             Logger.recordOutput("Vision/Closest/HasTarget", false);
-            Logger.recordOutput("Vision/Closest/RejectedDist", getDistFromTag(limelightID));
+            Logger.recordOutput("Vision/Closest/RejectedDist", closestTagDist);
             return;
         }
 
@@ -191,7 +196,7 @@ public class VisionSubsystem extends StormSubsystem {
         Logger.recordOutput("Vision/Closest/TagCount", estimate.tagCount);
         Logger.recordOutput("Vision/Closest/Pose", estimate.pose);
         Logger.recordOutput("Vision/Closest/AvgTagDist", estimate.avgTagDist);
-        Logger.recordOutput("Vision/Closest/ClosestTagDist", getDistFromTag(limelightID));
+        Logger.recordOutput("Vision/Closest/ClosestTagDist", closestTagDist);
 
 
 
