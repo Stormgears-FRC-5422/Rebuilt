@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.Constants;
 import frc.robot.FieldConstants;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.subsystems.drive.DrivetrainBase;
@@ -185,11 +186,13 @@ public class VisionSubsystem extends StormSubsystem {
         Pose2d poseBefore = drivetrainPoseEstimator.getPose();
 
         // Merge the vision measurement into the drivetrain's pose estimator
-        drivetrainPoseEstimator.addVisionMeasurement(
-            estimate.pose,
-            estimate.timestampSeconds,
-            VISION_STD_DEVS
-        );
+        if(Constants.Vision.mergeVision){
+            drivetrainPoseEstimator.addVisionMeasurement(
+                estimate.pose,
+                estimate.timestampSeconds,
+                VISION_STD_DEVS
+            );
+        }
 
         // Measure how much the pose estimator shifted after the vision update
         Pose2d poseAfter = drivetrainPoseEstimator.getPose();
