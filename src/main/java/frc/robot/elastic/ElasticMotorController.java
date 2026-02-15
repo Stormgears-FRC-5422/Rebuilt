@@ -8,7 +8,8 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> rumble;
   public final Option<Boolean> intakeDown;
   public final Option<Boolean> tester;
-
+  public final Option<Boolean> shootButton;
+  
   public ElasticMotorController() {
     super("Motor tester with elastic");
     homeButton = createBooleanOption("homeButton", false);
@@ -16,6 +17,7 @@ public class ElasticMotorController extends OptionsController {
     rumble = createBooleanOption("make the intake rumble", false);
     intakeDown = createBooleanOption("make intake go down", false);
     tester = createBooleanOption("wtv", false);
+    shootButton = createBooleanOption("shoot", false);
     OptionsRegistry.register(this);
   }
 }

@@ -5,6 +5,7 @@ package frc.robot;
 
 import java.util.Optional;
 
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -13,14 +14,15 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.JoyStickDrive;
+import frc.robot.commands.ShootCommand;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.KrakenShooter;
 import frc.robot.subsystems.Lights;
+import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -38,8 +40,8 @@ public class RobotContainer {
     private VisionSubsystem vision;
 
     private SingleMotorTuner shooterTuner;
-    private KrakenShooter krakenShooter;
-    private Intake intake = new Intake();
+    private ShooterHopper shooterHopper;
+    private Intake intake;
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -67,12 +69,16 @@ public class RobotContainer {
                 console("Create vision");
                 vision = new VisionSubsystem("limelight", drivetrain);
             }
+            if (Toggles.useIntake) {
+                console("Create intake");
+                intake = new Intake();
+            }
 
             if (Toggles.useShooter) {
                 console("Create shooter");
-                krakenShooter = new KrakenShooter();
+                shooterHopper = new ShooterHopper();
                 if (Toggles.usePidTuner) {
-                    shooterTuner = new SingleMotorTuner("Shooter Tuner", krakenShooter.getPidConfig());
+                    shooterTuner = new SingleMotorTuner("Shooter Tuner", shooterHopper.getPidConfig());
                 }
             }
 
@@ -115,6 +121,10 @@ public class RobotContainer {
             elasticMotorController.tester.setValue(false);
         }, intake));
 
+        if (shooterHopper != null) {
+            Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
+            shootTrigger.onTrue(new ShootCommand(shooterHopper));
+        }
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
@@ -142,14 +152,8 @@ public class RobotContainer {
             shooterTuner.periodic();
         }
 
-        if (Toggles.useShooter && krakenShooter != null) {
-            // if (elasticMotorController.enabled.get()) {
-            //     // double percent = slider(motorTestTuner.motor1.get(), -1.0, 1.0);
-                //-->// krakenShooter.setVelocityClosedLoop(-elasticMotorController.motor1.get()*100);
-            //     Logger.recordOutput("targetVelocity",-elasticMotorController.motor1.get()*100);
-            // } else {
-            //     krakenShooter.stop();
-            // }
+        if (Toggles.useShooter && shooterHopper != null) {
+
         }
     }
 
