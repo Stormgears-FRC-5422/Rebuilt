@@ -11,6 +11,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.robot.Constants;
 import frc.robot.FieldConstants;
+import frc.robot.RobotState;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormSubsystem;
@@ -37,6 +38,7 @@ public class VisionSubsystem extends StormSubsystem {
     /** Vision measurement standard deviations [x(m), y(m), theta(rad)].
      *  theta is set very high because MegaTag2 already uses the gyro for heading. */
     private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(0.7, 0.7, 9999999);
+
 
     public VisionSubsystem(
 //        SwerveDrivePoseEstimator poseEstimator,
@@ -141,6 +143,16 @@ public class VisionSubsystem extends StormSubsystem {
                 Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", fid.distToRobot);
             }
         }
+    }
+
+    public Translation2d DistFromHub(){
+        Pose2d hubPose = ((RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE)? FieldConstants.hubPositionBLUE(): FieldConstants.hubPositionRED());
+
+        Pose2d current = drivetrain.getPoseEstimator().getPose();
+
+        return current.minus(hubPose).getTranslation();
+
+
     }
 
     @Override
