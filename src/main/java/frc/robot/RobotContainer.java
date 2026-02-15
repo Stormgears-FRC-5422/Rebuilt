@@ -101,9 +101,19 @@ public class RobotContainer {
                 intake.requestIdle();
                 elasticMotorController.homeButton.setValue(false);
             }, intake));
-        new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
-        new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> intake.requestIntakeDown(), intake));
-        new Trigger(() -> elasticMotorController.tester.get()).onTrue(Commands.runOnce(() -> intake.runIntake(), intake));
+        new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
+            intake.requestRumble();
+            elasticMotorController.rumble.setValue(false);
+
+        }, intake));
+        new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
+        intake.requestIntakeDown();
+        elasticMotorController.intakeDown.setValue(false);
+        }, intake));
+        new Trigger(() -> elasticMotorController.tester.get()).onTrue(Commands.runOnce(() -> {
+            intake.runIntake();
+            elasticMotorController.tester.setValue(false);
+        }, intake));
 
         console("[Init] configureBindings");
 

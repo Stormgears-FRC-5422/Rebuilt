@@ -10,6 +10,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
@@ -39,16 +40,16 @@ public class Intake extends StormSubsystem {
     String canBusName = Constants.Imu.canBusName;
 
     private boolean rollerEnabled = false;
-    private double rollerSpeed = 0.8;
+    private double rollerSpeed = -1.0;
 
     public boolean hasBeenHomed = false;
 
     private boolean rumbleHigh = false;
     private final double RUMBLE_MIN = 40.0;
     private final double RUMBLE_MAX = 50.0;
-
+    private final double rumblePin = 0.0;
     public Intake() {
-        updownIntakeMotor = new TalonFX(25, canBusName);
+        updownIntakeMotor = new TalonFX(25, new CANBus(canBusName));
         rollerIntakeMotor = new SparkMax(51,MotorType.kBrushless);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
@@ -63,8 +64,8 @@ public class Intake extends StormSubsystem {
         config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 0.2; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 0.2; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 1.0; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 1.0; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -118,29 +119,27 @@ public class Intake extends StormSubsystem {
                     setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
                 }
                 case INTAKING -> {
-                    setAngleDegrees(110);
+                    setAngleDegrees(137);
                 }
                 case BUMP -> { // not sure if this is necessary
                     setAngleDegrees(60);
                 }
                 case RUMBLE -> {
-                    rumbleHigh = false;
-                    setAngleDegrees(RUMBLE_MIN);
                 }
             }
-            if (state == IntakeState.RUMBLE) {
-                if (stateTimer.hasElapsed(0.5)) {
-                    stateTimer.restart();
+            // if (state == IntakeState.RUMBLE) {
+            //     if (stateTimer.hasElapsed(0.5)) {
+            //         stateTimer.restart();
 
-                    rumbleHigh = !rumbleHigh;
+            //         rumbleHigh = !rumbleHigh;
 
-                    if (rumbleHigh) {
-                        setAngleDegrees(RUMBLE_MAX);
-                    } else {
-                        setAngleDegrees(RUMBLE_MIN);
-                    }
-                }
-            }
+            //         if (rumbleHigh) {
+            //             setAngleDegrees(RUMBLE_MAX);
+            //         } else {
+            //             setAngleDegrees(RUMBLE_MIN);
+            //         }
+            //     }
+            // }
 
         }
     }
@@ -182,6 +181,21 @@ public class Intake extends StormSubsystem {
             rollerIntakeMotor.set(rollerSpeed);
         } else {
             rollerIntakeMotor.set(0.0);
+        }
+
+        if (state == IntakeState.RUMBLE) {
+            if (rumbleHigh) {
+                setAngleDegrees(RUMBLE_MIN);
+                rumblePin = RUMBLE_MAX;
+            }
+            else {
+                setAngleDegrees(RUMBLE_MAX);
+                rumblePin = RUMBLE_MIN;
+
+            }
+            if (atTargetDegrees(rumblePin)) {
+                rumbleHigh = !rumbleHigh;
+            }
         }
     }
 }
