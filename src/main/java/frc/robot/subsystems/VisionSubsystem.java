@@ -66,14 +66,21 @@ public class VisionSubsystem extends StormSubsystem {
             return Double.MAX_VALUE;
         }
 
+        // Check to make sure a real poseEstimate has been returned with visible Tags
         LimelightHelpers.PoseEstimate poseEstimate =
             LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
         if (poseEstimate == null || poseEstimate.tagCount == 0) {
             return Double.MAX_VALUE;
         }
+
+
         Pose2d poseV = poseEstimate.pose;
         Pose2d poseTag = FieldConstants.getPoseTag(tagId);
+
+        // Gets the x and y distance between Vision Pose and Closest Tag's pose
         Translation2d diff = poseV.minus(poseTag).getTranslation();
+
+        // Pythagorean Theorem to find distance of two perpendicular vectors
         double xDist = diff.getX();
         double yDist = diff.getY();
         return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
