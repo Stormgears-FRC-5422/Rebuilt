@@ -193,18 +193,18 @@ public class VisionSubsystem extends StormSubsystem {
                 estimate.timestampSeconds,
                 VISION_STD_DEVS
             );
+
+            // Measure how much the pose estimator shifted after the vision update
+            Pose2d poseAfter = drivetrainPoseEstimator.getPose();
+            double dx = poseAfter.getX() - poseBefore.getX();
+            double dy = poseAfter.getY() - poseBefore.getY();
+            double correctionMeters = Math.sqrt(dx * dx + dy * dy);
+            double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
+
+            Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
+            Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
+            Logger.recordOutput("Vision/PoseBefore", poseBefore);
+            Logger.recordOutput("Vision/PoseAfter", poseAfter);
         }
-
-        // Measure how much the pose estimator shifted after the vision update
-        Pose2d poseAfter = drivetrainPoseEstimator.getPose();
-        double dx = poseAfter.getX() - poseBefore.getX();
-        double dy = poseAfter.getY() - poseBefore.getY();
-        double correctionMeters = Math.sqrt(dx * dx + dy * dy);
-        double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
-
-        Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
-        Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
-        Logger.recordOutput("Vision/PoseBefore", poseBefore);
-        Logger.recordOutput("Vision/PoseAfter", poseAfter);
     }
 }
