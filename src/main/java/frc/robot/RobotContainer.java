@@ -3,35 +3,30 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import java.util.Optional;
+
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
-import frc.robot.elastic.SwerveModuleTuner;
-import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
+import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
+import frc.robot.subsystems.KrakenShooter;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
-
-import java.util.LinkedList;
-import java.util.List;
-
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import org.littletonrobotics.junction.Logger;
-import java.util.Optional;
 
 public class RobotContainer {
     // **********
@@ -43,6 +38,7 @@ public class RobotContainer {
 
     private SingleMotorTuner shooterTuner;
     private KrakenShooter krakenShooter;
+    private final AutoCommandFactory autoFactory;
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -86,6 +82,8 @@ public class RobotContainer {
         } catch (IllegalJoystickTypeException e) {
             console("Error: Invalid joystick type specified: " + e.getMessage());
         }
+        autoFactory = new AutoCommandFactory(drivetrain);
+
     }
 
     private void configureBindings() {
@@ -204,6 +202,9 @@ public class RobotContainer {
 
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
+    }
+    public Command getAutonomousCommand() {
+        return autoFactory.getTheAuto();
     }
 
 }

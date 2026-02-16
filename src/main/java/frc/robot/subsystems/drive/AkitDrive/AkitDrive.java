@@ -7,7 +7,15 @@
 
 package frc.robot.subsystems.drive.AkitDrive;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
@@ -29,14 +37,8 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 import frc.robot.subsystems.drive.DrivetrainBase;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 
 public class AkitDrive extends DrivetrainBase {
     // TunerConstants doesn't include these constants, so they are declared locally
@@ -302,6 +304,12 @@ public class AkitDrive extends DrivetrainBase {
     public Rotation2d getRotation() {
         return getPose().getRotation();
     }
+    @Override
+    public void declarePoseIsNow(Pose2d pose) {
+        setPose(pose);
+    }
+
+
 
     /**
      * Resets the current odometry pose.
@@ -309,6 +317,8 @@ public class AkitDrive extends DrivetrainBase {
     public void setPose(Pose2d pose) {
         poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
     }
+
+
 
     /**
      * Adds a new timestamped vision measurement.

@@ -57,6 +57,13 @@ public class RobotState {
         return instance;
     }
 
+    public static RobotState createInstance() {
+        if (instance != null) return instance;
+
+        instance = new RobotState();
+        return instance;
+    }
+
     public void setAlliance(StateAlliance alliance) {
         if (this.alliance != alliance) {
             System.out.println("**********");

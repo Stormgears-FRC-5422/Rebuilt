@@ -1,6 +1,13 @@
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+
+import choreo.trajectory.SwerveSample;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -14,10 +21,6 @@ import frc.robot.sensors.imu.NullIMU;
 import frc.robot.sensors.pose.NullPoseEstimator;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.utils.StormSubsystem;
-import org.littletonrobotics.junction.AutoLogOutput;
-
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 /**
  * Abstract base class for all drivetrain implementations.
@@ -38,6 +41,10 @@ public abstract class DrivetrainBase extends StormSubsystem {
     /** Cached driver perspective - only updated when disabled */
     private Rotation2d m_cachedDriverPerspective = null;
     private boolean m_hasAppliedDriverPerspective = false;
+
+    private static final PIDController xController = new PIDController(2.1, 0.0, 0.1);
+    private static final PIDController yController = new PIDController(2.6, 0.0, 0.1);
+    private static final PIDController headingController = new PIDController(3.1, 0.0, 0.1);
 
     @AutoLogOutput
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
@@ -331,5 +338,17 @@ public abstract class DrivetrainBase extends StormSubsystem {
         return new double[] {};
     }
 
+    public void followTrajectory(SwerveSample sample) {
+        Pose2d pose = getPose();
+
+        ChassisSpeeds speeds = new ChassisSpeeds(
+            sample.vx + xController.calculate(pose.getX(), sample.x),
+            sample.vy + yController.calculate(pose.getY(), sample.y),
+            sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
+        );
+        drive(speeds, true);
+    }
+    public void declarePoseIsNow(Pose2d pose) {
+    }
 
 }
