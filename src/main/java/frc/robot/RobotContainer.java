@@ -19,7 +19,7 @@ import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
-import frc.robot.subsystems.Lights.lightStates;
+// import frc.robot.subsystems.Lights.lightStates;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -110,10 +110,10 @@ public class RobotContainer {
 //            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
-        new Trigger(() -> elasticMotorController.enabled.get())
-            .onTrue(new InstantCommand(() -> lights.setLightState(lightStates.IDLE)));
+        // new Trigger(() -> elasticMotorController.enabled.get())
+        //     .onTrue(new InstantCommand(() -> lights.setLightState(lightStates.IDLE)));
 
-        console("[DONE] configureBindings");
+        // console("[DONE] configureBindings");
     }
     private static double slider(double x, double low, double high) {
         return Math.max(low, Math.min(high, x));
@@ -134,9 +134,9 @@ public class RobotContainer {
             }
         }
         // String state = elasticMotorController.lightState.get();
-        if (elasticMotorController.hopperIsEmpty.get()) {
-            lights.setLightState(lightStates.HOPPER_EMPTY);
-        }
+        // if (elasticMotorController.hopperIsEmpty.get()) {
+        //     lights.setLightState(lightStates.HOPPER_EMPTY);
+        // }
     }
 
     /**
