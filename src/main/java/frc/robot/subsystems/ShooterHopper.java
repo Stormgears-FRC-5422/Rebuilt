@@ -1,17 +1,14 @@
 package frc.robot.subsystems;
 
-import org.littletonrobotics.junction.Logger;
-
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.Shooter;
@@ -84,18 +81,18 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0.0;
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = 15.0;
+                targetVelocityRPS = Shooter.testingTargetRPS;
                 hopperSpeed = 0.0;
             }
             case SHOOTING -> {
-                targetVelocityRPS = 15.0;
-                hopperSpeed = 1.0;
+                targetVelocityRPS = Shooter.testingTargetRPS;
+                hopperSpeed = Shooter.hopperSpeed;
             }
             case OUTTAKE -> {
                 targetVelocityRPS = -10.0;
             }
             case EJECT -> {
-                targetVelocityRPS = -5.0;
+                targetVelocityRPS = 5.0;
             }
             case BAD -> {}
         }
@@ -103,10 +100,12 @@ public class ShooterHopper extends StormSubsystem {
 
     @Override
     public void periodic() {
+        super.periodic();
+            
+        shooterStateMachine(); 
         leaderMotor.setControl(velocityVoltage.withVelocity(targetVelocityRPS));
         hopperNeo.set(hopperSpeed);
-        Logger.recordOutput("Shooter/TargetVelocity", targetVelocityRPS);
-        Logger.recordOutput("Shooter/ActualVelocity", leaderMotor.getVelocity().getValueAsDouble());    
+
         if (pid.isDirty()) {
             configMotor();
             pid.clearDirty();
@@ -140,10 +139,17 @@ public class ShooterHopper extends StormSubsystem {
         MotorOutputConfigs out = new MotorOutputConfigs();
         out.PeakForwardDutyCycle = pid.kMax;
         out.PeakReverseDutyCycle = pid.kMin;
-        out.Inverted = InvertedValue.Clockwise_Positive;
+        out.Inverted = InvertedValue.Clockwise_Positive; //used to invert
 
+        //follower coast config, for testing 1 motor at a time
         MotorOutputConfigs followerOut = new MotorOutputConfigs();
-        out.NeutralMode = NeutralModeValue.Brake;
+        followerOut.NeutralMode = NeutralModeValue.Coast;
+
+        CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
+        currentLimits.StatorCurrentLimit = 60.0; //amps
+        currentLimits.StatorCurrentLimitEnable = true;
+
+        leaderMotor.getConfigurator().apply(currentLimits);
 
         followerMotor.getConfigurator().apply(followerOut);
         leaderMotor.getConfigurator().apply(out);

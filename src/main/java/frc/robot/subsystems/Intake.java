@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -10,10 +12,10 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
+import frc.robot.Constants.Shooter;
 import frc.utils.StormSubsystem;
 
 public class Intake extends StormSubsystem {
@@ -24,15 +26,11 @@ public class Intake extends StormSubsystem {
         IDLE, // brings intake arm back up, leaving it there
         INTAKING, // in the position to intake
         RUMBLE, // rumbles to funnel
-        BUMP,
     }
 
     public final TalonFX updownIntakeMotor;
     private final SparkMax rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
-
-    private double targetDeg = 0.0;
-
 
     private IntakeState state = IntakeState.UNKNOWN;
     private IntakeState lastState = null;
@@ -40,17 +38,13 @@ public class Intake extends StormSubsystem {
     String canBusName = Constants.Imu.canBusName;
 
     private boolean rollerEnabled = false;
-    private double rollerSpeed = -1.0;
-
     public boolean hasBeenHomed = false;
-
     private boolean rumbleHigh = false;
-    private double RUMBLE_MIN = 40.0;
-    private double RUMBLE_MAX = 50.0;
+
     private double rumblePin = 0.0;
     public Intake() {
-        updownIntakeMotor = new TalonFX(25, new CANBus(canBusName));
-        rollerIntakeMotor = new SparkMax(51,MotorType.kBrushless);
+        updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(canBusName));
+        rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
@@ -73,10 +67,15 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
 
         stateTimer = new Timer();
+
+        CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
+        currentLimits.StatorCurrentLimit = 20.0;
+        currentLimits.StatorCurrentLimitEnable = true;
+
+        updownIntakeMotor.getConfigurator().apply(currentLimits);
     }
 
     public void setAngleDegrees(double degrees) {
-        targetDeg = degrees;
         double accRotations = degrees / 360.0;
 
         updownIntakeMotor.setControl(mmRequest.withPosition(accRotations));
@@ -84,7 +83,6 @@ public class Intake extends StormSubsystem {
 
     public void zeroHere() {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
-        targetDeg = 0.0;
     }
 
     public double getAngleDegrees() {
@@ -94,58 +92,9 @@ public class Intake extends StormSubsystem {
     private void setState(IntakeState newState) {
         state = newState;
     }
-
-    private void updateStateMachine() {
-        if (state != lastState) {
-            stateTimer.restart();
-            lastState = state;
-
-            // if (state == IntakeState.INTAKING && rollerEnabled)
-            switch (state) {
-                case UNKNOWN -> { //insta go home
-                    setState(IntakeState.HOMING);
-                }
-                case HOMING -> { 
-                    zeroHere();
-                    setState(IntakeState.HOME);
-                    hasBeenHomed = true;
-                }
-                // combine these 2 later?
-                case HOME -> {
-                    setAngleDegrees(0);
-                    setState(IntakeState.IDLE);
-                }
-                case IDLE -> {
-                    setAngleDegrees(1); // Not 0 because it should home at 0 when it's set as far back as possible, this gives some tolerance if pid overshoots. Same w/ kick
-                }
-                case INTAKING -> {
-                    setAngleDegrees(137);
-                }
-                case BUMP -> { // not sure if this is necessary
-                    setAngleDegrees(60);
-                }
-                case RUMBLE -> {
-                }
-            }
-            // if (state == IntakeState.RUMBLE) {
-            //     if (stateTimer.hasElapsed(0.5)) {
-            //         stateTimer.restart();
-
-            //         rumbleHigh = !rumbleHigh;
-
-            //         if (rumbleHigh) {
-            //             setAngleDegrees(RUMBLE_MAX);
-            //         } else {
-            //             setAngleDegrees(RUMBLE_MIN);
-            //         }
-            //     }
-            // }
-
-        }
-    }
     
     private boolean atTargetDegrees(double deg) {
-        return Math.abs(getAngleDegrees() - deg) < 10.0; // some tolerance because this method returns a million sig figs
+        return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance; 
     }
     
     // only methods to be used outside
@@ -175,25 +124,49 @@ public class Intake extends StormSubsystem {
     }
 
     @Override
-    public void periodic() {
-        updateStateMachine();
-        if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(137)) {
-            rollerIntakeMotor.set(rollerSpeed);
+    public void periodic() {        
+        super.periodic();
+        
+        if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(Shooter.intakingAngle)) {
+            rollerIntakeMotor.set(Shooter.rollerIntakeSpeed);
         } else {
             rollerIntakeMotor.set(0.0);
         }
 
-        if (state == IntakeState.RUMBLE) {
-            if (rumbleHigh) {
-                setAngleDegrees(RUMBLE_MIN);
-                rumblePin = RUMBLE_MAX;
+        switch (state) {
+            case UNKNOWN -> { //insta go home
+                setState(IntakeState.HOMING);
             }
-            else {
-                setAngleDegrees(RUMBLE_MAX);
-                rumblePin = RUMBLE_MIN;
+            case HOMING -> { 
+                updownIntakeMotor.set(Shooter.homingSpeed);
+                double current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
+                if (current > 15.0) { 
+                        if (stateTimer.hasElapsed(0.1)) {
+                        updownIntakeMotor.stopMotor();
+                        zeroHere();
+                        hasBeenHomed = true;
+                        setState(IntakeState.IDLE);
+                    }
+                }
             }
-            if (atTargetDegrees(rumblePin)) {
-                rumbleHigh = !rumbleHigh;
+            case IDLE -> {
+                setAngleDegrees(1);
+            }
+            case INTAKING -> {
+                setAngleDegrees(Shooter.intakingAngle);
+            }
+            case RUMBLE -> {
+                if (rumbleHigh) {
+                    setAngleDegrees(Shooter.minRumbleAngle);
+                    rumblePin = Shooter.maxRumbleAngle;
+                }
+                else {
+                    setAngleDegrees(Shooter.maxRumbleAngle);
+                    rumblePin = Shooter.minRumbleAngle;
+                }
+                if (atTargetDegrees(rumblePin)) {
+                    rumbleHigh = !rumbleHigh;
+                }
             }
         }
     }
