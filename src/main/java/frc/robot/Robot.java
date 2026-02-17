@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
 import frc.utils.configfile.OptionsRegistry;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends LoggedRobot {
     private RobotContainer robotContainer;
@@ -149,6 +150,9 @@ public class Robot extends LoggedRobot {
         state.setPeriod(StatePeriod.AUTONOMOUS);
         if (robotContainer != null) {
             autonomousCommand = robotContainer.getAutonomousCommand();
+        }
+        if (autonomousCommand != null) {
+            autonomousCommand.schedule();
         }
     }
 

@@ -38,7 +38,7 @@ public class RobotContainer {
 
     private SingleMotorTuner shooterTuner;
     private KrakenShooter krakenShooter;
-    private final AutoCommandFactory autoFactory;
+    private  AutoCommandFactory autoFactory;
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -60,6 +60,7 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
+                autoFactory = new AutoCommandFactory(drivetrain);
             }
 
             if (Toggles.useShooter) {
@@ -82,7 +83,6 @@ public class RobotContainer {
         } catch (IllegalJoystickTypeException e) {
             console("Error: Invalid joystick type specified: " + e.getMessage());
         }
-        autoFactory = new AutoCommandFactory(drivetrain);
 
     }
 

@@ -37,8 +37,8 @@ public class RebuiltTorqueFOC {
     // When using closed-loop control, the drive motor uses the control
     // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
     private static final Slot0Configs driveGains = new Slot0Configs()
-        .withKP(Constants.Drive.driveKP).withKI(Constants.Drive.driveKI).withKD(Constants.Drive.driveKD)
-        .withKS(Constants.Drive.driveKS);
+        .withKP(Constants.Drive.driveKP_foc).withKI(Constants.Drive.driveKI_foc).withKD(Constants.Drive.driveKD_foc)
+        .withKS(Constants.Drive.driveKS_foc);
 
     // The closed-loop output type to use for the steer motors;
     // This affects the PID/FF gains for the steer motors

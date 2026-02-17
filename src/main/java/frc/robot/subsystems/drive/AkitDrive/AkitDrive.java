@@ -7,15 +7,7 @@
 
 package frc.robot.subsystems.drive.AkitDrive;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
+import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
@@ -37,8 +29,16 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.subsystems.drive.DrivetrainBase;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import frc.robot.sensors.pose.PoseEstimator;
+import frc.robot.sensors.pose.WPILibPoseEstimator;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
+import frc.robot.subsystems.drive.DrivetrainBase;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 public class AkitDrive extends DrivetrainBase {
     // TunerConstants doesn't include these constants, so they are declared locally
@@ -105,6 +105,8 @@ public class AkitDrive extends DrivetrainBase {
         setMaxVelocities(MetersPerSecond.of(getMaxLinearSpeedMetersPerSec()),
                          RadiansPerSecond.of(getMaxAngularSpeedRadPerSec()));
     }
+
+
 
     @Override
     public void periodic() {
@@ -304,12 +306,6 @@ public class AkitDrive extends DrivetrainBase {
     public Rotation2d getRotation() {
         return getPose().getRotation();
     }
-    @Override
-    public void declarePoseIsNow(Pose2d pose) {
-        setPose(pose);
-    }
-
-
 
     /**
      * Resets the current odometry pose.
@@ -317,8 +313,6 @@ public class AkitDrive extends DrivetrainBase {
     public void setPose(Pose2d pose) {
         poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
     }
-
-
 
     /**
      * Adds a new timestamped vision measurement.
@@ -357,5 +351,14 @@ public class AkitDrive extends DrivetrainBase {
         };
     }
 
+    @Override
+    protected void resetOrientationTo(Rotation2d targetRotation) {
+        poseEstimator.resetPose(new Pose2d(poseEstimator.getEstimatedPosition().getTranslation(),
+            targetRotation));
+    }
 
+    @Override
+    public PoseEstimator getPoseEstimator() {
+        return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+    }
 }
