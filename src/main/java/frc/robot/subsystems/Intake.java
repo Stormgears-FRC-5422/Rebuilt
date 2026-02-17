@@ -16,24 +16,25 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
+import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
 
 public class Intake extends StormSubsystem {
     public enum IntakeState {
         UNKNOWN,
-        HOMING,
-        HOME,
-        IDLE, // brings intake arm back up, leaving it there
+        HOMING, 
+        IDLE, // Once homing has homed the intake, it is sent to IDLE. also brings intake arm back up, leaving it there
         INTAKING, // in the position to intake
-        RUMBLE, // rumbles to funnel
+        RUMBLE, // rumbles to funnel balls into shooter
     }
+    public ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     public final TalonFX updownIntakeMotor;
     private final SparkMax rollerIntakeMotor;
+
     private final MotionMagicVoltage mmRequest;
 
     private IntakeState state = IntakeState.UNKNOWN;
-    private IntakeState lastState = null;
     private final Timer stateTimer;
     String canBusName = Constants.Imu.canBusName;
 
@@ -43,7 +44,7 @@ public class Intake extends StormSubsystem {
 
     private double rumblePin = 0.0;
     public Intake() {
-        updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(canBusName));
+        updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
@@ -51,7 +52,6 @@ public class Intake extends StormSubsystem {
 
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         config.Feedback.SensorToMechanismRatio = 53.33;
-        config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
         config.Slot0.kP = 50.0; //23.0
         config.Slot0.kI = 0.0; //2.0
@@ -62,9 +62,7 @@ public class Intake extends StormSubsystem {
         config.MotionMagic.MotionMagicAcceleration = 1.0; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
-        updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
-
-        updownIntakeMotor.getConfigurator().setPosition(0.0);
+        updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
 
         stateTimer = new Timer();
 
@@ -128,7 +126,7 @@ public class Intake extends StormSubsystem {
         super.periodic();
         
         if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(Shooter.intakingAngle)) {
-            rollerIntakeMotor.set(Shooter.rollerIntakeSpeed);
+            rollerIntakeMotor.set(elasticMotorController.intakeRollerSpeed.get());
         } else {
             rollerIntakeMotor.set(0.0);
         }
@@ -138,16 +136,19 @@ public class Intake extends StormSubsystem {
                 setState(IntakeState.HOMING);
             }
             case HOMING -> { 
-                updownIntakeMotor.set(Shooter.homingSpeed);
-                double current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
-                if (current > 15.0) { 
-                        if (stateTimer.hasElapsed(0.1)) {
-                        updownIntakeMotor.stopMotor();
-                        zeroHere();
-                        hasBeenHomed = true;
-                        setState(IntakeState.IDLE);
-                    }
-                }
+                zeroHere();
+                setState(IntakeState.IDLE);
+                hasBeenHomed = true;
+                // updownIntakeMotor.set(Shooter.homingSpeed);
+                // double current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
+                // //need to log current to find the amount to home at
+                // if (current > 15.0) { // need to experiment to find the right current threshold that indicates stalling against the hard stop
+                //         if (stateTimer.hasElapsed(0.1)) {
+                //             updownIntakeMotor.stopMotor();
+                //             zeroHere();
+                //             hasBeenHomed = true;
+                //             setState(IntakeState.IDLE);
+                //     }
             }
             case IDLE -> {
                 setAngleDegrees(1);
@@ -158,11 +159,11 @@ public class Intake extends StormSubsystem {
             case RUMBLE -> {
                 if (rumbleHigh) {
                     setAngleDegrees(Shooter.minRumbleAngle);
-                    rumblePin = Shooter.maxRumbleAngle;
+                    rumblePin = Shooter.minRumbleAngle;
                 }
                 else {
                     setAngleDegrees(Shooter.maxRumbleAngle);
-                    rumblePin = Shooter.minRumbleAngle;
+                    rumblePin = Shooter.maxRumbleAngle;
                 }
                 if (atTargetDegrees(rumblePin)) {
                     rumbleHigh = !rumbleHigh;

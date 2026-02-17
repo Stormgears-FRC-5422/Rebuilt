@@ -116,6 +116,7 @@ public class RobotContainer {
         intake.requestIntakeDown();
         elasticMotorController.intakeDown.setValue(false);
         }, intake));
+        
         new Trigger(() -> elasticMotorController.tester.get()).onTrue(Commands.runOnce(() -> {
             intake.runIntake();
             elasticMotorController.tester.setValue(false);
@@ -147,7 +148,6 @@ public class RobotContainer {
     }
 
     public void periodic() {
-        System.out.println(intake.updownIntakeMotor.getPosition());
         if (shooterTuner != null) {
             shooterTuner.periodic();
         }

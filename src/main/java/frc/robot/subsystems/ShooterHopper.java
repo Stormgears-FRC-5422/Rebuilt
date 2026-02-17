@@ -1,19 +1,24 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
+import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
+
 
 public class ShooterHopper extends StormSubsystem {
     public enum ShooterState {
@@ -22,10 +27,9 @@ public class ShooterHopper extends StormSubsystem {
         SHOOTING, // hopper rollers should be running, probably also run the intake to get any balls that it's touching
         OUTTAKE, // sends the ball back to the hopper
         EJECT, //outtakes slowly out of the robot 
-        BAD;
+        BAD,
+        DIAGNOSTIC;
     }
-    private final Timer spinupTimer = new Timer();
-    private static final double spinuptimeseconds = 1.0;
 
     public final TalonFX leaderMotor;
     public final TalonFX followerMotor;
@@ -34,18 +38,22 @@ public class ShooterHopper extends StormSubsystem {
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
-    private ShooterState state = ShooterState.IDLE;
+    private ShooterState state = ShooterState.DIAGNOSTIC; // start in idle or diagnostic
     private double hopperSpeed = 0.0;
-    int num = 0;
+    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
+
+    String canBusName = Constants.Imu.canBusName;
 
     public ShooterHopper() {
-        leaderMotor = new TalonFX(Shooter.leaderMotorID);
-        followerMotor = new TalonFX(Shooter.followerMotorID);
+        leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
+        followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
         hopperNeo = new SparkMax(Shooter.hopperMotorID, MotorType.kBrushless);
 
-        // followerMotor.setControl(
-        //     new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
-        // ); // .Opposed 
+        hopperNeo.setInverted(true);
+
+        followerMotor.setControl(
+            new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
+        ); // .Opposed 
 
         // Initialize PID configs
         pid = new PidConfig()
@@ -67,13 +75,13 @@ public class ShooterHopper extends StormSubsystem {
     
     public void stopShooter() {
         setState(ShooterState.IDLE);
-        targetVelocityRPS = 0.0;
     }
 
     public void setState(ShooterState newState) {
         if (state == newState) return;
         state = newState;
     }
+
     public void shooterStateMachine() {
         switch (state) {
             case IDLE -> {
@@ -95,6 +103,10 @@ public class ShooterHopper extends StormSubsystem {
                 targetVelocityRPS = 5.0;
             }
             case BAD -> {}
+            case DIAGNOSTIC -> {
+                targetVelocityRPS = 0;
+                hopperSpeed = 0;
+            }
         }
     }
 
@@ -102,9 +114,14 @@ public class ShooterHopper extends StormSubsystem {
     public void periodic() {
         super.periodic();
             
-        shooterStateMachine(); 
-        leaderMotor.setControl(velocityVoltage.withVelocity(targetVelocityRPS));
-        hopperNeo.set(hopperSpeed);
+        shooterStateMachine();
+        if (state == ShooterState.DIAGNOSTIC) {
+            leaderMotor.setControl(velocityVoltage.withVelocity(100 * elasticMotorController.shootSpeed.get()));
+            hopperNeo.set(elasticMotorController.hopperSpeed.get());
+        } else {
+            leaderMotor.setControl(velocityVoltage.withVelocity(targetVelocityRPS));
+            hopperNeo.set(hopperSpeed);
+        }
 
         if (pid.isDirty()) {
             configMotor();
@@ -133,7 +150,6 @@ public class ShooterHopper extends StormSubsystem {
         slot0.kD = pid.kD;
         slot0.kS = pid.kS;
         slot0.kV = pid.kV;
-
         leaderMotor.getConfigurator().apply(slot0);
 
         MotorOutputConfigs out = new MotorOutputConfigs();
