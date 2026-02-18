@@ -5,41 +5,48 @@ package frc.robot;
 
 import java.util.Optional;
 
+<<<<<<< auto-command-factory
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
+=======
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Commands;
+>>>>>>> main
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
+<<<<<<< auto-command-factory
+=======
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.RunIntake;
 
+>>>>>>> main
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
+<<<<<<< auto-command-factory
+import frc.robot.subsystems.KrakenShooter;
+=======
 import frc.robot.subsystems.Intake;
+>>>>>>> main
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
-import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
-
-import java.util.LinkedList;
-import java.util.List;
-
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import org.littletonrobotics.junction.Logger;
-import java.util.Optional;
 
 public class RobotContainer {
     // **********
@@ -53,8 +60,13 @@ public class RobotContainer {
     private VisionSubsystem vision;
 
     private SingleMotorTuner shooterTuner;
+<<<<<<< auto-command-factory
+    private KrakenShooter krakenShooter;
+    private  AutoCommandFactory autoFactory;
+=======
     private ShooterHopper shooterHopper;
     private Intake intake;
+>>>>>>> main
 
     //elastic control
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -76,6 +88,7 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
+                autoFactory = new AutoCommandFactory(drivetrain);
             }
 
 
@@ -108,6 +121,7 @@ public class RobotContainer {
         } catch (IllegalJoystickTypeException e) {
             console("Error: Invalid joystick type specified: " + e.getMessage());
         }
+
     }
 
     private void configureBindings() {
@@ -253,6 +267,9 @@ public class RobotContainer {
 
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
+    }
+    public Command getAutonomousCommand() {
+        return autoFactory.getTheAuto();
     }
 
 }

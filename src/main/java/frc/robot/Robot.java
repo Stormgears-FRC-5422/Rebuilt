@@ -3,13 +3,6 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
-import edu.wpi.first.net.WebServer;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.RobotState.StatePeriod;
-import frc.utils.configfile.OptionsRegistry;
-import frc.utils.configfile.OptionsRegistry;
-
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -18,10 +11,20 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import edu.wpi.first.net.WebServer;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.RobotState.StatePeriod;
+import frc.utils.configfile.OptionsRegistry;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
 public class Robot extends LoggedRobot {
     private RobotContainer robotContainer;
     private RobotState state;
     private int iteration = 0;
+    private Command autonomousCommand;
+
 
     public Robot() {
         state = RobotState.getInstance();
@@ -145,6 +148,12 @@ public class Robot extends LoggedRobot {
     public void autonomousInit() {
         console("AutoInit");
         state.setPeriod(StatePeriod.AUTONOMOUS);
+        if (robotContainer != null) {
+            autonomousCommand = robotContainer.getAutonomousCommand();
+        }
+        if (autonomousCommand != null) {
+            autonomousCommand.schedule();
+        }
     }
 
     @Override
