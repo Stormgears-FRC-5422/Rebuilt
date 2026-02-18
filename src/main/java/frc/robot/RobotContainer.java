@@ -72,7 +72,7 @@ public class RobotContainer {
 
 
             if(Toggles.useVision){
-                console("Create vision" + (Toggles.useDrive && drivetrain != null)? " (with drive)" : " (without drive)");
+                console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
                 vision = new VisionSubsystem(drivetrain, "limelight");
             }
 
