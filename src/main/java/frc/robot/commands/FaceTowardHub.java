@@ -10,11 +10,9 @@ import frc.utils.StormCommand;
 
 public class FaceTowardHub extends StormCommand {
 
-    VisionSubsystem visionSubsystem;
     DrivetrainBase drivetrain;
 
-    public FaceTowardHub(VisionSubsystem visionSubsystem, DrivetrainBase drivetrain) {
-        this.visionSubsystem = visionSubsystem;
+    public FaceTowardHub(DrivetrainBase drivetrain) {
         this.drivetrain = drivetrain;
     }
 
