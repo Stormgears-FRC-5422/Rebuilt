@@ -51,6 +51,8 @@ public class VisionSubsystem extends StormSubsystem {
         if(drivetrain !=null){
             this.drivetrain = drivetrain;
             this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
+            hasDrive = true;
+        }else{
             hasDrive = false;
         }
 
