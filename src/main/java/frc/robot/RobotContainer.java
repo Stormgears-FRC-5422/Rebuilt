@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.RunIntake;
+
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -97,6 +99,7 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        
         new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestHome();
                 elasticMotorController.homeButton.setValue(false);
@@ -110,21 +113,24 @@ public class RobotContainer {
         new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
             intake.requestRumble();
             elasticMotorController.rumble.setValue(false);
-
         }, intake));
         new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
         intake.requestIntakeDown();
         elasticMotorController.intakeDown.setValue(false);
         }, intake));
         
-        new Trigger(() -> elasticMotorController.tester.get()).onTrue(Commands.runOnce(() -> {
-            intake.runIntake();
-            elasticMotorController.tester.setValue(false);
-        }, intake));
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
             shootTrigger.onTrue(new ShootCommand(shooterHopper));
+        }
+
+        if (intake != null) {
+            new Trigger(() -> joystick.intakeTogglePressed())
+                .onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
+
+            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2)
+                .whileTrue(new RunIntake(intake, true));
         }
         console("[Init] configureBindings");
 

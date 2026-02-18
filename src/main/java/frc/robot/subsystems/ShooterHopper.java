@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -38,13 +40,18 @@ public class ShooterHopper extends StormSubsystem {
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
-    private ShooterState state = ShooterState.DIAGNOSTIC; // start in idle or diagnostic
     private double hopperSpeed = 0.0;
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
-
+    private ShooterState state;
+    
     String canBusName = Constants.Imu.canBusName;
 
     public ShooterHopper() {
+        if (Shooter.useShooterHopperDiagnostic) {
+            state = ShooterState.DIAGNOSTIC; 
+        } else {
+            state = ShooterState.IDLE;
+        }
         leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
         followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
         hopperNeo = new SparkMax(Shooter.hopperMotorID, MotorType.kBrushless);
@@ -89,11 +96,11 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0.0;
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = Shooter.testingTargetRPS;
+                targetVelocityRPS = (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = 0.0;
             }
             case SHOOTING -> {
-                targetVelocityRPS = Shooter.testingTargetRPS;
+                targetVelocityRPS = (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = Shooter.hopperSpeed;
             }
             case OUTTAKE -> {
@@ -128,6 +135,7 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
+        Logger.recordOutput("shooter rps", (leaderMotor.getRotorVelocity()).getValueAsDouble());
     }
 
     public PidConfig getPidConfig() {

@@ -2,12 +2,13 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -18,6 +19,7 @@ import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
 import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
+
 
 public class Intake extends StormSubsystem {
     public enum IntakeState {
@@ -42,7 +44,7 @@ public class Intake extends StormSubsystem {
     public boolean hasBeenHomed = false;
     private boolean rumbleHigh = false;
 
-    private double rumblePin = 0.0;
+    private double rumblePin = 40.0;
     public Intake() {
         updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
@@ -114,17 +116,25 @@ public class Intake extends StormSubsystem {
             setState(IntakeState.INTAKING);
         }
     }
-    public void runIntake() {
-        // add a secondary if later on, in case it needs to be disabled even when it isnt in intaking
-        if (hasBeenHomed && state == IntakeState.INTAKING) {
-            rollerEnabled = !rollerEnabled;  // toggle on/off
+    public void setRollerEnabled(boolean enabled) {
+        rollerEnabled = enabled;
+    }
+    public void toggleIntakePosition() {
+        if (!hasBeenHomed) return;
+
+        if (state == IntakeState.INTAKING) {
+            rollerEnabled = false;
+            setState(IntakeState.IDLE);
+        } else {
+            setState(IntakeState.INTAKING)
         }
     }
-
     @Override
     public void periodic() {        
         super.periodic();
         
+        Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
+
         if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(Shooter.intakingAngle)) {
             rollerIntakeMotor.set(elasticMotorController.intakeRollerSpeed.get());
         } else {
@@ -157,17 +167,17 @@ public class Intake extends StormSubsystem {
                 setAngleDegrees(Shooter.intakingAngle);
             }
             case RUMBLE -> {
-                if (rumbleHigh) {
-                    setAngleDegrees(Shooter.minRumbleAngle);
-                    rumblePin = Shooter.minRumbleAngle;
-                }
-                else {
-                    setAngleDegrees(Shooter.maxRumbleAngle);
-                    rumblePin = Shooter.maxRumbleAngle;
-                }
+                setAngleDegrees(rumblePin);
+
                 if (atTargetDegrees(rumblePin)) {
+                    if (rumbleHigh) {
+                        rumblePin = Shooter.maxRumbleAngle;
+                    } else {
+                        rumblePin = Shooter.minRumbleAngle;
+                    }
                     rumbleHigh = !rumbleHigh;
                 }
+                            
             }
         }
     }

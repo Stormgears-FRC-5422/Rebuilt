@@ -33,4 +33,12 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
 
     // getSlider() uses base default (0.0)
+    @Override
+    public double getLeftTriggerAxis() {
+        return xboxController.getLeftTrigger();
+    }
+    @Override
+    public boolean intakeTogglePressed() {
+        return xboxController.getAButtonIsPressed();
+    }
 }

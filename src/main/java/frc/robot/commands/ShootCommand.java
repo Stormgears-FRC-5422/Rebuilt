@@ -25,7 +25,7 @@ public class ShootCommand extends StormCommand {
     @Override
     public void execute() {
         // log motor speed and iterations of periodic to see how long it takes to spin up
-        if (timer.hasElapsed(0.2)) {
+        if (timer.hasElapsed(1.0)) {
             shooter.setState(ShooterState.SHOOTING);
         }
     }
@@ -33,6 +33,7 @@ public class ShootCommand extends StormCommand {
     @Override
     public boolean isFinished() {
         return timer.hasElapsed(5.0);
+        // this command should end when the hopper is empty
     }
 
     @Override
