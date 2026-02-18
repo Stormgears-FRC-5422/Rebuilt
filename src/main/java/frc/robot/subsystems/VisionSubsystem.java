@@ -28,8 +28,9 @@ public class VisionSubsystem extends StormSubsystem {
     String limelightID;
 
     /** Drivetrain reference — used for gyro heading and pose estimator */
-    private final DrivetrainBase drivetrain;
-    private final PoseEstimator drivetrainPoseEstimator;
+    private DrivetrainBase drivetrain;
+    private PoseEstimator drivetrainPoseEstimator;
+    private boolean hasDrive = true;
 
     /** Maximum distance to accept a tag measurement, in feet */
     private static final double MAX_TAG_DISTANCE_FEET = 9.0;
@@ -47,8 +48,12 @@ public class VisionSubsystem extends StormSubsystem {
     ){
 //        this.poseEstimator = poseEstimator;
         this.limelightIDs = limelightIDs;
-        this.drivetrain = drivetrain;
-        this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
+        if(drivetrain !=null){
+            this.drivetrain = drivetrain;
+            this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
+            hasDrive = false;
+        }
+
     }
 
 
@@ -164,8 +169,12 @@ public class VisionSubsystem extends StormSubsystem {
         super.periodic();
 
         // MegaTag2 requires the robot orientation to be set each cycle for all limelights
-        double robotYaw = drivetrain.getRotation().getDegrees();
-        setAllLimelightOrientations(robotYaw);
+        if(hasDrive){
+            double robotYaw = drivetrain.getRotation().getDegrees();
+            setAllLimelightOrientations(robotYaw);
+        }
+
+
 
         limelightID = getClosestLL();
 
@@ -199,29 +208,30 @@ public class VisionSubsystem extends StormSubsystem {
         Logger.recordOutput("Vision/Closest/ClosestTagDist", closestTagDist);
 
 
+        if(hasDrive){
+            // Snapshot pose before vision correction
+            Pose2d poseBefore = drivetrainPoseEstimator.getPose();
 
-        // Snapshot pose before vision correction
-        Pose2d poseBefore = drivetrainPoseEstimator.getPose();
+            // Merge the vision measurement into the drivetrain's pose estimator
+            if(Constants.Vision.mergeVision) {
+                drivetrainPoseEstimator.addVisionMeasurement(
+                    estimate.pose,
+                    estimate.timestampSeconds,
+                    VISION_STD_DEVS
+                );
 
-        // Merge the vision measurement into the drivetrain's pose estimator
-        if(Constants.Vision.mergeVision){
-            drivetrainPoseEstimator.addVisionMeasurement(
-                estimate.pose,
-                estimate.timestampSeconds,
-                VISION_STD_DEVS
-            );
+                // Measure how much the pose estimator shifted after the vision update
+                Pose2d poseAfter = drivetrainPoseEstimator.getPose();
+                double dx = poseAfter.getX() - poseBefore.getX();
+                double dy = poseAfter.getY() - poseBefore.getY();
+                double correctionMeters = Math.sqrt(dx * dx + dy * dy);
+                double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
 
-            // Measure how much the pose estimator shifted after the vision update
-            Pose2d poseAfter = drivetrainPoseEstimator.getPose();
-            double dx = poseAfter.getX() - poseBefore.getX();
-            double dy = poseAfter.getY() - poseBefore.getY();
-            double correctionMeters = Math.sqrt(dx * dx + dy * dy);
-            double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
-
-            Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
-            Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
-            Logger.recordOutput("Vision/PoseBefore", poseBefore);
-            Logger.recordOutput("Vision/PoseAfter", poseAfter);
+                Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
+                Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
+                Logger.recordOutput("Vision/PoseBefore", poseBefore);
+                Logger.recordOutput("Vision/PoseAfter", poseAfter);
+            }
         }
     }
 }
