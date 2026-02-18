@@ -5,28 +5,32 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.FieldConstants;
+import frc.robot.Constants.Drive;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
 
 public class FaceTowardHub extends StormCommand {
+    private final PIDController headingController;
 
     DrivetrainBase drivetrain;
     double goalAngle;
-    private final PIDController headingController = new PIDController(3.1, 0.0, 0.1);
-
 
     public FaceTowardHub(DrivetrainBase drivetrain) {
         this.drivetrain = drivetrain;
         addRequirements(drivetrain);
+
+        headingController = new PIDController(Drive.targetKP, Drive.targetKI, Drive.targetKD);
         headingController.enableContinuousInput(-Math.PI, Math.PI);
-        headingController.setTolerance(Math.toRadians(2));
+        headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
     }
 
     @Override
     public void initialize() {
+        super.initialize();
+
         //Calculate Translation distance between Hub and current Robot Loc.
-        Pose2d hubPose = ((RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED());
+        Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
         Pose2d current = drivetrain.getPoseEstimator().getPose();
         Translation2d trans = hubPose.getTranslation().minus(current.getTranslation());
 
@@ -37,8 +41,6 @@ public class FaceTowardHub extends StormCommand {
 
         headingController.reset();
         headingController.setSetpoint(goalAngle);
-
-        super.initialize();
     }
 
     @Override
