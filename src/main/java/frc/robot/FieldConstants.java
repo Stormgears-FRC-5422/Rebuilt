@@ -12,7 +12,7 @@ public class FieldConstants {
     static double rightOffset = 0;
 
     public static double inchesToMeters(double x){return x*0.0254;};
-    
+
 
 
 
@@ -21,7 +21,7 @@ public class FieldConstants {
      * Method should NOT be used directly in commands
      * @param id the id of the tag
      */
-    
+
 
     public static Pose2d getPoseTag(int id) {
     return switch (id) {
@@ -187,14 +187,24 @@ public class FieldConstants {
 
         default -> null;
     };
-}
 
-    
 
-    
+    }
 
-    
+    public static Pose2d hubPositionRED() {
+        return new Pose2d(11.912,4.024, Rotation2d.fromDegrees(0));
+    }
 
-    
+    public static Pose2d hubPositionBLUE() {
+        return new Pose2d(4.628, 4.024, Rotation2d.fromDegrees(0));
+    }
+
+
+
+
+
+
+
+
 
 }

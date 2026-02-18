@@ -20,6 +20,7 @@ import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
+import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
@@ -40,6 +41,9 @@ public class RobotContainer {
     RebuiltJoystick joystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
+
+    @SuppressWarnings("unused")
+    private VisionSubsystem vision;
 
     private SingleMotorTuner shooterTuner;
     private KrakenShooter krakenShooter;
@@ -64,6 +68,11 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
+            }
+
+            if (Toggles.useVision && Toggles.useDrive && drivetrain != null) {
+                console("Create vision");
+                vision = new VisionSubsystem(drivetrain, "limelight");
             }
 
             if (Toggles.useShooter) {
