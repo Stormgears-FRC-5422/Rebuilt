@@ -42,4 +42,12 @@ public abstract class RebuiltJoystick {
     public double getSlider() {
         return 0.0;
     }
+
+    public double getLeftTriggerAxis() {
+        return 0.0;
+    }
+
+    public boolean intakeTogglePressed() {
+        return false;
+    }
 }
