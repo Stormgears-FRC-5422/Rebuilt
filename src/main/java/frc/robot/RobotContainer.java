@@ -69,7 +69,7 @@ public class RobotContainer {
 
             if (Toggles.useVision && Toggles.useDrive && drivetrain != null) {
                 console("Create vision");
-                vision = new VisionSubsystem("limelight", drivetrain);
+                vision = new VisionSubsystem(drivetrain, "limelight");
             }
             if (Toggles.useIntake) {
                 console("Create intake");
