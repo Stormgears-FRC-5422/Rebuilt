@@ -3,15 +3,28 @@ import frc.utils.configfile.Option;
 import frc.utils.configfile.OptionsController;
 import frc.utils.configfile.OptionsRegistry;
 public class ElasticMotorController extends OptionsController {
-  public final Option<Boolean> enabled;
-  public final Option<Double> motor1;
-  // public final Option<Double> motor2;
+  public final Option<Boolean> homeButton;
+  public final Option<Boolean> goToIdle;
+  public final Option<Boolean> rumble;
+  public final Option<Boolean> intakeDown;
+  public final Option<Boolean> tester;
+  public final Option<Boolean> shootButton;
+  public final Option<Double> shootSpeed;
+  public final Option<Double> hopperSpeed;
+  public final Option<Double> intakeRollerSpeed;
+
   public ElasticMotorController() {
     super("Motor tester with elastic");
-    enabled = createBooleanOption("Enabled", false);
-    motor1   = createNumberOption("Motor 1 Output", 0.0);
-    // motor2   = createNumberOption("Motor 2 Output", 0.0);
-    OptionsRegistry.register(this);
+    homeButton = createBooleanOption("HOME THE INTAKE", false);
+    goToIdle = createBooleanOption("INTAKE IDLE", false);
+    rumble = createBooleanOption("RUMBLE", false);
+    intakeDown = createBooleanOption("INTAKE DOWN", false);
+    tester = createBooleanOption("wtv", false);
+    shootButton = createBooleanOption("shoot", false);
+    shootSpeed = createNumberOption("shooter speed diagnostic", 0.0);
+    intakeRollerSpeed = createNumberOption("intake speed diagnostic", 0.0);
+    hopperSpeed = createNumberOption("hopper speed diagnostic", 0.0);
 
+    OptionsRegistry.register(this);
   }
 }
