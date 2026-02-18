@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.DriveCommands;
+import frc.robot.commands.HoldSwerveModuleStates;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.RunIntake;
@@ -29,6 +31,15 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
+import frc.robot.subsystems.drive.basicSwerve.config.SwerveModuleConstants;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import org.littletonrobotics.junction.Logger;
+import java.util.Optional;
 
 public class RobotContainer {
     // **********
@@ -67,8 +78,9 @@ public class RobotContainer {
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
             }
 
-            if (Toggles.useVision && Toggles.useDrive && drivetrain != null) {
-                console("Create vision");
+
+            if(Toggles.useVision){
+                console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
                 vision = new VisionSubsystem(drivetrain, "limelight");
             }
             if (Toggles.useIntake) {
@@ -138,6 +150,10 @@ public class RobotContainer {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
 
             drivetrain.setDefaultCommand(driveWithJoystick);
+            new Trigger(() -> joystick.wheelRadiusCharacterization())
+                .onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
+//            new Trigger(() -> joystick.wheelRadiusCharacterization())
+//                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
             new Trigger(() -> joystick.resetGyro())
                 .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
@@ -238,4 +254,5 @@ public class RobotContainer {
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
     }
+
 }
