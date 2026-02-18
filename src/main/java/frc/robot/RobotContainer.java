@@ -5,42 +5,26 @@ package frc.robot;
 
 import java.util.Optional;
 
-<<<<<<< auto-command-factory
-import org.littletonrobotics.junction.Logger;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-=======
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Commands;
->>>>>>> main
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.JoyStickDrive;
-<<<<<<< auto-command-factory
-=======
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.RunIntake;
 
->>>>>>> main
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
-<<<<<<< auto-command-factory
-import frc.robot.subsystems.KrakenShooter;
-=======
 import frc.robot.subsystems.Intake;
->>>>>>> main
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.VisionSubsystem;
@@ -57,31 +41,26 @@ public class RobotContainer {
     private DrivetrainBase drivetrain;
 
     @SuppressWarnings("unused")
+    private Lights lights;
     private VisionSubsystem vision;
 
-    private SingleMotorTuner shooterTuner;
-<<<<<<< auto-command-factory
-    private KrakenShooter krakenShooter;
-    private  AutoCommandFactory autoFactory;
-=======
+    private AutoCommandFactory autoFactory;
     private ShooterHopper shooterHopper;
     private Intake intake;
->>>>>>> main
 
     //elastic control
+    private SingleMotorTuner shooterTuner;
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     // **********
     // Commands
     // **********
     // (no pre-created commands)
-    @SuppressWarnings("unused")
-    private Lights lights;
 
     public RobotContainer() {
-        try {
-            console("[Init] RobotContainer");
+        console("[Init] RobotContainer");
 
+        try {
             console("Making joystick!");
             joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
 
@@ -91,41 +70,42 @@ public class RobotContainer {
                 autoFactory = new AutoCommandFactory(drivetrain);
             }
 
-
-            if(Toggles.useVision){
-                console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
-                vision = new VisionSubsystem(drivetrain, "limelight");
-            }
-            if (Toggles.useIntake) {
-                console("Create intake");
-                intake = new Intake();
-            }
-
-            if (Toggles.useShooter) {
-                console("Create shooter");
-                shooterHopper = new ShooterHopper();
-                if (Toggles.usePidTuner) {
-                    shooterTuner = new SingleMotorTuner("Shooter Tuner", shooterHopper.getPidConfig());
-                }
-            }
-
-            if (Toggles.useLights) {
-                lights = new Lights();
-            }
-            configureBindings();
-            console("[DONE] RobotContainer");
         } catch (IllegalDriveTypeException e) {
             console("Error: Invalid drive type specified: " + e.getMessage());
-        } catch (RuntimeException e) {
-            console("Error initializing RobotContainer: " + e.getMessage());
         } catch (IllegalJoystickTypeException e) {
             console("Error: Invalid joystick type specified: " + e.getMessage());
+        } catch (RuntimeException e) {
+            console("Error initializing RobotContainer: " + e.getMessage());
         }
+
+        if(Toggles.useVision){
+            console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
+            vision = new VisionSubsystem(drivetrain, "limelight");
+        }
+        if (Toggles.useIntake) {
+            console("Create intake");
+            intake = new Intake();
+        }
+
+        if (Toggles.useShooter) {
+            console("Create shooter");
+            shooterHopper = new ShooterHopper();
+            if (Toggles.usePidTuner) {
+                shooterTuner = new SingleMotorTuner("Shooter Tuner", shooterHopper.getPidConfig());
+            }
+        }
+
+        if (Toggles.useLights) {
+            lights = new Lights();
+        }
+        configureBindings();
+        console("[DONE] RobotContainer");
+
 
     }
 
     private void configureBindings() {
-        
+
         new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestHome();
                 elasticMotorController.homeButton.setValue(false);
@@ -144,7 +124,7 @@ public class RobotContainer {
         intake.requestIntakeDown();
         elasticMotorController.intakeDown.setValue(false);
         }, intake));
-        
+
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());

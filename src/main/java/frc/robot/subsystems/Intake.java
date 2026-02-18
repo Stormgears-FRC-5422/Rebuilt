@@ -24,7 +24,7 @@ import frc.utils.StormSubsystem;
 public class Intake extends StormSubsystem {
     public enum IntakeState {
         UNKNOWN,
-        HOMING, 
+        HOMING,
         IDLE, // Once homing has homed the intake, it is sent to IDLE. also brings intake arm back up, leaving it there
         INTAKING, // in the position to intake
         RUMBLE, // rumbles to funnel balls into shooter
@@ -48,7 +48,7 @@ public class Intake extends StormSubsystem {
     public Intake() {
         updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
-        
+
         TalonFXConfiguration config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
 
@@ -88,15 +88,15 @@ public class Intake extends StormSubsystem {
     public double getAngleDegrees() {
         return updownIntakeMotor.getPosition().getValue().in(Degrees);
     }
-    
+
     private void setState(IntakeState newState) {
         state = newState;
     }
-    
+
     private boolean atTargetDegrees(double deg) {
-        return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance; 
+        return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance;
     }
-    
+
     // only methods to be used outside
     public void requestHome() {
         setState(IntakeState.HOMING);
@@ -126,13 +126,13 @@ public class Intake extends StormSubsystem {
             rollerEnabled = false;
             setState(IntakeState.IDLE);
         } else {
-            setState(IntakeState.INTAKING)
+            setState(IntakeState.INTAKING);
         }
     }
     @Override
-    public void periodic() {        
+    public void periodic() {
         super.periodic();
-        
+
         Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
 
         if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(Shooter.intakingAngle)) {
@@ -145,7 +145,7 @@ public class Intake extends StormSubsystem {
             case UNKNOWN -> { //insta go home
                 setState(IntakeState.HOMING);
             }
-            case HOMING -> { 
+            case HOMING -> {
                 zeroHere();
                 setState(IntakeState.IDLE);
                 hasBeenHomed = true;
@@ -177,7 +177,7 @@ public class Intake extends StormSubsystem {
                     }
                     rumbleHigh = !rumbleHigh;
                 }
-                            
+
             }
         }
     }

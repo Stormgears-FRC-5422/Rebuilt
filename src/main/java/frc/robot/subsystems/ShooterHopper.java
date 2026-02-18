@@ -12,8 +12,11 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
@@ -28,7 +31,7 @@ public class ShooterHopper extends StormSubsystem {
         SPEEDING_UP, // time that it takes to reach the speed, may eventually be on a 1 second timer
         SHOOTING, // hopper rollers should be running, probably also run the intake to get any balls that it's touching
         OUTTAKE, // sends the ball back to the hopper
-        EJECT, //outtakes slowly out of the robot 
+        EJECT, //outtakes slowly out of the robot
         BAD,
         DIAGNOSTIC;
     }
@@ -43,24 +46,27 @@ public class ShooterHopper extends StormSubsystem {
     private double hopperSpeed = 0.0;
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
     private ShooterState state;
-    
-    String canBusName = Constants.Imu.canBusName;
 
     public ShooterHopper() {
         if (Shooter.useShooterHopperDiagnostic) {
-            state = ShooterState.DIAGNOSTIC; 
+            state = ShooterState.DIAGNOSTIC;
         } else {
             state = ShooterState.IDLE;
         }
-        leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
-        followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
+
         hopperNeo = new SparkMax(Shooter.hopperMotorID, MotorType.kBrushless);
 
-        hopperNeo.setInverted(true);
+        SparkMaxConfig hopperConfig = new SparkMaxConfig();
+        hopperConfig.inverted(true);
+        hopperNeo.configure(hopperConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        // These are on the standard rio CAN, not the canivore
+        leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
+        followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
 
         followerMotor.setControl(
             new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
-        ); // .Opposed 
+        ); // .Opposed
 
         // Initialize PID configs
         pid = new PidConfig()
@@ -79,7 +85,7 @@ public class ShooterHopper extends StormSubsystem {
             targetVelocityRPS = givenTarget;
         }
     }
-    
+
     public void stopShooter() {
         setState(ShooterState.IDLE);
     }
@@ -120,7 +126,7 @@ public class ShooterHopper extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
-            
+
         shooterStateMachine();
         if (state == ShooterState.DIAGNOSTIC) {
             leaderMotor.setControl(velocityVoltage.withVelocity(100 * elasticMotorController.shootSpeed.get()));
