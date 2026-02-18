@@ -13,11 +13,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.Constants.Toggles;
-import frc.robot.commands.AutoCommandFactory;
-import frc.robot.commands.DriveCommands;
-import frc.robot.commands.JoyStickDrive;
-import frc.robot.commands.ShootCommand;
-import frc.robot.commands.RunIntake;
+import frc.robot.commands.*;
 
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
@@ -55,6 +51,7 @@ public class RobotContainer {
     // **********
     // Commands
     // **********
+    FaceTowardHub faceTowardHub;
     // (no pre-created commands)
 
     public RobotContainer() {
@@ -68,6 +65,7 @@ public class RobotContainer {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
                 autoFactory = new AutoCommandFactory(drivetrain);
+                faceTowardHub = new FaceTowardHub(drivetrain);
             }
 
         } catch (IllegalDriveTypeException e) {

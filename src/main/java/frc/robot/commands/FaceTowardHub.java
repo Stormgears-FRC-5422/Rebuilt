@@ -22,8 +22,8 @@ public class FaceTowardHub extends StormCommand {
         Pose2d current = drivetrain.getPoseEstimator().getPose();
         Translation2d trans = current.minus(hubPose).getTranslation();
 
-        double x = trans.getX();
-        double y = trans.getY();
+        double x = Math.abs(trans.getX());
+        double y = Math.abs(trans.getY());
         double goalAngle = Math.atan(x/y);
 
 
