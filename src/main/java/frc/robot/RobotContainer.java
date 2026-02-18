@@ -70,13 +70,10 @@ public class RobotContainer {
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
             }
 
-            if (Toggles.useVision && Toggles.useDrive && drivetrain != null) {
-                console("Create vision (with drive)");
+
+            if(Toggles.useVision){
+                console("Create vision" + (Toggles.useDrive && drivetrain != null)? " (with drive)" : " (without drive)");
                 vision = new VisionSubsystem(drivetrain, "limelight");
-            }
-            else if(Toggles.useVision){
-                console("Create vision (no drive)");
-                vision = new VisionSubsystem(null, "limelight");
             }
 
             if (Toggles.useShooter) {
