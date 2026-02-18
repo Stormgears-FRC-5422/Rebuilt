@@ -173,7 +173,6 @@ public abstract class DrivetrainBase extends StormSubsystem {
     }
 
     // ==================== Velocity Configuration ====================
-
     protected final void setMaxVelocities(LinearVelocity maxVelocity, AngularVelocity maxAngularVelocity) {
         m_maxVelocity = maxVelocity;
         m_maxAngularVelocity = maxAngularVelocity;
@@ -326,4 +325,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
             collisionManager.updateAndConstrain(getPose(), this::setPose);
         }
     }
+
+    // ==================== PID / etc Characterization ====================
+    public double[] getWheelRadiusCharacterizationPositions() {
+        return new double[] {};
+    }
+
+
 }

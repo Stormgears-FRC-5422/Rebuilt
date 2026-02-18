@@ -3,7 +3,9 @@ package frc.robot.subsystems.drive;
 import frc.robot.subsystems.drive.basicSwerve.BasicSwerve;
 import frc.robot.subsystems.drive.basicSwerve.DiagnosticSwerve;
 import frc.robot.subsystems.drive.ctrDrive.CTRSwerve;
-import frc.robot.subsystems.drive.tunerConstants.RebuiltTunerConstants;
+import frc.robot.subsystems.drive.tunerConstants.RebuiltVoltage;
+
+import frc.robot.subsystems.drive.AkitDrive.AkitDrive;
 
 public class DrivetrainFactory {
     protected static DrivetrainBase instance;
@@ -17,6 +19,7 @@ public class DrivetrainFactory {
             switch (driveType.toLowerCase()) {
                 case "diagnosticswerve" -> instance = new DiagnosticSwerve();
                 case "basicswerve" -> instance = new BasicSwerve();
+                case "akitdrive" -> instance = new AkitDrive();
                 case "ctrswerve" -> instance = new CTRSwerve(getTunerConstants(driveSubtype));
                 default -> throw new IllegalDriveTypeException("Illegal Drive Type: " + driveType);
             }
@@ -30,7 +33,7 @@ public class DrivetrainFactory {
     private static Class<?> getTunerConstants(String subtype) throws IllegalDriveTypeException {
         System.out.println("Collected constants for subtype: " + subtype);
         return switch (subtype.toLowerCase()) {
-            case "ctrrebuilt" -> RebuiltTunerConstants.class;
+            case "ctrrebuilt" -> RebuiltVoltage.class;
             default -> throw new IllegalDriveTypeException("Illegal Drive subtype: " + subtype);
         };
     }
