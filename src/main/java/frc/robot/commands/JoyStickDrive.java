@@ -54,7 +54,7 @@ public class JoyStickDrive extends StormCommand {
 
         // Field-relative when option is enabled AND trigger is NOT pressed
         // Trigger pressed = robot-relative override
-        fieldRelativeSupplier = () -> options.useFieldRelative.get() && !joystick.getRobotRelative();
+        fieldRelativeSupplier = () -> options.useFieldRelative.get() && false;
     }
 
     @Override

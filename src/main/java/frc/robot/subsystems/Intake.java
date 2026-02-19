@@ -35,8 +35,9 @@ public class Intake extends StormSubsystem {
     private final SparkMax rollerIntakeMotor;
 
     private final MotionMagicVoltage mmRequest;
-
-    private IntakeState state = IntakeState.UNKNOWN;
+    
+    double current;
+    public IntakeState state = IntakeState.UNKNOWN;
     private final Timer stateTimer;
     String canBusName = Constants.Imu.canBusName;
 
@@ -89,11 +90,11 @@ public class Intake extends StormSubsystem {
         return updownIntakeMotor.getPosition().getValue().in(Degrees);
     }
 
-    private void setState(IntakeState newState) {
+    public void setState(IntakeState newState) {
         state = newState;
     }
 
-    private boolean atTargetDegrees(double deg) {
+    public boolean atTargetDegrees(double deg) {
         return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance;
     }
 
@@ -133,9 +134,12 @@ public class Intake extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
+        current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
 
-        if (rollerEnabled && state == IntakeState.INTAKING && atTargetDegrees(Shooter.intakingAngle)) {
+        Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
+        Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
+        if (rollerEnabled && state == IntakeState.INTAKING) {
+            System.out.println("Intake + " + elasticMotorController.intakeRollerSpeed.get());
             rollerIntakeMotor.set(elasticMotorController.intakeRollerSpeed.get());
         } else {
             rollerIntakeMotor.set(0.0);
@@ -143,22 +147,12 @@ public class Intake extends StormSubsystem {
 
         switch (state) {
             case UNKNOWN -> { //insta go home
-                setState(IntakeState.HOMING);
+                // setState(IntakeState.HOMING);
+                updownIntakeMotor.set(0);
+                rollerIntakeMotor.set(0);
             }
             case HOMING -> {
-                zeroHere();
-                setState(IntakeState.IDLE);
-                hasBeenHomed = true;
-                // updownIntakeMotor.set(Shooter.homingSpeed);
-                // double current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
-                // //need to log current to find the amount to home at
-                // if (current > 15.0) { // need to experiment to find the right current threshold that indicates stalling against the hard stop
-                //         if (stateTimer.hasElapsed(0.1)) {
-                //             updownIntakeMotor.stopMotor();
-                //             zeroHere();
-                //             hasBeenHomed = true;
-                //             setState(IntakeState.IDLE);
-                //     }
+                home();
             }
             case IDLE -> {
                 setAngleDegrees(1);
@@ -179,6 +173,23 @@ public class Intake extends StormSubsystem {
                 }
 
             }
+        }
+    }
+    private void home() {
+        if (Shooter.stratlimit) {
+            // might want to use an average here to minimize spikes
+            updownIntakeMotor.setVoltage(-2.0);
+        } else { //assume you're at home
+            updownIntakeMotor.setVoltage(0.0);
+        }
+    }    
+    public boolean isAtHome() {
+        if (Shooter.stratlimit) {
+            // might want to use an average here to minimize spikes
+            return (updownIntakeMotor.getStatorCurrent().getValueAsDouble()) > Shooter.intakeCurrentLimit;
+        } else {
+            console("isAtHome current position: " + updownIntakeMotor.getPosition());
+            return true;
         }
     }
 }
