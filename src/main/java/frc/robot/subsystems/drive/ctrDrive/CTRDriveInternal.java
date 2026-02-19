@@ -6,16 +6,13 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.RobotState;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltVoltage.TunerSwerveDrivetrain;
 
 import java.util.function.Supplier;
@@ -28,17 +25,9 @@ import static edu.wpi.first.units.Units.Volts;
  * Subsystem so it can easily be used in command-based projects.
  */
 public class CTRDriveInternal extends TunerSwerveDrivetrain implements Subsystem {
-    private RobotState robotState;
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
-
-    /* Keep track if we've ever applied the driver perspective before or not */
-    private boolean m_hasAppliedDriverPerspective = false;
-    /* Supplier for driver perspective from parent CTRSwerve */
-    private Supplier<Rotation2d> m_driverPerspectiveSupplier = null;
-    /* Track the last applied perspective to detect changes */
-    private Rotation2d m_lastAppliedPerspective = null;
 
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
@@ -123,7 +112,6 @@ public class CTRDriveInternal extends TunerSwerveDrivetrain implements Subsystem
     ) {
         super(drivetrainConstants, modules);
 
-        robotState = RobotState.getInstance();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -215,53 +203,6 @@ public class CTRDriveInternal extends TunerSwerveDrivetrain implements Subsystem
      */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
-    }
-
-    /**
-     * Set the driver perspective supplier. Called by CTRSwerve to provide
-     * the perspective from DrivetrainBase.getDriverPerspective().
-     *
-     * @param supplier Supplier that returns the current driver perspective
-     */
-    public void setDriverPerspectiveSupplier(Supplier<Rotation2d> supplier) {
-        m_driverPerspectiveSupplier = supplier;
-    }
-
-    @Override
-    public void periodic() {
-        /*
-         * Periodically try to apply the driver perspective.
-         * If we haven't applied the driver perspective before, then we should apply it regardless of DS state.
-         * This allows us to correct the perspective in case the robot code restarts mid-match.
-         * Otherwise, only check and apply the driver perspective if the DS is disabled.
-         * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-         */
-        if (!m_hasAppliedDriverPerspective || DriverStation.isDisabled()) {
-            Rotation2d perspective = getDriverPerspective();
-            if (perspective != null) {
-                // Only apply if perspective changed or first time
-                if (m_lastAppliedPerspective == null ||
-                    !perspective.equals(m_lastAppliedPerspective)) {
-                    setOperatorPerspectiveForward(perspective);
-                    m_lastAppliedPerspective = perspective;
-                }
-                m_hasAppliedDriverPerspective = true;
-            }
-        }
-    }
-
-    /**
-     * Get the driver perspective from the supplier, or fall back to alliance-based default.
-     */
-    private Rotation2d getDriverPerspective() {
-        if (m_driverPerspectiveSupplier != null) {
-            return m_driverPerspectiveSupplier.get();
-        }
-        // Fallback: alliance-based perspective (only if alliance is known)
-        if (robotState.getAlliance() != RobotState.StateAlliance.MISSING) {
-            return robotState.isAllianceRed() ? Rotation2d.k180deg : Rotation2d.kZero;
-        }
-        return null;
     }
 
     private void startSimThread() {

@@ -24,11 +24,12 @@ import static edu.wpi.first.units.Units.*;
 /**
  * CTRE Phoenix 6 swerve drive implementation.
  * Uses CTRE's vendor swerve code with internal IMU and pose estimation.
- * This implementation handles field-relative conversion and driver perspective internally.
+ * Field-relative conversion is handled by DrivetrainBase; this class always
+ * sends robot-relative speeds to CTRE via driveRobotCentric.
+ * Driver perspective is applied upstream in JoyStickDrive.
  */
 public class CTRSwerve extends DrivetrainBase {
     public final CTRDriveInternal driveInternal;
-    private final SwerveRequest.FieldCentric driveFieldCentric;
     private final SwerveRequest.RobotCentric driveRobotCentric;
     private final CTRPoseEstimator poseEstimatorWrapper;
     private final IMU wrappedIMU;
@@ -43,10 +44,6 @@ public class CTRSwerve extends DrivetrainBase {
 
         logger = new Telemetry(MaxSpeed);
 
-        driveFieldCentric = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-            .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-
         driveRobotCentric = new SwerveRequest.RobotCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
@@ -59,23 +56,19 @@ public class CTRSwerve extends DrivetrainBase {
         // Wrap the internal Pigeon2 IMU for external access
         wrappedIMU = IMUFactory.wrap(driveInternal.getPigeon2());
 
-        // Provide driver perspective from base class to internal drivetrain
-        driveInternal.setDriverPerspectiveSupplier(this::getDriverPerspective);
-
         driveInternal.registerTelemetry(logger::telemeterize);
     }
 
     // ==================== Implementation Characteristics ====================
-    // CTRSwerve handles these internally via CTRE's vendor code
 
     @Override
     protected boolean handlesFieldRelativeConversion() {
-        return true;  // CTRE's FieldCentric/RobotCentric requests handle this
+        return false;  // Base class converts field→robot; we always use driveRobotCentric
     }
 
     @Override
     protected boolean handlesDriverPerspective() {
-        return true;  // CTRDriveInternal handles driver perspective
+        return false;  // JoyStickDrive applies driver perspective before calling drive()
     }
 
     @Override
@@ -131,18 +124,11 @@ public class CTRSwerve extends DrivetrainBase {
             console("in CTRDrive chassisSpeeds: " + m_chassisSpeeds, 100);
         }
 
-        // Apply drive control using options.useFieldRelative
-        if (m_fieldRelative) {
-            driveInternal.setControl(driveFieldCentric
-                .withVelocityX(m_chassisSpeeds.vxMetersPerSecond)
-                .withVelocityY(m_chassisSpeeds.vyMetersPerSecond)
-                .withRotationalRate(m_chassisSpeeds.omegaRadiansPerSecond));
-        } else {
-            driveInternal.setControl(driveRobotCentric
-                .withVelocityX(m_chassisSpeeds.vxMetersPerSecond)
-                .withVelocityY(m_chassisSpeeds.vyMetersPerSecond)
-                .withRotationalRate(m_chassisSpeeds.omegaRadiansPerSecond));
-        }
+        // m_chassisSpeeds is always robot-relative (base class handles field→robot conversion)
+        driveInternal.setControl(driveRobotCentric
+            .withVelocityX(m_chassisSpeeds.vxMetersPerSecond)
+            .withVelocityY(m_chassisSpeeds.vyMetersPerSecond)
+            .withRotationalRate(m_chassisSpeeds.omegaRadiansPerSecond));
 
         // Log module states
         SwerveModuleState[] moduleTargetStates = driveInternal.getState().ModuleTargets;
