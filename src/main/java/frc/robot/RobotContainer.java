@@ -136,16 +136,16 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        new Trigger(() -> elasticMotorController.homeIntake.get())
-            .onTrue(new IntakeHome(intake));
 
-        new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
         if (Toggles.useIntake) {
-            new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
-                intake.requestHome();
-                elasticMotorController.homeButton.setValue(false);
-                System.out.println("is homed?: " + intake.hasBeenHomed);
-            }, intake));
+            new Trigger(() -> elasticMotorController.homeIntake.get())
+                .onTrue(new IntakeHome(intake));
+
+//            new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
+//                intake.requestHome();
+//                elasticMotorController.homeButton.setValue(false);
+//                System.out.println("is homed?: " + intake.hasBeenHomed);
+//            }, intake));
 
             new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestIdle();
@@ -163,7 +163,7 @@ public class RobotContainer {
             }, intake));
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
-            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2).whileTrue(new RunIntake(intake, true));
+            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2).whileTrue(new RunIntake(intake));
         }
 
         if (shooterHopper != null) {

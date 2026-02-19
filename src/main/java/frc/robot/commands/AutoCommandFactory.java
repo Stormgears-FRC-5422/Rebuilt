@@ -141,7 +141,7 @@ public class AutoCommandFactory {
         return Commands.sequence(
             printName,
             Commands.parallel(
-                Commands.runOnce(intake::requestHome, intake),
+                new IntakeHome(intake),
                 trajectory
             )
         );
