@@ -3,6 +3,9 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import frc.utils.vision.LimelightHelpers;
 import edu.wpi.first.wpilibj.DriverStation;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -133,6 +136,7 @@ public class Robot extends LoggedRobot {
     public void disabledInit() {
         console("DisabledInit");
         state.setPeriod(StatePeriod.DISABLED);
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(200);
     }
 
     @Override
@@ -174,6 +178,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void autonomousInit() {
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
         console("AutoInit");
         state.setPeriod(StatePeriod.AUTONOMOUS);
         if (robotContainer != null) {
@@ -195,6 +200,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void teleopInit() {
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
         console("TeleopInit");
         state.setPeriod(StatePeriod.TELEOP);
     }
