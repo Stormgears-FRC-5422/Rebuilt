@@ -2,8 +2,9 @@ package frc.utils.motorcontrol;
 
 import org.littletonrobotics.junction.Logger;
 
-public interface MotorLogger {
+public interface MotorLogger<T extends MotorLogger<T>> {
     String getMotorName();
+    T withName(String name);
     double getMotorCurrent();
     double getMotorPosition();
     double getMotorVoltageOutput();

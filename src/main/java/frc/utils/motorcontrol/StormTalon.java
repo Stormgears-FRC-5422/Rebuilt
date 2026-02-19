@@ -3,7 +3,7 @@ package frc.utils.motorcontrol;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-public class StormTalon extends TalonFX implements MotorLogger {
+public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     private String name;
 
     public StormTalon(int deviceId) {

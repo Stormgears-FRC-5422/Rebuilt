@@ -3,7 +3,7 @@ package frc.utils.motorcontrol;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkMax;
 
-public class StormSparkMax extends SparkMax implements MotorLogger {
+public class StormSparkMax extends SparkMax implements MotorLogger<StormSparkMax> {
     private String name;
 
     public StormSparkMax(int deviceId, MotorType motorType) {
