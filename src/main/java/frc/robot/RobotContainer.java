@@ -45,7 +45,6 @@ public class RobotContainer {
     private Intake intake;
     //elastic control
     private SingleMotorTuner shooterTuner;
-    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     // **********
     // Commands
@@ -61,10 +60,8 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
-                autoFactory = new AutoCommandFactory(drivetrain);
                 faceTowardHub = new FaceTowardHub(drivetrain);
             }
-
         } catch (IllegalDriveTypeException e) {
             console("Error: Invalid drive type specified: " + e.getMessage());
         } catch (RuntimeException e) {
