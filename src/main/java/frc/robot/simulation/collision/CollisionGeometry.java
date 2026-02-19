@@ -1,7 +1,6 @@
 package frc.robot.simulation.collision;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 import java.util.ArrayList;

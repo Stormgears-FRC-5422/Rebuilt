@@ -3,6 +3,10 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import frc.utils.vision.LimelightHelpers;
+import edu.wpi.first.wpilibj.DriverStation;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -119,6 +123,8 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void robotPeriodic() {
+        iteration++;
+
         OptionsRegistry.periodic();
         if (robotContainer != null) {
             robotContainer.periodic();
@@ -130,12 +136,21 @@ public class Robot extends LoggedRobot {
     public void disabledInit() {
         console("DisabledInit");
         state.setPeriod(StatePeriod.DISABLED);
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(200);
     }
 
     @Override
     public void disabledPeriodic() {
-        if (robotContainer != null) {
-            robotContainer.updateAlliance();
+        if (iteration % 25 == 0) {
+            if (robotContainer != null) {
+                robotContainer.updateAlliance();
+                robotContainer.updateAutoPose();
+            }
+        }
+
+        // only needs to happen once, but could happen a couple different ways
+        if (!state.getJoystickReady() && isJoyStickConnected() && robotContainer != null) {
+            robotContainer.onJoysticksAvaiable();
         }
     }
 
@@ -144,8 +159,26 @@ public class Robot extends LoggedRobot {
         console("DisabledExit");
     }
 
+    private boolean isJoyStickConnected() {
+        if (Constants.Toggles.useController) {
+            return DriverStation.isJoystickConnected(Constants.ButtonBoard.driveJoystickPort);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void driverStationConnected() {
+        super.driverStationConnected();
+        // only needs to happen once, but could happen a couple different ways
+        if (!state.getJoystickReady() && isJoyStickConnected() && robotContainer != null) {
+            robotContainer.onJoysticksAvaiable();
+        }
+    }
+
     @Override
     public void autonomousInit() {
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
         console("AutoInit");
         state.setPeriod(StatePeriod.AUTONOMOUS);
         if (robotContainer != null) {
@@ -167,6 +200,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void teleopInit() {
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
         console("TeleopInit");
         state.setPeriod(StatePeriod.TELEOP);
     }

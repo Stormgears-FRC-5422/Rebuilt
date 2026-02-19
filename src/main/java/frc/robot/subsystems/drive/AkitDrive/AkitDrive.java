@@ -112,6 +112,7 @@ public class AkitDrive extends DrivetrainBase {
 
     @Override
     public void periodic() {
+        super.periodic();  // Handles resetOrientation option and driver perspective cache
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);

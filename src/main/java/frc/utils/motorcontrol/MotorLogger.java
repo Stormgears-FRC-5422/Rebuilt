@@ -1,0 +1,18 @@
+package frc.utils.motorcontrol;
+
+import org.littletonrobotics.junction.Logger;
+
+public interface MotorLogger<T extends MotorLogger<T>> {
+    String getMotorName();
+    T withName(String name);
+    double getMotorCurrent();
+    double getMotorPosition();
+    double getMotorVoltageOutput();
+
+    default void logMotorData() {
+        String basePath = "Motors/" + getMotorName();
+        Logger.recordOutput(basePath + "/Current", getMotorCurrent());
+        Logger.recordOutput(basePath + "/Position", getMotorPosition());
+        Logger.recordOutput(basePath + "/Voltage", getMotorVoltageOutput());
+    }
+}
