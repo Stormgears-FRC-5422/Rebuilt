@@ -32,24 +32,22 @@ import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
 
 public class RobotContainer {
+    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
+    RobotState robotState;
     // **********
     // Control
     // **********
     RebuiltJoystick joystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
-
     @SuppressWarnings("unused")
     private Lights lights;
     private VisionSubsystem vision;
-
-    private AutoCommandFactory autoFactory;
+    private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
     private Intake intake;
-
     //elastic control
     private SingleMotorTuner shooterTuner;
-    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     // **********
     // Commands
@@ -59,27 +57,21 @@ public class RobotContainer {
 
     public RobotContainer() {
         console("[Init] RobotContainer");
+        robotState = RobotState.getInstance();
 
         try {
-            console("Making joystick!");
-            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
-
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
-                autoFactory = new AutoCommandFactory(drivetrain);
                 faceTowardHub = new FaceTowardHub(drivetrain);
             }
-
         } catch (IllegalDriveTypeException e) {
             console("Error: Invalid drive type specified: " + e.getMessage());
-        } catch (IllegalJoystickTypeException e) {
-            console("Error: Invalid joystick type specified: " + e.getMessage());
         } catch (RuntimeException e) {
             console("Error initializing RobotContainer: " + e.getMessage());
         }
 
-        if(Toggles.useVision){
+        if (Toggles.useVision) {
             console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
             ArrayList<String> limelights = new ArrayList<>();
             for(Field f : Constants.Limelights.class.getFields()){
@@ -92,6 +84,7 @@ public class RobotContainer {
             }
             vision = new VisionSubsystem(drivetrain, limelights.toArray(new String[0]));
         }
+
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
@@ -108,45 +101,59 @@ public class RobotContainer {
         if (Toggles.useLights) {
             lights = new Lights();
         }
-        configureBindings();
+
+        if (drivetrain != null) {
+            autoCommandFactory = new AutoCommandFactory(drivetrain, shooterHopper, intake);
+        }
+
         console("[DONE] RobotContainer");
+    }
 
+    private static double slider(double x, double low, double high) {
+        return Math.max(low, Math.min(high, x));
+    }
 
+    public void onJoysticksAvaiable() {
+        console("Configuring Joystick and bindings");
+        try {
+            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
+            configureBindings();
+            robotState.setJoystickReady(true);
+        } catch (IllegalJoystickTypeException e) {
+            console("disabledPeriodic: Error configuring Joystick and button board" + e.getMessage());
+        }
     }
 
     private void configureBindings() {
-
-        new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
+        if (Toggles.useIntake) {
+            new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestHome();
                 elasticMotorController.homeButton.setValue(false);
                 System.out.println("is homed?: " + intake.hasBeenHomed);
             }, intake));
 
-        new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
+            new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestIdle();
                 elasticMotorController.homeButton.setValue(false);
             }, intake));
-        new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
-            intake.requestRumble();
-            elasticMotorController.rumble.setValue(false);
-        }, intake));
-        new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
-        intake.requestIntakeDown();
-        elasticMotorController.intakeDown.setValue(false);
-        }, intake));
 
+            new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
+                intake.requestRumble();
+                elasticMotorController.rumble.setValue(false);
+            }, intake));
+
+            new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
+                intake.requestIntakeDown();
+                elasticMotorController.intakeDown.setValue(false);
+            }, intake));
+
+            new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
+            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2).whileTrue(new RunIntake(intake, true));
+        }
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
             shootTrigger.onTrue(new ShootCommand(shooterHopper));
-        }
-
-        if (intake != null) {
-            new Trigger(() -> joystick.intakeTogglePressed())
-                .onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
-
-            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2)
-                .whileTrue(new RunIntake(intake, true));
         }
         console("[Init] configureBindings");
 
@@ -154,13 +161,11 @@ public class RobotContainer {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
 
             drivetrain.setDefaultCommand(driveWithJoystick);
-            new Trigger(() -> joystick.wheelRadiusCharacterization())
-                .onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
+            new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
+            new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
+
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
-
-            new Trigger(() -> joystick.resetGyro())
-                .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
 
             // Need a test here to allow this based on the drive type.
 //            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
@@ -169,9 +174,6 @@ public class RobotContainer {
 
         console("[DONE] configureBindings");
     }
-    private static double slider(double x, double low, double high) {
-        return Math.max(low, Math.min(high, x));
-    }
 
     public void periodic() {
         if (shooterTuner != null) {
@@ -179,7 +181,7 @@ public class RobotContainer {
         }
 
         if (Toggles.useShooter && shooterHopper != null) {
-
+            ;;;
         }
     }
 
@@ -189,7 +191,6 @@ public class RobotContainer {
      * When alliance becomes available (or changes), calls onAllianceUpdated().
      */
     public void updateAlliance() {
-        RobotState robotState = RobotState.getInstance();
         RobotState.StateAlliance newAlliance = RobotState.StateAlliance.MISSING;
         String defaultAlliance = Constants.Debug.defaultAlliance.toLowerCase();
 
@@ -199,34 +200,20 @@ public class RobotContainer {
             Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
 
             if (alliance.isPresent()) {
-                newAlliance = alliance.get() == DriverStation.Alliance.Blue
-                    ? RobotState.StateAlliance.BLUE
-                    : RobotState.StateAlliance.RED;
+                newAlliance = alliance.get() == DriverStation.Alliance.Blue ? RobotState.StateAlliance.BLUE : RobotState.StateAlliance.RED;
             }
         } else {
             // Debug override active
-            newAlliance = defaultAlliance.equals("blue")
-                ? RobotState.StateAlliance.BLUE
-                : RobotState.StateAlliance.RED;
+            newAlliance = defaultAlliance.equals("blue") ? RobotState.StateAlliance.BLUE : RobotState.StateAlliance.RED;
         }
 
         RobotState.StateAlliance previousAlliance = robotState.getAlliance();
 
         // Call onAllianceUpdated when alliance first becomes known or changes
-        if (newAlliance != RobotState.StateAlliance.MISSING
-            && (previousAlliance == RobotState.StateAlliance.MISSING || previousAlliance != newAlliance)) {
+        if (newAlliance != RobotState.StateAlliance.MISSING && (previousAlliance == RobotState.StateAlliance.MISSING || previousAlliance != newAlliance)) {
             robotState.setAlliance(newAlliance);
             onAllianceUpdated();
         }
-    }
-
-    /**
-     * Called when alliance is first set or changes.
-     * Resets initial pose and performs any other alliance-dependent initialization.
-     */
-    private void onAllianceUpdated() {
-        console("Alliance updated to " + RobotState.getInstance().getAlliance());
-        resetInitialPose();
     }
 
     /**
@@ -234,7 +221,6 @@ public class RobotContainer {
      * remapped for the current alliance.
      */
     public void resetInitialPose() {
-        RobotState robotState = RobotState.getInstance();
         if (!Toggles.useDrive || drivetrain == null) {
             return;
         }
@@ -242,11 +228,7 @@ public class RobotContainer {
         Pose2d initialPose;
         if (Constants.Debug.debug && !robotState.getAlliance().equals(RobotState.StateAlliance.MISSING)) {
             // Use debug pose settings, remapped for alliance
-            Pose2d bluePose = new Pose2d(
-                Constants.Debug.initPoseX,
-                Constants.Debug.initPoseY,
-                Rotation2d.fromDegrees(Constants.Debug.initPoseDegrees)
-            );
+            Pose2d bluePose = new Pose2d(Constants.Debug.initPoseX, Constants.Debug.initPoseY, Rotation2d.fromDegrees(Constants.Debug.initPoseDegrees));
             initialPose = RebuiltField.remapPose(bluePose, robotState.getAlliance());
         } else {
             // Default pose - AutoChooser should set the pose itself for matches
@@ -255,11 +237,29 @@ public class RobotContainer {
         drivetrain.setPose(initialPose);
     }
 
+    public void updateAutoPose() {
+        if (autoCommandFactory == null) return;
+        autoCommandFactory.getInitialPose().ifPresent(drivetrain::setPose);
+    }
+
+    /**
+     * Called when alliance is first set or changes.
+     * Resets initial pose and performs any other alliance-dependent initialization.
+     */
+    private void onAllianceUpdated() {
+        console("Alliance updated to " + RobotState.getInstance().getAlliance());
+        if (autoCommandFactory != null) {
+            autoCommandFactory.initialize();
+        }
+        resetInitialPose();
+    }
+
     private void console(String message) {
         System.out.println("RobotContainer : " + message);
     }
-    public Command getAutonomousCommand() {
-        return autoFactory.getTheAuto();
-    }
 
+    public Command getAutonomousCommand() {
+        if (autoCommandFactory == null) return null;
+        return autoCommandFactory.getChosenCommand();
+    }
 }

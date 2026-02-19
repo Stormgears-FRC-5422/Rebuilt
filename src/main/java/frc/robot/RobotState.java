@@ -3,7 +3,6 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.subsystems.misc.BatteryMonitor;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
 public class RobotState {
@@ -26,13 +25,13 @@ public class RobotState {
     }
 
     private static RobotState instance;
-    private Pose2d currentPose;
-
     private final StateSimMode stateSimMode;
     private StatePeriod statePeriod;
     private BatteryState batteryState;
-
     private StateAlliance alliance = StateAlliance.MISSING;
+
+    private boolean joystickReady = false;
+    private Pose2d currentPose;
 
     private RobotState() {
         if (RobotBase.isReal()) {
@@ -70,6 +69,10 @@ public class RobotState {
         return alliance;
     }
 
+    public boolean isAllianceMissing() {
+        return alliance == StateAlliance.MISSING;
+    }
+
     public boolean isAllianceBlue() {
         return alliance == StateAlliance.BLUE;
     }
@@ -98,6 +101,14 @@ public class RobotState {
         return this.batteryState;
     }
 
+    public boolean getJoystickReady() {
+        return joystickReady;
+    }
+
+    public void setJoystickReady(boolean ready) {
+        joystickReady = ready;
+    }
+
     public void setPose(Pose2d pose) {
         // Make a copy, not a reference to the same object!
         currentPose = new Pose2d(pose.getX(), pose.getY(), new Rotation2d(pose.getRotation().getRadians()));
@@ -106,6 +117,5 @@ public class RobotState {
     public Pose2d getPose() {
         return currentPose;
     }
-
 
 }

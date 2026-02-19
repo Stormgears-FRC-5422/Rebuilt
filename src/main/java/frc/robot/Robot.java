@@ -6,6 +6,7 @@ package frc.robot;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.utils.vision.LimelightHelpers;
+import edu.wpi.first.wpilibj.DriverStation;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -122,6 +123,8 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void robotPeriodic() {
+        iteration++;
+
         OptionsRegistry.periodic();
         if (robotContainer != null) {
             robotContainer.periodic();
@@ -138,14 +141,39 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void disabledPeriodic() {
-        if (robotContainer != null) {
-            robotContainer.updateAlliance();
+        if (iteration % 25 == 0) {
+            if (robotContainer != null) {
+                robotContainer.updateAlliance();
+                robotContainer.updateAutoPose();
+            }
+        }
+
+        // only needs to happen once, but could happen a couple different ways
+        if (!state.getJoystickReady() && isJoyStickConnected() && robotContainer != null) {
+            robotContainer.onJoysticksAvaiable();
         }
     }
 
     @Override
     public void disabledExit() {
         console("DisabledExit");
+    }
+
+    private boolean isJoyStickConnected() {
+        if (Constants.Toggles.useController) {
+            return DriverStation.isJoystickConnected(Constants.ButtonBoard.driveJoystickPort);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void driverStationConnected() {
+        super.driverStationConnected();
+        // only needs to happen once, but could happen a couple different ways
+        if (!state.getJoystickReady() && isJoyStickConnected() && robotContainer != null) {
+            robotContainer.onJoysticksAvaiable();
+        }
     }
 
     @Override
