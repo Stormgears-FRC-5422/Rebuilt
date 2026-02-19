@@ -3,6 +3,9 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -78,7 +81,16 @@ public class RobotContainer {
 
         if(Toggles.useVision){
             console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
-            vision = new VisionSubsystem(drivetrain, "limelight");
+            ArrayList<String> limelights = new ArrayList<>();
+            for(Field f : Constants.Limelights.class.getFields()){
+                try{
+                    limelights.add((String) f.get(null));
+                } catch (IllegalAccessException e){
+                    return;
+                }
+
+            }
+            vision = new VisionSubsystem(drivetrain, limelights.toArray(new String[0]));
         }
         if (Toggles.useIntake) {
             console("Create intake");
