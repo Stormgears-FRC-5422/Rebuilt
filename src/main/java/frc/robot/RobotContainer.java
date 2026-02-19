@@ -4,21 +4,26 @@
 package frc.robot;
 
 import java.util.Optional;
+import java.util.concurrent.locks.Condition;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.JoyStickDrive;
-import frc.robot.commands.ShootCommand;
 import frc.robot.commands.RunIntake;
-
+import frc.robot.commands.IntakeHome;
+import frc.robot.commands.ShootCommand;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -105,6 +110,8 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        new Trigger(() -> elasticMotorController.homeIntake.get())
+            .onTrue(new IntakeHome(intake));
 
         new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestHome();
@@ -136,7 +143,7 @@ public class RobotContainer {
                 .onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
 
             new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2)
-                .whileTrue(new RunIntake(intake, true));
+                .whileTrue(new RunIntake(intake));
         }
         console("[Init] configureBindings");
 
