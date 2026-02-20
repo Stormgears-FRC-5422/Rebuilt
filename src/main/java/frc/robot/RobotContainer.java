@@ -5,30 +5,23 @@ package frc.robot;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.concurrent.locks.Condition;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.PrintCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.FaceTowardHub;
+import frc.robot.commands.IntakeHome;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.RunIntake;
-import frc.robot.commands.IntakeHome;
 import frc.robot.commands.ShootCommand;
-import frc.robot.commands.*;
-
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -152,6 +145,8 @@ public class RobotContainer {
                 elasticMotorController.homeButton.setValue(false);
             }, intake));
 
+            new Trigger(() -> elasticMotorController.visionCmd.get()).whileTrue(new FaceTowardHub(drivetrain));
+            
             new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestRumble();
                 elasticMotorController.rumble.setValue(false);
@@ -163,7 +158,9 @@ public class RobotContainer {
             }, intake));
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
-            new Trigger(() -> joystick.getLeftTriggerAxis() > 0.2).whileTrue(new RunIntake(intake));
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
+            new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper));
+            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
         }
 
         if (shooterHopper != null) {

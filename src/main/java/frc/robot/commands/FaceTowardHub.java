@@ -20,7 +20,7 @@ public class FaceTowardHub extends StormCommand {
         this.drivetrain = drivetrain;
         addRequirements(drivetrain);
 
-        headingController = new PIDController(Drive.targetKP, Drive.targetKI, Drive.targetKD);
+        headingController = new PIDController(Drive.targetKPvcmd, Drive.targetKIvcmd, Drive.targetKDvcmd);
         headingController.enableContinuousInput(-Math.PI, Math.PI);
         headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
     }
