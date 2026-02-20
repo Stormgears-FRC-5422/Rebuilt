@@ -63,6 +63,11 @@ public class AutoCommandFactory {
             autoChooser.addOption("Sweeper", "Sweeper");
             autoChooser.addOption("TwoCycleLeft", "TwoCycleLeft");
             autoChooser.addOption("TwoCycleRight", "TwoCycleRight");
+            autoChooser.addOption("CircularRabbit", "CircularRabbit");
+            autoChooser.addOption("HokeyPokeyRabbit", "HokeyPokeyRabbit");
+            autoChooser.addOption("PoopingSloth", "PoopingSloth");
+            autoChooser.addOption("Tortoise", "Tortoise");
+            autoChooser.addOption("simplePath", "simplePath");
             chooserInitialized = true;
         }
 
@@ -114,10 +119,19 @@ public class AutoCommandFactory {
         loadTrajectory("Sweeper");
         loadTrajectory("TwoCycleLeft");
         loadTrajectory("TwoCycleRight");
+        loadTrajectory("CircularRabbit");
+        loadTrajectory("HokeyPokeyRabbit");
+        loadTrajectory("PoopingSloth");
+        loadTrajectory("Tortoise");
+        loadTrajectory("simplePath");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
-        return choreoFactory.cache().loadTrajectory(trajectoryName);
+        Optional<? extends Trajectory<?>> trajectory =  choreoFactory.cache().loadTrajectory(trajectoryName);
+        if (trajectory.isEmpty()){
+            System.err.println(trajectoryName + " is not found");
+        }
+        return trajectory;
     }
 
     /* **********
