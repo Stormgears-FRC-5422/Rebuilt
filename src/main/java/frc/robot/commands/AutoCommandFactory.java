@@ -139,6 +139,9 @@ public class AutoCommandFactory {
      * **********/
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
+        if(trajectoryName == "simplePath"){
+            return simplePath();
+        }
         return basicAuto(trajectoryName);
     }
 
@@ -158,6 +161,23 @@ public class AutoCommandFactory {
                 new IntakeHome(intake),
                 trajectory
             )
+        );
+    }
+
+    private Command simplePath() {
+        String name = "simplePath";
+        Command trajectory = choreoFactory.trajectoryCmd(name);
+        Command printName = new PrintCommand("Auto: " + name);
+
+        if (intake == null) return Commands.sequence(printName, trajectory);
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                trajectory
+            ),
+            new ShootCommand(shooterHopper, true)
         );
     }
 }

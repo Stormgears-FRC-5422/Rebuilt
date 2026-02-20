@@ -159,13 +159,13 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
-            new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper));
+            new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper, false));
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
         }
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
-            shootTrigger.onTrue(new ShootCommand(shooterHopper));
+            shootTrigger.onTrue(new ShootCommand(shooterHopper, false));
         }
         console("[Init] configureBindings");
 

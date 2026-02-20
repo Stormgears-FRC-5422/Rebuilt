@@ -156,16 +156,6 @@ public class VisionSubsystem extends StormSubsystem {
         }
     }
 
-    public Translation2d DistFromHub(){
-        Pose2d hubPose = ((RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE)? FieldConstants.hubPositionBLUE(): FieldConstants.hubPositionRED());
-
-        Pose2d current = drivetrain.getPoseEstimator().getPose();
-
-        return current.minus(hubPose).getTranslation();
-
-
-    }
-
     @Override
     public void periodic() {
         super.periodic();

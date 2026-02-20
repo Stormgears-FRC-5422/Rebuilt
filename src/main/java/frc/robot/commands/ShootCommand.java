@@ -10,8 +10,9 @@ public class ShootCommand extends StormCommand {
     private final ShooterHopper shooter;
     private final Timer timer = new Timer();
 
-    public ShootCommand(ShooterHopper shooter) {
+    public ShootCommand(ShooterHopper shooter, boolean useRealDist) {
         this.shooter = shooter;
+        shooter.setUseRealDist(useRealDist);
         addRequirements(shooter);
     }
 

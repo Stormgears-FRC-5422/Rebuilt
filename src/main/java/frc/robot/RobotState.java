@@ -2,6 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
@@ -116,6 +117,11 @@ public class RobotState {
 
     public Pose2d getPose() {
         return currentPose;
+    }
+
+    public double getDistFromHub() {
+        Pose2d hubPose = (alliance == StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
+        return currentPose.minus(hubPose).getTranslation().getNorm();
     }
 
 }
