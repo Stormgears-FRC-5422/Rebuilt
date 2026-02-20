@@ -1,5 +1,12 @@
 package frc.robot.commands;
 
+import static java.util.Objects.isNull;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -7,15 +14,8 @@ import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Options.DriveOptions;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.joysticks.RebuiltLogitechJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
-import org.littletonrobotics.junction.Logger;
-
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
-import static java.util.Objects.isNull;
 
 public class JoyStickDrive extends StormCommand {
     private final DrivetrainBase drivetrain;
@@ -54,7 +54,7 @@ public class JoyStickDrive extends StormCommand {
 
         // Field-relative when option is enabled AND trigger is NOT pressed
         // Trigger pressed = robot-relative override
-        fieldRelativeSupplier = () -> options.useFieldRelative.get() && false;
+        fieldRelativeSupplier = () -> options.useFieldRelative.get() && !joystick.getRobotRelative();
     }
 
     @Override

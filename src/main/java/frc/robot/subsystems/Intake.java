@@ -56,13 +56,13 @@ public class Intake extends StormSubsystem {
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         config.Feedback.SensorToMechanismRatio = 53.33;
 
-        config.Slot0.kP = 50.0; //23.0
-        config.Slot0.kI = 0.0; //2.0
+        config.Slot0.kP = 60.0; //23.0
+        config.Slot0.kI = 1.0; //2.0
         config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 1.0; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 1.0; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 5.0; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 5.0; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
@@ -70,7 +70,7 @@ public class Intake extends StormSubsystem {
         stateTimer = new Timer();
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
-        currentLimits.StatorCurrentLimit = 20.0;
+        currentLimits.StatorCurrentLimit = 40.0;
         currentLimits.StatorCurrentLimitEnable = true;
 
         updownIntakeMotor.getConfigurator().apply(currentLimits);
@@ -109,9 +109,12 @@ public class Intake extends StormSubsystem {
     }
     public void requestRumble() {
         if (hasBeenHomed) {
-        setState(IntakeState.RUMBLE);
+            rumblePin = Shooter.minRumbleAngle;
+            rumbleHigh = false;
+            setState(IntakeState.RUMBLE);
         }
     }
+
     public void requestIntakeDown() {
         if (hasBeenHomed) {
             setState(IntakeState.INTAKING);
@@ -136,11 +139,15 @@ public class Intake extends StormSubsystem {
 
         current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
 
+        Logger.recordOutput("rumble target", rumblePin);
+        Logger.recordOutput("rumble position", getAngleDegrees());
+        Logger.recordOutput("rumble at target", atTargetDegrees(rumblePin));
+
         Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
         Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
         if (rollerEnabled && state == IntakeState.INTAKING) {
-            System.out.println("Intake + " + elasticMotorController.intakeRollerSpeed.get());
-            rollerIntakeMotor.set(elasticMotorController.intakeRollerSpeed.get());
+            // System.out.println("Intake + " + elasticMotorController.intakeRollerSpeed.get());
+            rollerIntakeMotor.set(Shooter.rollerIntakeSpeed);
         } else {
             rollerIntakeMotor.set(0.0);
         }

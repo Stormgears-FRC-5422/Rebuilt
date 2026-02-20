@@ -32,7 +32,7 @@ public class ShootCommand extends StormCommand {
 
     @Override
     public boolean isFinished() {
-        return timer.hasElapsed(5.0);
+        return false;
         // this command should end when the hopper is empty
     }
 
