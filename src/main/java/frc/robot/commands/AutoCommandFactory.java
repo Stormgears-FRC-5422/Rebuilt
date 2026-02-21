@@ -142,16 +142,16 @@ public class AutoCommandFactory {
      * **********/
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
-        if(trajectoryName == "simplePath"){
-            return simplePath();
+        switch (trajectoryName){
+            case "simplePath", "simplePathLeft":
+                return simplePathAuto(trajectoryName);
+            case "Reload":
+                return reloadAuto();
+            case "TwoCycleRight", "TwoCycleLeft":
+                return twoCycleAuto(trajectoryName);
+            default:
+                return basicAuto(trajectoryName);
         }
-        if(trajectoryName == "simplePathLeft"){
-            return simplePathLeft();
-        }
-        if(trajectoryName == "Reload"){
-            return reloadAuto();
-        }
-        return basicAuto(trajectoryName);
     }
 
     /**
@@ -180,8 +180,10 @@ public class AutoCommandFactory {
 
     private Command reloadAuto() {
         String name = "Reload";
-        Command intakeLeg = choreoFactory.trajectoryCmd(name, 0);
-        Command shootLeg = choreoFactory.trajectoryCmd(name, 1);
+        Command intakeLeg1 = choreoFactory.trajectoryCmd(name, 0);
+        Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
+        Command intakeLeg2 = choreoFactory.trajectoryCmd(name, 1);
+        Command shootLeg2 = choreoFactory.trajectoryCmd(name, 1);
         Command printName = new PrintCommand("Auto: " + name);
 
         return Commands.sequence(
@@ -189,26 +191,42 @@ public class AutoCommandFactory {
             Commands.parallel(
                 new IntakeHome(intake),
                 Commands.race(
-                    intakeLeg,
+                    intakeLeg1,
                     new RunIntake(intake)
                 )
             ),
             stopDrive(),
-            shootLeg,
+            shootLeg1,
             stopDrive(),
+            new TimedShootCommand(shooterHopper, true, 8.0),
+            Commands.race(
+                intakeLeg2,
+                new RunIntake(intake)
+            ),
+            stopDrive(),
+            shootLeg2,
             new TimedShootCommand(shooterHopper, true, 8.0)
         );
     }
 
-    private Command simplePath() {
-        return simplePathAuto("simplePath");
-    }
-
-    private Command simplePathLeft() {
-        return simplePathAuto("simplePathLeft");
-    }
-
     private Command simplePathAuto(String name) {
+        Command trajectory = choreoFactory.trajectoryCmd(name);
+        Command printName = new PrintCommand("Auto: " + name);
+
+        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                trajectory
+            ),
+            stopDrive(),
+            new ShootCommand(shooterHopper, true)
+        );
+    }
+
+    private Command twoCycleAuto(String name) {
         Command trajectory = choreoFactory.trajectoryCmd(name);
         Command printName = new PrintCommand("Auto: " + name);
 
