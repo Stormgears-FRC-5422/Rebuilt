@@ -45,6 +45,7 @@ public class Intake extends StormSubsystem {
     private boolean outtakeEnabled = false;
     public boolean hasBeenHomed = false;
     private boolean rumbleHigh = false;
+    public double rollerOutput;
 
     private double rumblePin = 40.0;
     public Intake() {
@@ -58,7 +59,7 @@ public class Intake extends StormSubsystem {
         config.Feedback.SensorToMechanismRatio = 53.33;
 
         config.Slot0.kP = 60.0; //23.0
-        config.Slot0.kI = 1.0; //2.0
+        config.Slot0.kI = 2.0; //2.0
         config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
@@ -71,7 +72,7 @@ public class Intake extends StormSubsystem {
         stateTimer = new Timer();
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
-        currentLimits.StatorCurrentLimit = 40.0;
+        currentLimits.StatorCurrentLimit = 65.0;
         currentLimits.StatorCurrentLimitEnable = true;
 
         updownIntakeMotor.getConfigurator().apply(currentLimits);
@@ -149,17 +150,16 @@ public class Intake extends StormSubsystem {
 
         Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
         Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
-        if (rollerEnabled && state == IntakeState.INTAKING) {
-            // System.out.println("Intake + " + elasticMotorController.intakeRollerSpeed.get());
-            rollerIntakeMotor.set(Shooter.rollerIntakeSpeed);
-        } else {
-            rollerIntakeMotor.set(0.0);
-        }
+           
+        rollerOutput = 0.0;
         if (outtakeEnabled) {
-            rollerIntakeMotor.set(Shooter.rollerOuttakeSpeed);
-        } else {
-            rollerIntakeMotor.set(0.0);
+            rollerOutput = Shooter.rollerOuttakeSpeed;
+        } 
+        else if (rollerEnabled && state == IntakeState.INTAKING) {
+            rollerOutput = Shooter.rollerIntakeSpeed;
         }
+
+        rollerIntakeMotor.set(rollerOutput);
 
         switch (state) {
             case UNKNOWN -> { //insta go home
