@@ -111,6 +111,7 @@ public class ShooterHopper extends StormSubsystem {
             }
             case OUTTAKE -> {
                 targetVelocityRPS = -10.0;
+                hopperSpeed = -0.5;
             }
             case EJECT -> {
                 targetVelocityRPS = 5.0;
