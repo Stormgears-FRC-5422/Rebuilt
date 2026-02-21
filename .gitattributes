@@ -1,0 +1,3 @@
+# Choreo trajectory and project files are complex JSON - never merge, always pick one side
+*.traj binary
+*.chor binary

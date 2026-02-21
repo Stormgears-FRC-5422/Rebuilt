@@ -59,4 +59,7 @@ public abstract class RebuiltJoystick {
     public boolean enableRumble() {
         return false;
     }
+    public boolean turnTowardsHub() {
+        return false;
+    }
 }

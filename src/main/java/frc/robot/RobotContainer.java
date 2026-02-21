@@ -134,23 +134,27 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
 
-//            new Trigger(() -> elasticMotorController.homeButton.get()).onTrue(Commands.runOnce(() -> {
-//                intake.requestHome();
-//                elasticMotorController.homeButton.setValue(false);
-//                System.out.println("is homed?: " + intake.hasBeenHomed);
-//            }, intake));
-
             new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestIdle();
                 elasticMotorController.homeButton.setValue(false);
             }, intake));
-
-            new Trigger(() -> elasticMotorController.visionCmd.get()).whileTrue(new FaceTowardHub(drivetrain));
             
             new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestRumble();
                 elasticMotorController.rumble.setValue(false);
             }, intake));
+            
+            new Trigger(() -> elasticMotorController.outtakeIntake.get()).onTrue(Commands.runOnce(() -> {
+                intake.setOuttakeRollers(true);
+            }, intake));
+            new Trigger(() -> elasticMotorController.outtakeIntake.get()).onFalse(Commands.runOnce(() -> {
+                intake.setOuttakeRollers(false);
+            }, intake));
+
+            new Trigger(() -> elasticMotorController.outtakeShooter.get()).onTrue(Commands.runOnce(() -> {
+                shooterHopper.setState(ShooterHopper.ShooterState.OUTTAKE);
+                elasticMotorController.outtakeShooter.setValue(false);
+            }, shooterHopper));
 
             new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestIntakeDown();
@@ -161,6 +165,8 @@ public class RobotContainer {
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
             new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper, false));
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
+            new Trigger(() -> joystick.turnTowardsHub()).whileTrue(new FaceTowardHub(drivetrain));
+
         }
 
         if (shooterHopper != null) {
