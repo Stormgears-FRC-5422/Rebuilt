@@ -8,16 +8,18 @@ import frc.utils.StormCommand;
 public class ShootCommand extends StormCommand {
 
     private final ShooterHopper shooter;
+    private final boolean useRealDist;
     private final Timer timer = new Timer();
 
     public ShootCommand(ShooterHopper shooter, boolean useRealDist) {
         this.shooter = shooter;
-        shooter.setUseRealDist(useRealDist);
+        this.useRealDist = useRealDist;
         addRequirements(shooter);
     }
 
     @Override
     public void initialize() {
+        shooter.setUseRealDist(useRealDist);
         timer.reset();
         timer.start();
         shooter.setState(ShooterState.SPEEDING_UP);
