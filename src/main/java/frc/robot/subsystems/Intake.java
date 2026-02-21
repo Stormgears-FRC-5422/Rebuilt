@@ -42,6 +42,7 @@ public class Intake extends StormSubsystem {
     String canBusName = Constants.Imu.canBusName;
 
     private boolean rollerEnabled = false;
+    private boolean outtakeEnabled = false;
     public boolean hasBeenHomed = false;
     private boolean rumbleHigh = false;
 
@@ -123,6 +124,9 @@ public class Intake extends StormSubsystem {
     public void setRollerEnabled(boolean enabled) {
         rollerEnabled = enabled;
     }
+    public void setOuttakeRollers(boolean enabled) {
+        outtakeEnabled = enabled;
+    }
     public void toggleIntakePosition() {
         if (!hasBeenHomed) return;
 
@@ -148,6 +152,11 @@ public class Intake extends StormSubsystem {
         if (rollerEnabled && state == IntakeState.INTAKING) {
             // System.out.println("Intake + " + elasticMotorController.intakeRollerSpeed.get());
             rollerIntakeMotor.set(Shooter.rollerIntakeSpeed);
+        } else {
+            rollerIntakeMotor.set(0.0);
+        }
+        if (outtakeEnabled) {
+            rollerIntakeMotor.set(Shooter.rollerOuttakeSpeed);
         } else {
             rollerIntakeMotor.set(0.0);
         }

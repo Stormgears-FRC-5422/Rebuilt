@@ -53,4 +53,8 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean enableRumble() {
         return xboxController.getXisPressed();
     }
+    @Override
+    public boolean turnTowardsHub() {
+        return xboxController.getYButtonIsPressed();
+    }
 }
