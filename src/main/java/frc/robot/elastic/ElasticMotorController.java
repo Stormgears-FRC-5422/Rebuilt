@@ -14,6 +14,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Double> intakeRollerSpeed;
   public final Option<Boolean> homeIntake;
   public final Option<Boolean> visionCmd;
+  public final Option<Double> intakeAngle;
 
   public ElasticMotorController() {
     super("Motor tester with elastic");
@@ -23,11 +24,11 @@ public class ElasticMotorController extends OptionsController {
     intakeDown = createBooleanOption("INTAKE DOWN", false);
     tester = createBooleanOption("wtv", false);
     shootButton = createBooleanOption("shoot", false);
-    shootSpeed = createNumberOption("shooter speed diagnostic", 0.0);
+    shootSpeed = createNumberOption("shooter speed diagnostic", 50.0);
     intakeRollerSpeed = createNumberOption("intake speed diagnostic", 0.0);
     hopperSpeed = createNumberOption("hopper speed diagnostic", 0.0);
     homeIntake = createBooleanOption("homeintake", false);
-
+    intakeAngle = createNumberOption("angle", 150.0);
     visionCmd = createBooleanOption("vision cmd", false);
     OptionsRegistry.register(this);
   }

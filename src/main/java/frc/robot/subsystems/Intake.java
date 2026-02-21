@@ -35,7 +35,7 @@ public class Intake extends StormSubsystem {
     private final SparkMax rollerIntakeMotor;
 
     private final MotionMagicVoltage mmRequest;
-    
+
     double current;
     public IntakeState state = IntakeState.UNKNOWN;
     private final Timer stateTimer;
@@ -165,7 +165,7 @@ public class Intake extends StormSubsystem {
                 setAngleDegrees(1);
             }
             case INTAKING -> {
-                setAngleDegrees(Shooter.intakingAngle);
+                setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
             }
             case RUMBLE -> {
                 setAngleDegrees(rumblePin);
@@ -189,7 +189,7 @@ public class Intake extends StormSubsystem {
         } else { //assume you're at home
             updownIntakeMotor.setVoltage(0.0);
         }
-    }    
+    }
     public boolean isAtHome() {
         if (Shooter.stratlimit) {
             // might want to use an average here to minimize spikes
