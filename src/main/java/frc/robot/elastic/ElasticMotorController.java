@@ -16,7 +16,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> visionCmd;
   public final Option<Boolean> outtakeIntake;
   public final Option<Boolean> outtakeShooter;
-  
+
   public ElasticMotorController() {
     super("Motor tester with elastic");
     homeButton = createBooleanOption("HOME THE INTAKE", false);
@@ -32,7 +32,7 @@ public class ElasticMotorController extends OptionsController {
 
     visionCmd = createBooleanOption("vision cmd", false);
     outtakeIntake = createBooleanOption("outtake intake", false);
-    outtakeShooter = createBooleanOption("outtakeshooter", false)
+    outtakeShooter = createBooleanOption("outtakeshooter", false);
 
     OptionsRegistry.register(this);
   }
