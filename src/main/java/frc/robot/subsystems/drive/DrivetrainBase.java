@@ -301,6 +301,8 @@ public abstract class DrivetrainBase extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
+        state.setPose(getPoseEstimator().getPose());
+
         // Check resetOrientation option (centralized here)
         if (options.resetOrientation.get()) {
             resetOrientation();

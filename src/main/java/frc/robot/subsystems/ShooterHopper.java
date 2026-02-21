@@ -18,8 +18,13 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import java.util.Arrays;
+
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+
 import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
+import frc.robot.RobotState;
 import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
@@ -46,6 +51,9 @@ public class ShooterHopper extends StormSubsystem {
     private double hopperSpeed = 0.0;
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
     private ShooterState state;
+
+    private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
+    private boolean useRealDist = false;
 
     public ShooterHopper() {
         if (Shooter.useShooterHopperDiagnostic) {
@@ -77,6 +85,15 @@ public class ShooterHopper extends StormSubsystem {
                 .withKS(Shooter.shootKS)
                 .withKMinMax(Shooter.shootKMin, Shooter.shootKMax);
 
+        // Parse shoot distance/speed lookup from properties into interpolating map
+        double[] distances = Arrays.stream(Shooter.shootDistances.replaceAll("[{}]", "").split(","))
+                .mapToDouble(Double::parseDouble).toArray();
+        double[] speeds = Arrays.stream(Shooter.shootSpeeds.replaceAll("[{}]", "").split(","))
+                .mapToDouble(Double::parseDouble).toArray();
+        for (int i = 0; i < distances.length; i++) {
+            shootSpeedMap.put(distances[i], speeds[i]);
+        }
+
         configMotor();
     }
 
@@ -102,11 +119,15 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0.0;
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = (elasticMotorController.shootSpeed.get() * 100);
+                targetVelocityRPS = useRealDist
+                        ? shootSpeedMap.get(RobotState.getInstance().getDistFromHub())
+                        : (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = 0.0;
             }
             case SHOOTING -> {
-                targetVelocityRPS = (elasticMotorController.shootSpeed.get() * 100);
+                targetVelocityRPS = useRealDist
+                        ? shootSpeedMap.get(RobotState.getInstance().getDistFromHub())
+                        : (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = Shooter.hopperSpeed;
             }
             case OUTTAKE -> {
@@ -143,6 +164,10 @@ public class ShooterHopper extends StormSubsystem {
             console(String.valueOf(pid),1);
         }
         Logger.recordOutput("shooter rps", (leaderMotor.getRotorVelocity()).getValueAsDouble());
+    }
+
+    public void setUseRealDist(boolean useRealDist) {
+        this.useRealDist = useRealDist;
     }
 
     public PidConfig getPidConfig() {

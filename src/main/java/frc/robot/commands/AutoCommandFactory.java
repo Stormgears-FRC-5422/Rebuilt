@@ -3,6 +3,7 @@ package frc.robot.commands;
 import choreo.auto.AutoFactory;
 import choreo.trajectory.Trajectory;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
@@ -68,6 +69,7 @@ public class AutoCommandFactory {
             autoChooser.addOption("PoopingSloth", "PoopingSloth");
             autoChooser.addOption("Tortoise", "Tortoise");
             autoChooser.addOption("simplePath", "simplePath");
+            autoChooser.addOption("simplePathLeft", "simplePathLeft");
             chooserInitialized = true;
         }
 
@@ -124,6 +126,7 @@ public class AutoCommandFactory {
         loadTrajectory("PoopingSloth");
         loadTrajectory("Tortoise");
         loadTrajectory("simplePath");
+        loadTrajectory("simplePathLeft");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -139,6 +142,15 @@ public class AutoCommandFactory {
      * **********/
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
+        if(trajectoryName == "simplePath"){
+            return simplePath();
+        }
+        if(trajectoryName == "simplePathLeft"){
+            return simplePathLeft();
+        }
+        if(trajectoryName == "Reload"){
+            return reloadAuto();
+        }
         return basicAuto(trajectoryName);
     }
 
@@ -146,18 +158,70 @@ public class AutoCommandFactory {
      * Runs a named trajectory while homing the intake in parallel.
      * Additional per-path complexity (e.g. shooting, scoring) can be layered on top of this.
      */
+    private Command stopDrive() {
+        return Commands.runOnce(() -> drivetrainBase.drive(new ChassisSpeeds(), false), drivetrainBase);
+    }
+
     private Command basicAuto(String name) {
         Command trajectory = choreoFactory.trajectoryCmd(name);
         Command printName = new PrintCommand("Auto: " + name);
 
-        if (intake == null) return Commands.sequence(printName, trajectory);
+        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
 
         return Commands.sequence(
             printName,
             Commands.parallel(
                 new IntakeHome(intake),
                 trajectory
-            )
+            ),
+            stopDrive()
+        );
+    }
+
+    private Command reloadAuto() {
+        String name = "Reload";
+        Command intakeLeg = choreoFactory.trajectoryCmd(name, 0);
+        Command shootLeg = choreoFactory.trajectoryCmd(name, 1);
+        Command printName = new PrintCommand("Auto: " + name);
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                Commands.race(
+                    intakeLeg,
+                    new RunIntake(intake)
+                )
+            ),
+            stopDrive(),
+            shootLeg,
+            stopDrive(),
+            new TimedShootCommand(shooterHopper, true, 8.0)
+        );
+    }
+
+    private Command simplePath() {
+        return simplePathAuto("simplePath");
+    }
+
+    private Command simplePathLeft() {
+        return simplePathAuto("simplePathLeft");
+    }
+
+    private Command simplePathAuto(String name) {
+        Command trajectory = choreoFactory.trajectoryCmd(name);
+        Command printName = new PrintCommand("Auto: " + name);
+
+        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                trajectory
+            ),
+            stopDrive(),
+            new ShootCommand(shooterHopper, true)
         );
     }
 }
