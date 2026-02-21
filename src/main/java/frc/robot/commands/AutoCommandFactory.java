@@ -70,6 +70,7 @@ public class AutoCommandFactory {
             autoChooser.addOption("Tortoise", "Tortoise");
             autoChooser.addOption("simplePath", "simplePath");
             autoChooser.addOption("simplePathLeft", "simplePathLeft");
+            autoChooser.addOption("simplePathMiddle", "simplePathMiddle");
             chooserInitialized = true;
         }
 
@@ -127,6 +128,7 @@ public class AutoCommandFactory {
         loadTrajectory("Tortoise");
         loadTrajectory("simplePath");
         loadTrajectory("simplePathLeft");
+        loadTrajectory("simplePathMiddle");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -143,7 +145,7 @@ public class AutoCommandFactory {
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
         switch (trajectoryName){
-            case "simplePath", "simplePathLeft":
+            case "simplePath", "simplePathLeft","simplePathMiddle":
                 return simplePathAuto(trajectoryName);
             case "Reload":
                 return reloadAuto();
@@ -182,9 +184,60 @@ public class AutoCommandFactory {
         String name = "Reload";
         Command intakeLeg1 = choreoFactory.trajectoryCmd(name, 0);
         Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
-        Command intakeLeg2 = choreoFactory.trajectoryCmd(name, 1);
-        Command shootLeg2 = choreoFactory.trajectoryCmd(name, 1);
         Command printName = new PrintCommand("Auto: " + name);
+
+        if (intake == null || shooterHopper == null) return Commands.sequence(printName, intakeLeg1, stopDrive());
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                intakeLeg1
+            ),
+            stopDrive(),
+            Commands.parallel(
+                new TimedShootCommand(shooterHopper, true,8),
+                Commands.runOnce(intake::requestRumble)
+            ),
+            Commands.parallel(
+                new IntakeHome(intake),
+                shootLeg1
+            ),
+            stopDrive(),
+            Commands.parallel(
+                new TimedShootCommand(shooterHopper, true,8),
+                Commands.runOnce(intake::requestRumble)
+            )
+        );
+    }
+
+    private Command simplePathAuto(String name) {
+        Command trajectory = choreoFactory.trajectoryCmd(name);
+        Command printName = new PrintCommand("Auto: " + name);
+
+        if (intake == null || shooterHopper == null) return Commands.sequence(printName, trajectory, stopDrive());
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                trajectory
+            ),
+            stopDrive(),
+            Commands.parallel(
+                new ShootCommand(shooterHopper, true),
+                Commands.runOnce(intake::requestRumble)
+            )
+        );
+    }
+
+    private Command twoCycleAuto(String name) {
+        Command printName = new PrintCommand("Auto: " + name);
+
+        Command intakeLeg1 = choreoFactory.trajectoryCmd(name, 0);
+        Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
+        Command intakeLeg2 = choreoFactory.trajectoryCmd(name, 2);
+        Command shootLeg2 = choreoFactory.trajectoryCmd(name, 3);
 
         return Commands.sequence(
             printName,
@@ -198,48 +251,21 @@ public class AutoCommandFactory {
             stopDrive(),
             shootLeg1,
             stopDrive(),
-            new TimedShootCommand(shooterHopper, true, 8.0),
+            Commands.parallel(
+                new TimedShootCommand(shooterHopper, true, 8.0),
+                Commands.runOnce(intake::requestRumble)
+            ),
+            Commands.runOnce(intake::toggleIntakePosition),
             Commands.race(
                 intakeLeg2,
                 new RunIntake(intake)
             ),
             stopDrive(),
             shootLeg2,
-            new TimedShootCommand(shooterHopper, true, 8.0)
-        );
-    }
-
-    private Command simplePathAuto(String name) {
-        Command trajectory = choreoFactory.trajectoryCmd(name);
-        Command printName = new PrintCommand("Auto: " + name);
-
-        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
-
-        return Commands.sequence(
-            printName,
             Commands.parallel(
-                new IntakeHome(intake),
-                trajectory
-            ),
-            stopDrive(),
-            new ShootCommand(shooterHopper, true)
-        );
-    }
-
-    private Command twoCycleAuto(String name) {
-        Command trajectory = choreoFactory.trajectoryCmd(name);
-        Command printName = new PrintCommand("Auto: " + name);
-
-        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
-
-        return Commands.sequence(
-            printName,
-            Commands.parallel(
-                new IntakeHome(intake),
-                trajectory
-            ),
-            stopDrive(),
-            new ShootCommand(shooterHopper, true)
+                new TimedShootCommand(shooterHopper, true, 8.0),
+                Commands.runOnce(intake::requestRumble)
+            )
         );
     }
 }

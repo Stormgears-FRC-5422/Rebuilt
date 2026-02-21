@@ -138,12 +138,12 @@ public class RobotContainer {
                 intake.requestIdle();
                 elasticMotorController.homeButton.setValue(false);
             }, intake));
-            
+
             new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestRumble();
                 elasticMotorController.rumble.setValue(false);
             }, intake));
-            
+
             new Trigger(() -> elasticMotorController.outtakeIntake.get()).onTrue(Commands.runOnce(() -> {
                 intake.setOuttakeRollers(true);
             }, intake));
@@ -151,15 +151,17 @@ public class RobotContainer {
                 intake.setOuttakeRollers(false);
             }, intake));
 
+            new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
+                intake.toggleIntakePosition();
+            }, intake));
+            new Trigger(() -> elasticMotorController.intakeDown.get()).onFalse(Commands.runOnce(() -> {
+                intake.toggleIntakePosition();
+            }, intake));
+
             new Trigger(() -> elasticMotorController.outtakeShooter.get()).onTrue(Commands.runOnce(() -> {
                 shooterHopper.setState(ShooterHopper.ShooterState.OUTTAKE);
                 elasticMotorController.outtakeShooter.setValue(false);
             }, shooterHopper));
-
-            new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
-                intake.requestIntakeDown();
-                elasticMotorController.intakeDown.setValue(false);
-            }, intake));
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));

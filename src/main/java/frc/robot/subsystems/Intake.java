@@ -63,8 +63,8 @@ public class Intake extends StormSubsystem {
         config.Slot0.kD = 0.0; //0.5
         config.Slot0.kG = 0.0;
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 5.0; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 5.0; // rot/s^2
+        config.MotionMagic.MotionMagicCruiseVelocity = 3.0; // rot /s
+        config.MotionMagic.MotionMagicAcceleration = 1.750; // rot/s^2
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
@@ -72,7 +72,7 @@ public class Intake extends StormSubsystem {
         stateTimer = new Timer();
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
-        currentLimits.StatorCurrentLimit = 65.0;
+        currentLimits.StatorCurrentLimit = 35.0;
         currentLimits.StatorCurrentLimitEnable = true;
 
         updownIntakeMotor.getConfigurator().apply(currentLimits);
@@ -150,11 +150,11 @@ public class Intake extends StormSubsystem {
 
         Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
         Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
-           
+
         rollerOutput = 0.0;
         if (outtakeEnabled) {
             rollerOutput = Shooter.rollerOuttakeSpeed;
-        } 
+        }
         else if (rollerEnabled && state == IntakeState.INTAKING) {
             rollerOutput = Shooter.rollerIntakeSpeed;
         }

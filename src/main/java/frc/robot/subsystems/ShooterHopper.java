@@ -55,7 +55,9 @@ public class ShooterHopper extends StormSubsystem {
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
     private boolean useRealDist = false;
 
+
     public ShooterHopper() {
+
         if (Shooter.useShooterHopperDiagnostic) {
             state = ShooterState.DIAGNOSTIC;
         } else {
@@ -148,6 +150,8 @@ public class ShooterHopper extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+
+        useRealDist = elasticMotorController.usePose.get();
 
         shooterStateMachine();
         if (state == ShooterState.DIAGNOSTIC) {

@@ -19,7 +19,7 @@ public class ShootCommand extends StormCommand {
 
     @Override
     public void initialize() {
-        shooter.setUseRealDist(useRealDist);
+        //shooter.setUseRealDist(useRealDist);
         timer.reset();
         timer.start();
         shooter.setState(ShooterState.SPEEDING_UP);
