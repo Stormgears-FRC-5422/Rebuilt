@@ -126,13 +126,13 @@ public class RobotState {
 
     // Make a copy, not a reference to the same object!
     public Pose2d getPose() {
-        return new Pose2d(currentPose.getX(), curretPose.getY(), new Rotation2d(currePose.getRotation().getRadians()));
+        return new Pose2d(currentPose.getX(), currentPose.getY(), new Rotation2d(currentPose.getRotation().getRadians()));
     }
-  
+
     public void setHopperState(HopperState hopperState){
         this.hopperState = hopperState;
     }
-  
+
     public HopperState getHopperState(){
         return hopperState;
     }
