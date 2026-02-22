@@ -5,31 +5,18 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.util.Color;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.RobotState.HopperState;
 import frc.utils.StormSubsystem;
 import frc.robot.subsystems.misc.BatteryMonitor;
-import frc.robot.subsystems.BeamBreakSensor;
 
 import static edu.wpi.first.units.Units.*;
 
 public class Lights extends StormSubsystem {
-    // public enum lightStates{
-    //     IDLE,
-    //     HOPPER_EMPTY,
-    //     HOPPER_HALF,
-    //     HOPPER_FULL,
-    //     ALIGNED_TO_TAG,
-    //     SWITCHING_SHIFTS,
-    // };
 
+    private RobotState.HopperState hopperState;
 
-    // private final Timer lightTimer = new Timer();
-    // private static final double lightTimerSeconds = 1.0;
-    // private lightStates lastState;
-
-    // lightStates state = lightStates.IDLE;
     // Alliance variables
     private final RobotState m_robotState;
-    private final BatteryMonitor m_BatteryMonitor;
 
 
     Color RED_COLOR = Color.kRed;
@@ -61,9 +48,7 @@ public class Lights extends StormSubsystem {
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
         setViews();
-        //state = lightStates.IDLE;
         m_robotState = RobotState.getInstance();
-        m_BatteryMonitor = new BatteryMonitor();
 
     }
 
@@ -71,71 +56,12 @@ public class Lights extends StormSubsystem {
     public void periodic() {
         super.periodic();
         
-        
-        LEDPattern red = LEDPattern.solid(Color.kRed);
-        LEDPattern green = LEDPattern.solid(Color.kGreen);
+        hopperState = m_robotState.getHopperState();
 
-        
-
-        if(m_robotState.getPeriod() == RobotState.StatePeriod.AUTONOMOUS){
-            setRainbow(pulse);
+        if(checkLightState(hopperState)){ // If the hopper state has changed
+            setLightState(hopperState);
+            switchLightState();
         }
-        else if(m_robotState.getPeriod() == RobotState.StatePeriod.TELEOP){
-            if(m_robotState.getHopperState() == m_robotState.hopperState.hopperEmpty){
-                setSolid(RED_COLOR);
-            }
-            else if(m_robotState.getHopperState() == m_robotState.hopperState.hopperHalf){
-                red.applyTo(m_top);
-                green.applyTo(m_bottom);
-            }
-            else if(m_robotState.getHopperState() == m_robotState.hopperState.hopperFull){
-                setSolid(GREEN_COLOR);
-            }
-            
-        }
-        else if(m_robotState.getPeriod() == RobotState.StatePeriod.DISABLED){
-            setAllianceColor();
-        }
-        else if(m_robotState.getPeriod() == RobotState.StatePeriod.TEST){
-
-        }
-        
-        
-        // switch(state){
-        //     case IDLE:
-        //         setRainbow(pulse);
-        //         break;
-        //     case HOPPER_EMPTY:
-        //         //Full red
-        //         setSolid(RED_COLOR);
-        //         break;
-        //     case HOPPER_HALF:
-        //         //Half green and half red
-        //         red.applyTo(m_top);
-        //         green.applyTo(m_bottom);
-        //         break;
-        //     case HOPPER_FULL:
-        //         //Full green
-        //         setSolid(GREEN_COLOR);
-        //         break;
-        //     case ALIGNED_TO_TAG:
-        //         //Flash blue
-        //         setSolid(BLUE_COLOR);
-        //         if (lightTimer.hasElapsed(lightTimerSeconds)) {
-        //             setLightState(lastState);
-        //             lightTimer.reset();
-        //         }
-        //         break;
-        //     case SWITCHING_SHIFTS:
-        //         //Flash Orange
-        //         setSolid(ORANGE_COLOR);
-        //         if (lightTimer.hasElapsed(lightTimerSeconds)) {
-        //             setLightState(lastState);
-        //             lightTimer.reset();
-        //         }
-        //         break;
-        // }
-
 
         // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
@@ -199,17 +125,40 @@ public class Lights extends StormSubsystem {
         // Right view is reversed because LED strips are wired in series
         m_bottom = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
         m_top = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
-    
-    // public void setLightState(lightStates newState){
-    //     lastState = state;
-    //     state = newState;
-    //     if(newState == lightStates.ALIGNED_TO_TAG || newState == lightStates.SWITCHING_SHIFTS){
-    //         lightTimer.start();
-    //     }
-    // }
-    // public lightStates getLightState(){
-    //     return state;
-    // }
+    }
 
-}
+    public void setLightState(HopperState newState){
+        hopperState = newState;
+    }
+    public HopperState getLightState(){
+        return hopperState;
+    }
+    public boolean checkLightState(HopperState newState){
+        if(hopperState != newState){
+            return true;
+        }
+        return false;
+    }
+    public void switchLightState(){
+
+        LEDPattern red = LEDPattern.solid(Color.kRed);
+        LEDPattern green = LEDPattern.solid(Color.kGreen);
+
+        switch(hopperState){
+            case IDLE:
+                setAllianceColor();
+                break;
+            case HOPPER_EMPTY:
+                setSolid(RED_COLOR);
+                break;
+            case HOPPER_HALF:
+                red.applyTo(m_top);
+                green.applyTo(m_bottom);
+                break;
+            case HOPPER_FULL:
+                setSolid(GREEN_COLOR);
+                break;
+        }
+    }
+
 }

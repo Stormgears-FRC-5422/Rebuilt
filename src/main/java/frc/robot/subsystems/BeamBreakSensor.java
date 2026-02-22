@@ -6,12 +6,6 @@ import frc.robot.RobotState;
 
 public class BeamBreakSensor extends StormSubsystem{
 
-    private enum HopperState{
-        hopperFull,
-        hopperHalf,
-        hopperEmpty,
-        unknown,
-    }
     private final DigitalInput bottomBeamBreak;
     private final DigitalInput topBeamBreak;
     private final RobotState m_robotState;
@@ -32,17 +26,24 @@ public class BeamBreakSensor extends StormSubsystem{
     @Override
     public void periodic() {
         super.periodic();
-        if(isHopperFull() == false && isHopperHalf() == true){ // hopper half
-            // hopperState = HopperState.hopperHalf;
-            m_robotState.setHopperState(m_robotState.hopperState.hopperHalf);
+
+        boolean bottom = isHopperHalf();
+        boolean top = isHopperFull();
+        RobotState.HopperState state;
+
+        if(!top && !bottom){ // hopper half
+            state = RobotState.HopperState.HOPPER_EMPTY;
         }
         else if(isHopperFull() == true && isHopperHalf() == true){ // hopper full
-            // hopperState = HopperState.hopperFull;
-            m_robotState.setHopperState(m_robotState.hopperState.hopperFull);
+            state = RobotState.HopperState.HOPPER_FULL;
         }
         else if(isHopperFull() == false && isHopperHalf() == false){ // hopper empty
-            // hopperState = HopperState.hopperEmpty;
-            m_robotState.setHopperState(m_robotState.hopperState.hopperEmpty);
+            state = RobotState.HopperState.HOPPER_FULL;
         }
+        else{
+            state = RobotState.HopperState.UNKNOWN;
+        }
+
+        m_robotState.setHopperState(state);
     }
 }

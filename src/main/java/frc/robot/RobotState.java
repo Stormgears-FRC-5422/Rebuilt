@@ -25,9 +25,11 @@ public class RobotState {
         TEST
     }
     public enum HopperState{
-        hopperFull,
-        hopperHalf,
-        hopperEmpty,
+        IDLE,
+        HOPPER_FULL,
+        HOPPER_HALF,
+        HOPPER_EMPTY,
+        UNKNOWN
     }
 
     private static RobotState instance;

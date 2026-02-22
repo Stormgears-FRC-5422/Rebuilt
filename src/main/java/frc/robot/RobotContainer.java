@@ -19,7 +19,6 @@ import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.KrakenShooter;
 import frc.robot.joysticks.RebuiltJoystickFactory;
 import frc.robot.subsystems.Lights;
-// import frc.robot.subsystems.Lights.lightStates;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -105,15 +104,8 @@ public class RobotContainer {
             new Trigger(() -> joystick.resetGyro())
                 .onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
 
-            // Need a test here to allow this based on the drive type.
-//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
-//            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
-        // new Trigger(() -> elasticMotorController.enabled.get())
-        //     .onTrue(new InstantCommand(() -> lights.setLightState(lightStates.IDLE)));
-
-        // console("[DONE] configureBindings");
     }
     private static double slider(double x, double low, double high) {
         return Math.max(low, Math.min(high, x));
@@ -133,10 +125,6 @@ public class RobotContainer {
                 krakenShooter.stop();
             }
         }
-        // String state = elasticMotorController.lightState.get();
-        // if (elasticMotorController.hopperIsEmpty.get()) {
-        //     lights.setLightState(lightStates.HOPPER_EMPTY);
-        // }
     }
 
     /**
