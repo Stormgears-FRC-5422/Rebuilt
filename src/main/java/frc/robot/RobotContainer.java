@@ -56,7 +56,6 @@ public class RobotContainer {
     // **********
     // Commands
     // **********
-    FaceTowardHub faceTowardHub;
     // (no pre-created commands)
 
     public RobotContainer() {
@@ -67,7 +66,7 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
-                faceTowardHub = new FaceTowardHub(drivetrain);
+                // FaceTowardHub is created in configureBindings when joystick is available
             }
         } catch (IllegalDriveTypeException e) {
             console("Error: Invalid drive type specified: " + e.getMessage());
