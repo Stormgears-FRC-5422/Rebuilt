@@ -187,12 +187,8 @@ public class RobotContainer {
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
-            // Need a test here to allow this based on the drive type.
-//            HoldSwerveModuleStates holdCommand = new HoldSwerveModuleStates(drivetrain, MetersPerSecond.of(0.5), Degrees.of(90));
-//            new Trigger(() -> joystick.holdSwerveState()).whileTrue(holdCommand);
         }
 
-        console("[DONE] configureBindings");
     }
 
     public void periodic() {

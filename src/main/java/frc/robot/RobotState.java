@@ -24,11 +24,20 @@ public class RobotState {
         TELEOP,
         TEST
     }
+    public enum HopperState{
+        IDLE,
+        HOPPER_FULL,
+        HOPPER_HALF,
+        HOPPER_EMPTY,
+        UNKNOWN
+    }
 
     private static RobotState instance;
     private final StateSimMode stateSimMode;
     private StatePeriod statePeriod;
     private BatteryState batteryState;
+    public HopperState hopperState;
+
     private StateAlliance alliance = StateAlliance.MISSING;
 
     private boolean joystickReady = false;
@@ -110,13 +119,22 @@ public class RobotState {
         joystickReady = ready;
     }
 
+    // Make a copy, not a reference to the same object!
     public void setPose(Pose2d pose) {
-        // Make a copy, not a reference to the same object!
         currentPose = new Pose2d(pose.getX(), pose.getY(), new Rotation2d(pose.getRotation().getRadians()));
     }
 
+    // Make a copy, not a reference to the same object!
     public Pose2d getPose() {
-        return currentPose;
+        return new Pose2d(currentPose.getX(), curretPose.getY(), new Rotation2d(currePose.getRotation().getRadians()));
+    }
+  
+    public void setHopperState(HopperState hopperState){
+        this.hopperState = hopperState;
+    }
+  
+    public HopperState getHopperState(){
+        return hopperState;
     }
 
     public double getDistFromHub() {
