@@ -1,20 +1,21 @@
 package frc.robot.commands;
 
+import static java.util.Objects.isNull;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Options.DriveOptions;
 import frc.robot.joysticks.RebuiltJoystick;
-import frc.robot.joysticks.RebuiltLogitechJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
-import org.littletonrobotics.junction.Logger;
-
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
-import static java.util.Objects.isNull;
 
 public class JoyStickDrive extends StormCommand {
     private final DrivetrainBase drivetrain;
@@ -89,8 +90,20 @@ public class JoyStickDrive extends StormCommand {
             omega = omegaScaleLimiter.calculate(omega);
         }
 
+        boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
-        drivetrain.percentOutputDrive(speeds, fieldRelativeSupplier.getAsBoolean());
+
+        // Apply driver perspective: rotate from driver frame to field frame.
+        // drive() then converts field→robot via gyro. Autonomous commands bypass
+        // this (they call drive() directly with raw field coordinates).
+        if (fieldRelative) {
+            Rotation2d perspective = drivetrain.getDriverPerspective();
+            if (perspective != null) {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+            }
+        }
+
+        drivetrain.percentOutputDrive(speeds, fieldRelative);
 
         Logger.recordOutput("x", x);
         Logger.recordOutput("y", y);

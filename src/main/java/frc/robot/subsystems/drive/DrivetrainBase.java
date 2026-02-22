@@ -1,6 +1,13 @@
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+
+import choreo.trajectory.SwerveSample;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -14,10 +21,6 @@ import frc.robot.sensors.imu.NullIMU;
 import frc.robot.sensors.pose.NullPoseEstimator;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.utils.StormSubsystem;
-import org.littletonrobotics.junction.AutoLogOutput;
-
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 /**
  * Abstract base class for all drivetrain implementations.
@@ -39,6 +42,10 @@ public abstract class DrivetrainBase extends StormSubsystem {
     private Rotation2d m_cachedDriverPerspective = null;
     private boolean m_hasAppliedDriverPerspective = false;
 
+    private final PIDController xController = new PIDController(Drive.trajectoryXKP, Drive.trajectoryXKI, Drive.trajectoryXKD);
+    private final PIDController yController = new PIDController(Drive.trajectoryYKP, Drive.trajectoryYKI, Drive.trajectoryYKD);
+    private final PIDController headingController = new PIDController(Drive.trajectoryHeadingKP, Drive.trajectoryHeadingKI, Drive.trajectoryHeadingKD);
+
     @AutoLogOutput
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
@@ -49,6 +56,7 @@ public abstract class DrivetrainBase extends StormSubsystem {
         state = RobotState.getInstance();
         options = DriveOptions.create();
         setDriveSpeedScale(Drive.driveSpeedScale);
+        headingController.enableContinuousInput(-Math.PI, Math.PI);
 
         // Initialize collision detection for simulation only
         collisionManager = frc.robot.simulation.collision.CollisionManager.createIfEnabled();
@@ -173,7 +181,6 @@ public abstract class DrivetrainBase extends StormSubsystem {
     }
 
     // ==================== Velocity Configuration ====================
-
     protected final void setMaxVelocities(LinearVelocity maxVelocity, AngularVelocity maxAngularVelocity) {
         m_maxVelocity = maxVelocity;
         m_maxAngularVelocity = maxAngularVelocity;
@@ -224,20 +231,10 @@ public abstract class DrivetrainBase extends StormSubsystem {
         m_fieldRelative = fieldRelative;
 
         if (!handlesFieldRelativeConversion() && fieldRelative) {
-            // Base class handles the conversion
-            // Apply driver perspective: rotate input speeds so "forward" from driver's POV
-            // maps to field-forward (0 degrees), then convert to robot-relative
-            ChassisSpeeds fieldSpeeds = speeds;
-            if (!handlesDriverPerspective()) {
-                Rotation2d driverPerspective = getDriverPerspective();
-                if (driverPerspective != null) {
-                    // Rotate the field-relative speeds by the driver perspective
-                    // This transforms from driver-relative to field-relative coordinates
-                    fieldSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, driverPerspective.unaryMinus());
-                }
-            }
-            Rotation2d robotRotation = getRotation();
-            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(fieldSpeeds, robotRotation);
+            // Convert from field frame to robot frame using current gyro rotation.
+            // Driver perspective is applied upstream (JoyStickDrive) so that
+            // autonomous commands (followTrajectory) use raw field coordinates unmodified.
+            m_chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getRotation());
         } else {
             // Either not field-relative, or child handles conversion
             m_chassisSpeeds = speeds;
@@ -304,20 +301,21 @@ public abstract class DrivetrainBase extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
+        state.setPose(getPoseEstimator().getPose());
+
         // Check resetOrientation option (centralized here)
         if (options.resetOrientation.get()) {
             resetOrientation();
             options.resetOrientation.setValue(false);
         }
 
-        // Update driver perspective only when disabled (matches CTRDriveInternal behavior)
-        // This ensures driving behavior doesn't change until an explicit disable event
-        if (!handlesDriverPerspective()) {
-            if (!m_hasAppliedDriverPerspective || edu.wpi.first.wpilibj.DriverStation.isDisabled()) {
-                m_cachedDriverPerspective = parseDriverPerspective();
-                if (m_cachedDriverPerspective != null) {
-                    m_hasAppliedDriverPerspective = true;
-                }
+        // Update driver perspective cache only when disabled.
+        // This ensures driving behavior doesn't change until an explicit disable event.
+        // JoyStickDrive reads getDriverPerspective() to apply perspective before calling drive().
+        if (!m_hasAppliedDriverPerspective || edu.wpi.first.wpilibj.DriverStation.isDisabled()) {
+            m_cachedDriverPerspective = parseDriverPerspective();
+            if (m_cachedDriverPerspective != null) {
+                m_hasAppliedDriverPerspective = true;
             }
         }
 
@@ -326,4 +324,21 @@ public abstract class DrivetrainBase extends StormSubsystem {
             collisionManager.updateAndConstrain(getPose(), this::setPose);
         }
     }
+
+    // ==================== PID / etc Characterization ====================
+    public double[] getWheelRadiusCharacterizationPositions() {
+        return new double[] {};
+    }
+
+    public void followTrajectory(SwerveSample sample) {
+        Pose2d pose = getPose();
+
+        ChassisSpeeds speeds = new ChassisSpeeds(
+            sample.vx + xController.calculate(pose.getX(), sample.x),
+            sample.vy + yController.calculate(pose.getY(), sample.y),
+            sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
+        );
+        drive(speeds, true, 1.0);  // Always full speed: Choreo velocities are already in m/s
+    }
+
 }

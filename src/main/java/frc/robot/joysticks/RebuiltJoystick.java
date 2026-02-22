@@ -22,7 +22,7 @@ public abstract class RebuiltJoystick {
         return driveJoystick.getOmegaSpeed();
     }
 
-    public boolean getRobotRelative() {
+    public boolean getIntakeRun() {
         return true;
     }
 
@@ -41,5 +41,25 @@ public abstract class RebuiltJoystick {
     // Logitech-specific (slider only) - safe default for Xbox
     public double getSlider() {
         return 0.0;
+    }
+
+    public double getLeftTriggerAxis() {
+        return 0.0;
+    }
+    public boolean shooterIsHeldManual() {
+        return false;
+    }
+
+    public boolean intakeTogglePressed() {
+        return false;
+    }
+    public boolean getRobotRelative() {
+        return true;
+    }
+    public boolean enableRumble() {
+        return false;
+    }
+    public boolean turnTowardsHub() {
+        return false;
     }
 }

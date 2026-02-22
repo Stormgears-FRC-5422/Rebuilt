@@ -2,8 +2,8 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.subsystems.misc.BatteryMonitor;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
 public class RobotState {
@@ -33,14 +33,15 @@ public class RobotState {
     }
 
     private static RobotState instance;
-    private Pose2d currentPose;
-
     private final StateSimMode stateSimMode;
     private StatePeriod statePeriod;
     private BatteryState batteryState;
     public HopperState hopperState;
 
     private StateAlliance alliance = StateAlliance.MISSING;
+
+    private boolean joystickReady = false;
+    private Pose2d currentPose;
 
     private RobotState() {
         if (RobotBase.isReal()) {
@@ -78,6 +79,10 @@ public class RobotState {
         return alliance;
     }
 
+    public boolean isAllianceMissing() {
+        return alliance == StateAlliance.MISSING;
+    }
+
     public boolean isAllianceBlue() {
         return alliance == StateAlliance.BLUE;
     }
@@ -106,19 +111,35 @@ public class RobotState {
         return this.batteryState;
     }
 
+    public boolean getJoystickReady() {
+        return joystickReady;
+    }
+
+    public void setJoystickReady(boolean ready) {
+        joystickReady = ready;
+    }
+
+    // Make a copy, not a reference to the same object!
     public void setPose(Pose2d pose) {
-        // Make a copy, not a reference to the same object!
         currentPose = new Pose2d(pose.getX(), pose.getY(), new Rotation2d(pose.getRotation().getRadians()));
     }
 
+    // Make a copy, not a reference to the same object!
     public Pose2d getPose() {
-        return currentPose;
+        return new Pose2d(currentPose.getX(), curretPose.getY(), new Rotation2d(currePose.getRotation().getRadians()));
     }
+  
     public void setHopperState(HopperState hopperState){
         this.hopperState = hopperState;
     }
+  
     public HopperState getHopperState(){
         return hopperState;
+    }
+
+    public double getDistFromHub() {
+        Pose2d hubPose = (alliance == StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
+        return currentPose.minus(hubPose).getTranslation().getNorm();
     }
 
 }

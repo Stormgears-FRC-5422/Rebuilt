@@ -9,7 +9,9 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.Constants;
 import frc.robot.FieldConstants;
+import frc.robot.RobotState;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormSubsystem;
@@ -26,8 +28,9 @@ public class VisionSubsystem extends StormSubsystem {
     String limelightID;
 
     /** Drivetrain reference — used for gyro heading and pose estimator */
-    private final DrivetrainBase drivetrain;
-    private final PoseEstimator drivetrainPoseEstimator;
+    private DrivetrainBase drivetrain;
+    private PoseEstimator drivetrainPoseEstimator;
+    private boolean hasDrive = true;
 
     /** Maximum distance to accept a tag measurement, in feet */
     private static final double MAX_TAG_DISTANCE_FEET = 9.0;
@@ -37,6 +40,7 @@ public class VisionSubsystem extends StormSubsystem {
      *  theta is set very high because MegaTag2 already uses the gyro for heading. */
     private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(0.7, 0.7, 9999999);
 
+
     public VisionSubsystem(
 //        SwerveDrivePoseEstimator poseEstimator,
         DrivetrainBase drivetrain,
@@ -44,8 +48,14 @@ public class VisionSubsystem extends StormSubsystem {
     ){
 //        this.poseEstimator = poseEstimator;
         this.limelightIDs = limelightIDs;
-        this.drivetrain = drivetrain;
-        this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
+        if(drivetrain !=null){
+            this.drivetrain = drivetrain;
+            this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
+            hasDrive = true;
+        }else{
+            hasDrive = false;
+        }
+
     }
 
 
@@ -64,7 +74,20 @@ public class VisionSubsystem extends StormSubsystem {
         if (poseEstimate == null || poseEstimate.tagCount == 0) {
             return Double.MAX_VALUE;
         }
-        return poseEstimate.avgTagDist;
+
+        // Use the closest individual tag distance measured directly by the camera.
+        // Why not compute it from poseV.minus(poseTag)?
+        //   The Limelight USES the tag to CALCULATE poseV. So if poseV is wrong,
+        //   the distance you compute from it is also wrong — it's circular.
+        //   rawFiducials[].distToRobot is an independent optical measurement
+        //   that doesn't depend on the pose at all.
+        double minDist = Double.MAX_VALUE;
+        for (LimelightHelpers.RawFiducial fid : poseEstimate.rawFiducials) {
+            if (fid.distToRobot < minDist) {
+                minDist = fid.distToRobot;
+            }
+        }
+        return minDist;
     }
 
     public Transform2d getTurretOffset(double xDist1, double pivotDist, int pivotAngle, int planarAngle) {
@@ -107,15 +130,47 @@ public class VisionSubsystem extends StormSubsystem {
         }
     }
 
+    public void logLLs(){
+        for(String limelightID: limelightIDs){
+            // Creating a string that allows each different limelight to have their own start string for logging
+            String start = "Vision/" + limelightID + "/";
+
+            // Logging all the values from the PoseEstimate
+            PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
+            if (estimate == null || estimate.tagCount == 0) {
+                Logger.recordOutput(start + "HasTarget", false);
+                continue;
+            }
+            Logger.recordOutput(start + "HasTarget", true);
+            Logger.recordOutput(start + "TagCount", estimate.tagCount);
+            Logger.recordOutput(start + "Pose", estimate.pose);
+            Logger.recordOutput(start + "AvgTagDist", estimate.avgTagDist);
+            Logger.recordOutput(start + "ClosestTagDist", getDistFromTag(limelightID));
+
+            // Logging the locations of all the April Tags with their dist, id
+            for (int i = 0; i < estimate.rawFiducials.length; i++) {
+                LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
+                Logger.recordOutput(start + "Tags/Tag" + i + "_ID", fid.id);
+                Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+            }
+        }
+    }
+
     @Override
     public void periodic() {
         super.periodic();
 
         // MegaTag2 requires the robot orientation to be set each cycle for all limelights
-        double robotYaw = drivetrain.getRotation().getDegrees();
-        setAllLimelightOrientations(robotYaw);
+        if(hasDrive){
+            double robotYaw = drivetrain.getRotation().getDegrees();
+            setAllLimelightOrientations(robotYaw);
+        }
+
+
 
         limelightID = getClosestLL();
+
+        logLLs();
 
         Logger.recordOutput("Vision/ActiveLL", limelightID);
 
@@ -131,44 +186,44 @@ public class VisionSubsystem extends StormSubsystem {
         }
 
         // Reject tags that are too far away (unreliable at distance)
-        if (estimate.avgTagDist > MAX_TAG_DISTANCE_METERS) {
-            Logger.recordOutput("Vision/HasTarget", false);
-            Logger.recordOutput("Vision/RejectedDist", estimate.avgTagDist);
+        double closestTagDist = getDistFromTag(limelightID);
+        if (closestTagDist > MAX_TAG_DISTANCE_METERS) {
+            Logger.recordOutput("Vision/Closest/HasTarget", false);
+            Logger.recordOutput("Vision/Closest/RejectedDist", closestTagDist);
             return;
         }
 
-        Logger.recordOutput("Vision/HasTarget", true);
-        Logger.recordOutput("Vision/TagCount", estimate.tagCount);
-        Logger.recordOutput("Vision/Pose", estimate.pose);
-        Logger.recordOutput("Vision/AvgTagDist", estimate.avgTagDist);
+        Logger.recordOutput("Vision/Closest/HasTarget", true);
+        Logger.recordOutput("Vision/Closest/TagCount", estimate.tagCount);
+        Logger.recordOutput("Vision/Closest/Pose", estimate.pose);
+        Logger.recordOutput("Vision/Closest/AvgTagDist", estimate.avgTagDist);
+        Logger.recordOutput("Vision/Closest/ClosestTagDist", closestTagDist);
 
-        // Log each individual tag ID and its distance to the robot
-        for (int i = 0; i < estimate.rawFiducials.length; i++) {
-            LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
-            Logger.recordOutput("Vision/Tags/Tag" + i + "_ID", fid.id);
-            Logger.recordOutput("Vision/Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+
+        if(hasDrive){
+            // Snapshot pose before vision correction
+            Pose2d poseBefore = drivetrainPoseEstimator.getPose();
+
+            // Merge the vision measurement into the drivetrain's pose estimator
+            if(Constants.Vision.mergeVision) {
+                drivetrainPoseEstimator.addVisionMeasurement(
+                    estimate.pose,
+                    estimate.timestampSeconds,
+                    VISION_STD_DEVS
+                );
+
+                // Measure how much the pose estimator shifted after the vision update
+                Pose2d poseAfter = drivetrainPoseEstimator.getPose();
+                double dx = poseAfter.getX() - poseBefore.getX();
+                double dy = poseAfter.getY() - poseBefore.getY();
+                double correctionMeters = Math.sqrt(dx * dx + dy * dy);
+                double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
+
+                Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
+                Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
+                Logger.recordOutput("Vision/PoseBefore", poseBefore);
+                Logger.recordOutput("Vision/PoseAfter", poseAfter);
+            }
         }
-
-        // Snapshot pose before vision correction
-        Pose2d poseBefore = drivetrainPoseEstimator.getPose();
-
-        // Merge the vision measurement into the drivetrain's pose estimator
-        drivetrainPoseEstimator.addVisionMeasurement(
-            estimate.pose,
-            estimate.timestampSeconds,
-            VISION_STD_DEVS
-        );
-
-        // Measure how much the pose estimator shifted after the vision update
-        Pose2d poseAfter = drivetrainPoseEstimator.getPose();
-        double dx = poseAfter.getX() - poseBefore.getX();
-        double dy = poseAfter.getY() - poseBefore.getY();
-        double correctionMeters = Math.sqrt(dx * dx + dy * dy);
-        double correctionDegrees = Math.abs(poseAfter.getRotation().getDegrees() - poseBefore.getRotation().getDegrees());
-
-        Logger.recordOutput("Vision/CorrectionMeters", correctionMeters);
-        Logger.recordOutput("Vision/CorrectionDegrees", correctionDegrees);
-        Logger.recordOutput("Vision/PoseBefore", poseBefore);
-        Logger.recordOutput("Vision/PoseAfter", poseAfter);
     }
 }

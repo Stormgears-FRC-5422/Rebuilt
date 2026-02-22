@@ -13,7 +13,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
     // Core driving inherited from base class via DriveJoystick
 
     @Override
-    public boolean getRobotRelative() {
+    public boolean getIntakeRun() {
         return xboxController.getLeftTrigger() > 0.2;
     }
 
@@ -31,6 +31,30 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean wheelRadiusCharacterization() {
         return xboxController.getYButtonIsHeld();
     }
+    @Override
+    public boolean shooterIsHeldManual() {
+        return xboxController.getBButtonIsHeld();
+    }
 
     // getSlider() uses base default (0.0)
+    // @Override
+    // public double getLeftTriggerAxis() {
+    //     return xboxController.getLeftTrigger();
+    // }
+    @Override
+    public boolean getRobotRelative() {
+        return xboxController.getLeftBumperIsPressed();
+    }
+    @Override
+    public boolean intakeTogglePressed() {
+        return xboxController.getAButtonIsPressed();
+    }
+    @Override
+    public boolean enableRumble() {
+        return xboxController.getXisPressed();
+    }
+    @Override
+    public boolean turnTowardsHub() {
+        return xboxController.getYButtonIsPressed();
+    }
 }
