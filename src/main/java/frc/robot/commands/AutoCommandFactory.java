@@ -330,10 +330,22 @@ public class AutoCommandFactory {
         List<Command> commands = new ArrayList<>();
         commands.add(new PrintCommand(label));
 
-        // First cycle: intake home + trajectory with intake running + shoot
-        commands.add(Commands.parallel(
-            new IntakeHome(intake),
-            Commands.race(choreoFactory.trajectoryCmd(firstTrajectory), new RunIntake(intake))
+        if (intake == null || shooterHopper == null) {
+            // Diagnostic: just run trajectories without intake/shooter
+            commands.add(choreoFactory.trajectoryCmd(firstTrajectory));
+            commands.add(stopDrive());
+            if (secondTrajectory != null) {
+                commands.add(choreoFactory.trajectoryCmd(secondTrajectory));
+                commands.add(stopDrive());
+            }
+            return Commands.sequence(commands.toArray(new Command[0]));
+        }
+
+        // First cycle
+        commands.add(new IntakeHome(intake));
+        commands.add(Commands.race(
+            choreoFactory.trajectoryCmd(firstTrajectory),
+            new RunIntake(intake)
         ));
         commands.add(stopDrive());
         commands.add(Commands.parallel(
