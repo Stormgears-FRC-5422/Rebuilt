@@ -13,6 +13,8 @@ import frc.robot.Constants.Auto;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -24,6 +26,9 @@ public class AutoCommandFactory {
 
     private AutoFactory choreoFactory;
     private final LoggedDashboardChooser<String> autoChooser = new LoggedDashboardChooser<>("Auto Routine");
+    private final LoggedDashboardChooser<String> startPositionChooser = new LoggedDashboardChooser<>("Start Position");
+    private LoggedDashboardChooser<String> firstCycleChooser;
+    private LoggedDashboardChooser<String> secondCycleChooser;
 
     @AutoLogOutput
     private boolean isDirty;
@@ -32,6 +37,9 @@ public class AutoCommandFactory {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<? extends Trajectory<?>> chosenTrajectory = Optional.empty();
     private String chooserTrajectoryName = Auto.path;
+    private String lastStartPosition = "";
+    private String lastFirstCycle = "";
+    private String lastSecondCycle = "";
 
     public AutoCommandFactory(DrivetrainBase drivetrainBase, ShooterHopper shooterHopper, Intake intake) {
         this.robotState = RobotState.getInstance();
@@ -55,10 +63,11 @@ public class AutoCommandFactory {
 
         loadTrajectories();
 
-        // Build chooser options only once — addOption accumulates duplicates on repeated calls
         if (!chooserInitialized) {
+            // Main auto chooser — legacy autos + cycle auto
             autoChooser.addDefaultOption(Auto.path, Auto.path);
             autoChooser.addOption("Nothing", null);
+            autoChooser.addOption("Cycle Auto", "CycleAuto");
             autoChooser.addOption("Straight", "Straight");
             autoChooser.addOption("Reload", "Reload");
             autoChooser.addOption("Sweeper", "Sweeper");
@@ -68,9 +77,15 @@ public class AutoCommandFactory {
             autoChooser.addOption("HokeyPokeyRabbit", "HokeyPokeyRabbit");
             autoChooser.addOption("PoopingSloth", "PoopingSloth");
             autoChooser.addOption("Tortoise", "Tortoise");
-            autoChooser.addOption("simplePath", "simplePath");
-            autoChooser.addOption("simplePathLeft", "simplePathLeft");
-            autoChooser.addOption("simplePathMiddle", "simplePathMiddle");
+
+            // Cycle auto sub-choosers
+            startPositionChooser.addDefaultOption("Left", "left");
+            startPositionChooser.addOption("Middle", "mid");
+            startPositionChooser.addOption("Right", "right");
+
+            rebuildFirstCycleChooser("left");
+            rebuildSecondCycleChooser("left", "mid");
+
             chooserInitialized = true;
         }
 
@@ -100,15 +115,42 @@ public class AutoCommandFactory {
         if (choreoFactory == null) return;
 
         String currentSelection = autoChooser.get();
-        // isDirty is set by initialize() on every alliance change (even if same selection).
-        // The Objects.equals check additionally catches selection changes between alliance updates.
-        if (!isDirty && Objects.equals(currentSelection, chooserTrajectoryName)) return;
+        String currentStart = startPositionChooser.get();
+        String currentFirst = firstCycleChooser != null ? firstCycleChooser.get() : "mid";
+        String currentSecond = secondCycleChooser != null ? secondCycleChooser.get() : "none";
+
+        // Rebuild downstream choosers when upstream selections change
+        if (!Objects.equals(currentStart, lastStartPosition)) {
+            rebuildFirstCycleChooser(currentStart);
+            currentFirst = firstCycleChooser.get();
+            rebuildSecondCycleChooser(currentStart, currentFirst);
+            currentSecond = secondCycleChooser.get();
+        } else if (!Objects.equals(currentFirst, lastFirstCycle)) {
+            rebuildSecondCycleChooser(currentStart, currentFirst);
+            currentSecond = secondCycleChooser.get();
+        }
+
+        boolean selectionChanged = !Objects.equals(currentSelection, chooserTrajectoryName)
+            || !Objects.equals(currentStart, lastStartPosition)
+            || !Objects.equals(currentFirst, lastFirstCycle)
+            || !Objects.equals(currentSecond, lastSecondCycle);
+
+        if (!isDirty && !selectionChanged) return;
 
         chooserTrajectoryName = currentSelection;
-        chosenCommand = buildCommand(chooserTrajectoryName);
-        chosenTrajectory = (chooserTrajectoryName != null)
-            ? loadTrajectory(chooserTrajectoryName)
-            : Optional.empty();
+        lastStartPosition = currentStart;
+        lastFirstCycle = currentFirst;
+        lastSecondCycle = currentSecond;
+
+        if ("CycleAuto".equals(chooserTrajectoryName)) {
+            chosenCommand = buildCycleAuto(currentStart, currentFirst, currentSecond);
+            chosenTrajectory = loadTrajectory(resolveInitialPoseTrajectory(currentStart, currentFirst));
+        } else {
+            chosenCommand = buildCommand(chooserTrajectoryName);
+            chosenTrajectory = (chooserTrajectoryName != null)
+                ? loadTrajectory(chooserTrajectoryName)
+                : Optional.empty();
+        }
 
         isDirty = false;
     }
@@ -117,6 +159,7 @@ public class AutoCommandFactory {
      * Trajectory loading
      * **********/
     private void loadTrajectories() {
+        // Legacy trajectories
         loadTrajectory("Straight");
         loadTrajectory("Reload");
         loadTrajectory("Sweeper");
@@ -126,9 +169,27 @@ public class AutoCommandFactory {
         loadTrajectory("HokeyPokeyRabbit");
         loadTrajectory("PoopingSloth");
         loadTrajectory("Tortoise");
-        loadTrajectory("simplePath");
-        loadTrajectory("simplePathLeft");
-        loadTrajectory("simplePathMiddle");
+
+        // Shoot-only trajectories
+        loadTrajectory("left_shoot_only");
+        loadTrajectory("mid_shoot_only");
+        loadTrajectory("right_shoot_only");
+
+        // Left-side cycle trajectories
+        loadTrajectory("left_first_mid");
+        loadTrajectory("left_first_depot");
+        loadTrajectory("left_second_mid");
+        loadTrajectory("left_second_depot");
+
+        // Right-side cycle trajectories
+        loadTrajectory("right_first_mid");
+        loadTrajectory("right_first_outpost");
+        loadTrajectory("right_second_mid");
+        loadTrajectory("right_second_outpost");
+
+        // Middle-start cycle trajectories (mid + mid is not valid; middle only has depot/outpost/shoot)
+        loadTrajectory("mid_first_depot");
+        loadTrajectory("mid_first_outpost");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -140,13 +201,11 @@ public class AutoCommandFactory {
     }
 
     /* **********
-     * Command building
+     * Legacy command building
      * **********/
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
         switch (trajectoryName){
-            case "simplePath", "simplePathLeft","simplePathMiddle":
-                return simplePathAuto(trajectoryName);
             case "Reload":
                 return reloadAuto();
             case "TwoCycleRight", "TwoCycleLeft":
@@ -156,10 +215,6 @@ public class AutoCommandFactory {
         }
     }
 
-    /**
-     * Runs a named trajectory while homing the intake in parallel.
-     * Additional per-path complexity (e.g. shooting, scoring) can be layered on top of this.
-     */
     private Command stopDrive() {
         return Commands.runOnce(() -> drivetrainBase.drive(new ChassisSpeeds(), false), drivetrainBase);
     }
@@ -211,26 +266,6 @@ public class AutoCommandFactory {
         );
     }
 
-    private Command simplePathAuto(String name) {
-        Command trajectory = choreoFactory.trajectoryCmd(name);
-        Command printName = new PrintCommand("Auto: " + name);
-
-        if (intake == null || shooterHopper == null) return Commands.sequence(printName, trajectory, stopDrive());
-
-        return Commands.sequence(
-            printName,
-            Commands.parallel(
-                new IntakeHome(intake),
-                trajectory
-            ),
-            stopDrive(),
-            Commands.parallel(
-                new ShootCommand(shooterHopper, true),
-                Commands.runOnce(intake::requestRumble)
-            )
-        );
-    }
-
     private Command twoCycleAuto(String name) {
         Command printName = new PrintCommand("Auto: " + name);
 
@@ -267,5 +302,161 @@ public class AutoCommandFactory {
                 Commands.runOnce(intake::requestRumble)
             )
         );
+    }
+
+    /* **********
+     * Modular cycle auto
+     * **********/
+
+    /**
+     * Builds a cycle auto from the three sub-chooser selections.
+     * The trajectory names follow the pattern: {start}_{first|second}_{destination}
+     */
+    private Command buildCycleAuto(String start, String firstCycle, String secondCycle) {
+        String label = "Cycle Auto: " + start + " / " + firstCycle + " / " + secondCycle;
+
+        // Shoot only — just drive to scoring position and shoot
+        if ("shoot_only".equals(firstCycle)) {
+            return shootOnlyAuto(label, start + "_shoot_only");
+        }
+
+        // Resolve trajectory names
+        String firstTrajectory = resolveFirstTrajectory(start, firstCycle);
+        String effectiveSide = resolveEffectiveSide(start, firstCycle);
+        String secondTrajectory = resolveSecondTrajectory(effectiveSide, secondCycle);
+
+        if (firstTrajectory == null) {
+            System.err.println("Invalid cycle auto combo: " + label);
+            return Commands.sequence(new PrintCommand("Invalid: " + label), Commands.none());
+        }
+
+        List<Command> commands = new ArrayList<>();
+        commands.add(new PrintCommand(label));
+
+        // First cycle: intake home + trajectory with intake running + shoot
+        commands.add(Commands.parallel(
+            new IntakeHome(intake),
+            Commands.race(choreoFactory.trajectoryCmd(firstTrajectory), new RunIntake(intake))
+        ));
+        commands.add(stopDrive());
+        commands.add(Commands.parallel(
+            new TimedShootCommand(shooterHopper, true, 8.0),
+            Commands.runOnce(intake::requestRumble)
+        ));
+
+        // Second cycle (if selected)
+        if (secondTrajectory != null) {
+            commands.add(Commands.runOnce(intake::toggleIntakePosition));
+            commands.add(Commands.race(
+                choreoFactory.trajectoryCmd(secondTrajectory),
+                new RunIntake(intake)
+            ));
+            commands.add(stopDrive());
+            commands.add(Commands.parallel(
+                new TimedShootCommand(shooterHopper, true, 8.0),
+                Commands.runOnce(intake::requestRumble)
+            ));
+        }
+
+        return Commands.sequence(commands.toArray(new Command[0]));
+    }
+
+    private Command shootOnlyAuto(String label, String trajectoryName) {
+        Command trajectory = choreoFactory.trajectoryCmd(trajectoryName);
+        Command printName = new PrintCommand(label);
+
+        if (intake == null || shooterHopper == null) return Commands.sequence(printName, trajectory, stopDrive());
+
+        return Commands.sequence(
+            printName,
+            Commands.parallel(
+                new IntakeHome(intake),
+                trajectory
+            ),
+            stopDrive(),
+            Commands.parallel(
+                new ShootCommand(shooterHopper, true),
+                Commands.runOnce(intake::requestRumble)
+            )
+        );
+    }
+
+    /**
+     * Resolves the first cycle trajectory name.
+     * Pattern: {start}_first_{destination}
+     */
+    private String resolveFirstTrajectory(String start, String firstCycle) {
+        return start + "_first_" + firstCycle;
+    }
+
+    /**
+     * Determines which side's second-cycle trajectories to use.
+     * Left/Right starts stay on their side. Middle start picks a side
+     * based on where the first cycle goes.
+     */
+    private String resolveEffectiveSide(String start, String firstCycle) {
+        if ("left".equals(start) || "right".equals(start)) return start;
+        // Middle start: depot and mid end at left scoring position, outpost ends at right
+        if ("outpost".equals(firstCycle)) return "right";
+        return "left";
+    }
+
+    /**
+     * Resolves the second cycle trajectory name.
+     * Pattern: {effectiveSide}_second_{destination}
+     * Returns null if second cycle is "none".
+     */
+    private String resolveSecondTrajectory(String effectiveSide, String secondCycle) {
+        if ("none".equals(secondCycle)) return null;
+        return effectiveSide + "_second_" + secondCycle;
+    }
+
+    /**
+     * Returns the trajectory name to use for the initial pose.
+     */
+    private String resolveInitialPoseTrajectory(String start, String firstCycle) {
+        if ("shoot_only".equals(firstCycle)) return start + "_shoot_only";
+        return resolveFirstTrajectory(start, firstCycle);
+    }
+
+    /* **********
+     * Dynamic chooser rebuilding
+     * **********/
+
+    private void rebuildFirstCycleChooser(String start) {
+        firstCycleChooser = new LoggedDashboardChooser<>("First Cycle");
+        switch (start) {
+            case "left":
+                firstCycleChooser.addDefaultOption("Mid", "mid");
+                firstCycleChooser.addOption("Depot", "depot");
+                firstCycleChooser.addOption("Shoot Only", "shoot_only");
+                break;
+            case "right":
+                firstCycleChooser.addDefaultOption("Mid", "mid");
+                firstCycleChooser.addOption("Outpost", "outpost");
+                firstCycleChooser.addOption("Shoot Only", "shoot_only");
+                break;
+            case "mid":
+                firstCycleChooser.addDefaultOption("Depot", "depot");
+                firstCycleChooser.addOption("Outpost", "outpost");
+                firstCycleChooser.addOption("Shoot Only", "shoot_only");
+                break;
+        }
+    }
+
+    private void rebuildSecondCycleChooser(String start, String firstCycle) {
+        secondCycleChooser = new LoggedDashboardChooser<>("Second Cycle");
+        secondCycleChooser.addDefaultOption("None", "none");
+
+        if (!"shoot_only".equals(firstCycle)) {
+            String effectiveSide = resolveEffectiveSide(start, firstCycle);
+            if ("left".equals(effectiveSide)) {
+                secondCycleChooser.addOption("Mid", "mid");
+                secondCycleChooser.addOption("Depot", "depot");
+            } else {
+                secondCycleChooser.addOption("Mid", "mid");
+                secondCycleChooser.addOption("Outpost", "outpost");
+            }
+        }
     }
 }
