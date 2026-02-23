@@ -27,8 +27,8 @@ public class AutoCommandFactory {
     private AutoFactory choreoFactory;
     private final LoggedDashboardChooser<String> autoChooser = new LoggedDashboardChooser<>("Auto Routine");
     private final LoggedDashboardChooser<String> startPositionChooser = new LoggedDashboardChooser<>("Start Position");
-    private LoggedDashboardChooser<String> firstCycleChooser;
-    private LoggedDashboardChooser<String> secondCycleChooser;
+    private final LoggedDashboardChooser<String> firstCycleChooser = new LoggedDashboardChooser<>("First Cycle");
+    private final LoggedDashboardChooser<String> secondCycleChooser = new LoggedDashboardChooser<>("Second Cycle");
 
     @AutoLogOutput
     private boolean isDirty;
@@ -83,8 +83,15 @@ public class AutoCommandFactory {
             startPositionChooser.addOption("Middle", "mid");
             startPositionChooser.addOption("Right", "right");
 
-            rebuildFirstCycleChooser("left");
-            rebuildSecondCycleChooser("left", "mid");
+            firstCycleChooser.addDefaultOption("Mid", "mid");
+            firstCycleChooser.addOption("Depot", "depot");
+            firstCycleChooser.addOption("Outpost", "outpost");
+            firstCycleChooser.addOption("Shoot Only", "shoot_only");
+
+            secondCycleChooser.addDefaultOption("None", "none");
+            secondCycleChooser.addOption("Mid", "mid");
+            secondCycleChooser.addOption("Depot", "depot");
+            secondCycleChooser.addOption("Outpost", "outpost");
 
             chooserInitialized = true;
         }
@@ -116,19 +123,8 @@ public class AutoCommandFactory {
 
         String currentSelection = autoChooser.get();
         String currentStart = startPositionChooser.get();
-        String currentFirst = firstCycleChooser != null ? firstCycleChooser.get() : "mid";
-        String currentSecond = secondCycleChooser != null ? secondCycleChooser.get() : "none";
-
-        // Rebuild downstream choosers when upstream selections change
-        if (!Objects.equals(currentStart, lastStartPosition)) {
-            rebuildFirstCycleChooser(currentStart);
-            currentFirst = firstCycleChooser.get();
-            rebuildSecondCycleChooser(currentStart, currentFirst);
-            currentSecond = secondCycleChooser.get();
-        } else if (!Objects.equals(currentFirst, lastFirstCycle)) {
-            rebuildSecondCycleChooser(currentStart, currentFirst);
-            currentSecond = secondCycleChooser.get();
-        }
+        String currentFirst = firstCycleChooser.get();
+        String currentSecond = secondCycleChooser.get();
 
         boolean selectionChanged = !Objects.equals(currentSelection, chooserTrajectoryName)
             || !Objects.equals(currentStart, lastStartPosition)
@@ -315,6 +311,12 @@ public class AutoCommandFactory {
     private Command buildCycleAuto(String start, String firstCycle, String secondCycle) {
         String label = "Cycle Auto: " + start + " / " + firstCycle + " / " + secondCycle;
 
+        // Validate combination
+        if (!isValidCycleCombo(start, firstCycle, secondCycle)) {
+            System.err.println("Invalid cycle auto combo: " + label);
+            return Commands.sequence(new PrintCommand("Invalid: " + label), Commands.none());
+        }
+
         // Shoot only — just drive to scoring position and shoot
         if ("shoot_only".equals(firstCycle)) {
             return shootOnlyAuto(label, start + "_shoot_only");
@@ -324,11 +326,6 @@ public class AutoCommandFactory {
         String firstTrajectory = resolveFirstTrajectory(start, firstCycle);
         String effectiveSide = resolveEffectiveSide(start, firstCycle);
         String secondTrajectory = resolveSecondTrajectory(effectiveSide, secondCycle);
-
-        if (firstTrajectory == null) {
-            System.err.println("Invalid cycle auto combo: " + label);
-            return Commands.sequence(new PrintCommand("Invalid: " + label), Commands.none());
-        }
 
         List<Command> commands = new ArrayList<>();
         commands.add(new PrintCommand(label));
@@ -420,43 +417,30 @@ public class AutoCommandFactory {
     }
 
     /* **********
-     * Dynamic chooser rebuilding
+     * Cycle auto validation
      * **********/
 
-    private void rebuildFirstCycleChooser(String start) {
-        firstCycleChooser = new LoggedDashboardChooser<>("First Cycle");
-        switch (start) {
-            case "left":
-                firstCycleChooser.addDefaultOption("Mid", "mid");
-                firstCycleChooser.addOption("Depot", "depot");
-                firstCycleChooser.addOption("Shoot Only", "shoot_only");
-                break;
-            case "right":
-                firstCycleChooser.addDefaultOption("Mid", "mid");
-                firstCycleChooser.addOption("Outpost", "outpost");
-                firstCycleChooser.addOption("Shoot Only", "shoot_only");
-                break;
-            case "mid":
-                firstCycleChooser.addDefaultOption("Depot", "depot");
-                firstCycleChooser.addOption("Outpost", "outpost");
-                firstCycleChooser.addOption("Shoot Only", "shoot_only");
-                break;
+    private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
+        // Middle can't do mid as first cycle
+        if ("mid".equals(start) && "mid".equals(firstCycle)) return false;
+
+        // Left can't do outpost
+        if ("left".equals(start)) {
+            if ("outpost".equals(firstCycle) || "outpost".equals(secondCycle)) return false;
         }
-    }
 
-    private void rebuildSecondCycleChooser(String start, String firstCycle) {
-        secondCycleChooser = new LoggedDashboardChooser<>("Second Cycle");
-        secondCycleChooser.addDefaultOption("None", "none");
+        // Right can't do depot
+        if ("right".equals(start)) {
+            if ("depot".equals(firstCycle) || "depot".equals(secondCycle)) return false;
+        }
 
-        if (!"shoot_only".equals(firstCycle)) {
+        // Middle: second cycle must match effective side
+        if ("mid".equals(start) && !"none".equals(secondCycle) && !"shoot_only".equals(firstCycle)) {
             String effectiveSide = resolveEffectiveSide(start, firstCycle);
-            if ("left".equals(effectiveSide)) {
-                secondCycleChooser.addOption("Mid", "mid");
-                secondCycleChooser.addOption("Depot", "depot");
-            } else {
-                secondCycleChooser.addOption("Mid", "mid");
-                secondCycleChooser.addOption("Outpost", "outpost");
-            }
+            if ("left".equals(effectiveSide) && "outpost".equals(secondCycle)) return false;
+            if ("right".equals(effectiveSide) && "depot".equals(secondCycle)) return false;
         }
+
+        return true;
     }
 }
