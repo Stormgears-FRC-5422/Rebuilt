@@ -19,9 +19,15 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> outtakeShooter;
   public final Option<Boolean> usePose;
   public final Option<Boolean> moveWhileShoot;
+  public final Option<Boolean> enabled;
+  public final Option<Double> motor1;
+  public final Option<Boolean> hopperIsEmpty;
+  // public final Option<Double> motor2;
+  // public final Option<String> lightState;
 
   public ElasticMotorController() {
     super("Motor tester with elastic");
+
     homeButton = createBooleanOption("HOME THE INTAKE", false);
     goToIdle = createBooleanOption("INTAKE IDLE", false);
     rumble = createBooleanOption("RUMBLE", false);
@@ -38,6 +44,12 @@ public class ElasticMotorController extends OptionsController {
     outtakeShooter = createBooleanOption("outtakeshooter", false);
     usePose = createBooleanOption("usePose", false);
     moveWhileShoot = createBooleanOption("move while shoot", false);
+    enabled = createBooleanOption("Enabled", false);
+    motor1   = createNumberOption("Motor 1 Output", 0.0);
+    hopperIsEmpty = createBooleanOption("Toggle lights tester", false);
+
+    // lightState = createStringOption("Light State", "IDLE");
+    // motor2   = createNumberOption("Motor 2 Output", 0.0);
 
     OptionsRegistry.register(this);
   }
