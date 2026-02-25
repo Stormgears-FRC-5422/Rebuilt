@@ -14,7 +14,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
 import frc.robot.elastic.ElasticMotorController;
@@ -38,14 +37,19 @@ public class Intake extends StormSubsystem {
 
     double current;
     public IntakeState state = IntakeState.UNKNOWN;
-    private final Timer stateTimer;
+
     String canBusName = Constants.Imu.canBusName;
 
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
     public boolean hasBeenHomed = false;
-    private boolean rumbleHigh = false;
     public double rollerOutput;
+
+    //rumble stuff
+    private double rumbleMinAngle = Shooter.minRumbleAngle;
+    private double rumbleMaxAngle = Shooter.maxRumbleAngle;
+    private boolean rumbleHitMax = false;
+    private boolean rumbleHigh = false;
 
     private double rumblePin = 40.0;
     public Intake() {
@@ -58,18 +62,19 @@ public class Intake extends StormSubsystem {
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         config.Feedback.SensorToMechanismRatio = 53.33;
 
-        config.Slot0.kP = 60.0; //23.0
-        config.Slot0.kI = 2.0; //2.0
-        config.Slot0.kD = 0.0; //0.5
-        config.Slot0.kG = 0.0;
+        config.Slot0.kP = 40.0; //23.0
+        config.Slot0.kI = 0.5; //2.0
+        config.Slot0.kD = 1.0; //0.5
+        config.Slot0.kG = 0.0; // probably need this 
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 3.0; // rot /s
-        config.MotionMagic.MotionMagicAcceleration = 1.750; // rot/s^2
+        config.Slot0.kS = 0.20;  // static friction  V
+
+        config.MotionMagic.MotionMagicCruiseVelocity = 0.9;  // rot/s 
+        config.MotionMagic.MotionMagicAcceleration   = 2.5;  // rot/s^2
+        config.MotionMagic.MotionMagicJerk           = 60.0; // rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
-
-        stateTimer = new Timer();
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
         currentLimits.StatorCurrentLimit = 35.0;
@@ -100,19 +105,13 @@ public class Intake extends StormSubsystem {
         return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance;
     }
 
-    // only methods to be used outside
-    public void requestHome() {
-        setState(IntakeState.HOMING);
-    }
-    public void requestIdle() {
-        if (hasBeenHomed) {
-            setState(IntakeState.IDLE);
-        }
-    }
     public void requestRumble() {
         if (hasBeenHomed) {
-            rumblePin = Shooter.minRumbleAngle;
-            rumbleHigh = false;
+            rumbleMinAngle = Shooter.minRumbleAngle;
+            rumbleMaxAngle = Shooter.maxRumbleAngle;
+            rumblePin = rumbleMinAngle;
+            rumbleHigh = false; 
+            rumbleHitMax = false;
             setState(IntakeState.RUMBLE);
         }
     }
@@ -120,6 +119,11 @@ public class Intake extends StormSubsystem {
     public void requestIntakeDown() {
         if (hasBeenHomed) {
             setState(IntakeState.INTAKING);
+        }
+    }
+    public void requestIdle() {
+        if (hasBeenHomed) {
+            setState(IntakeState.IDLE);
         }
     }
     public void setRollerEnabled(boolean enabled) {
@@ -181,13 +185,12 @@ public class Intake extends StormSubsystem {
 
                 if (atTargetDegrees(rumblePin)) {
                     if (rumbleHigh) {
-                        rumblePin = Shooter.maxRumbleAngle;
-                    } else {
-                        rumblePin = Shooter.minRumbleAngle;
+                        rumbleHitMax = true; 
                     }
-                    rumbleHigh = !rumbleHigh;
-                }
 
+                    rumbleHigh = !rumbleHigh;
+                    rumblePin = rumbleHigh ? rumbleMaxAngle : rumbleMinAngle;
+                }
             }
         }
     }
@@ -207,5 +210,20 @@ public class Intake extends StormSubsystem {
             console("isAtHome current position: " + updownIntakeMotor.getPosition());
             return true;
         }
+    }
+
+    public void setRumbleMaxAngle(double degrees) {
+        rumbleMaxAngle = degrees;
+    }
+
+    public double getRumbleMaxAngle() {
+        return rumbleMaxAngle;
+    }
+
+    public boolean intakeIsAtMax() {
+//im forgetting smth here
+        boolean hit = rumbleHitMax;
+        rumbleHitMax = false;
+        return hit;
     }
 }
