@@ -19,6 +19,7 @@ import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
+import org.littletonrobotics.junction.Logger;
 
 public class MoveWhileShoot extends StormCommand {
     private final DrivetrainBase drivetrain;
@@ -85,6 +86,14 @@ public class MoveWhileShoot extends StormCommand {
             y = yScaleLimiter.calculate(y);
         }
 
+        // Cap linear velocity while shooting to prevent misses
+        double linearMag = Math.hypot(x, y);
+        if (linearMag > Drive.shootMaxSpeedScale) {
+            double scale = Drive.shootMaxSpeedScale / linearMag;
+            x *= scale;
+            y *= scale;
+        }
+
         // PID + feedforward omega to face the hub (continuously updated as robot moves)
         updateGoalAngle();
         double currentAngle = drivetrain.getRotation().getRadians();
@@ -113,6 +122,16 @@ public class MoveWhileShoot extends StormCommand {
         }
 
         drivetrain.percentOutputDrive(speeds, fieldRelative);
+
+        // Telemetry
+        double headingError = MathUtil.angleModulus(goalAngle - currentAngle);
+        Logger.recordOutput("MoveWhileShoot/HeadingErrorRad", headingError);
+        Logger.recordOutput("MoveWhileShoot/GoalAngleRad", goalAngle);
+        Logger.recordOutput("MoveWhileShoot/MeasuredAngleRad", currentAngle);
+        Logger.recordOutput("MoveWhileShoot/OmegaOutput", omega);
+        Logger.recordOutput("MoveWhileShoot/GoalAngleRateRadPerSec", goalAngleRate);
+        Logger.recordOutput("MoveWhileShoot/LinearSpeed", Math.hypot(x, y));
+        Logger.recordOutput("MoveWhileShoot/DistToHub", RobotState.getInstance().getDistFromHub());
     }
 
     private void updateGoalAngle() {
