@@ -1,22 +1,25 @@
 package frc.robot.commands;
 
-import choreo.auto.AutoFactory;
-import choreo.trajectory.Trajectory;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj2.command.*;
-import frc.robot.RobotState;
-import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.ShooterHopper;
-import frc.robot.subsystems.drive.DrivetrainBase;
-import frc.robot.Constants.Auto;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
+import choreo.auto.AutoFactory;
+import choreo.trajectory.Trajectory;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
+import frc.robot.Constants.Auto;
+import frc.robot.RobotState;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.ShooterHopper;
+import frc.robot.subsystems.drive.DrivetrainBase;
 
 public class AutoCommandFactory {
     private final DrivetrainBase drivetrainBase;
@@ -77,6 +80,8 @@ public class AutoCommandFactory {
             autoChooser.addOption("HokeyPokeyRabbit", "HokeyPokeyRabbit");
             autoChooser.addOption("PoopingSloth", "PoopingSloth");
             autoChooser.addOption("Tortoise", "Tortoise");
+            autoChooser.addOption("Left Close Outpost", "left_close_outpost");
+            autoChooser.addOption("Right Close Outpost", "right_close_outpost");
 
             // Cycle auto sub-choosers
             startPositionChooser.addDefaultOption("Left", "left");
@@ -87,12 +92,12 @@ public class AutoCommandFactory {
             firstCycleChooser.addOption("Depot", "depot");
             firstCycleChooser.addOption("Outpost", "outpost");
             firstCycleChooser.addOption("Shoot Only", "shoot_only");
+            firstCycleChooser.addOption("Close Outpost", "close_outpost");
 
             secondCycleChooser.addDefaultOption("None", "none");
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Depot", "depot");
-            secondCycleChooser.addOption("Outpost", "outpost");
-
+            secondCycleChooser.addOption("Outpost", "outpost");            
             chooserInitialized = true;
         }
 
@@ -176,12 +181,14 @@ public class AutoCommandFactory {
         loadTrajectory("left_first_depot");
         loadTrajectory("left_second_mid");
         loadTrajectory("left_second_depot");
+        loadTrajectory("left_close_outpost");
 
         // Right-side cycle trajectories
         loadTrajectory("right_first_mid");
         loadTrajectory("right_first_outpost");
         loadTrajectory("right_second_mid");
         loadTrajectory("right_second_outpost");
+        loadTrajectory("right_close_outpost");
 
         // Middle-start cycle trajectories (mid + mid is not valid; middle only has depot/outpost/shoot)
         loadTrajectory("mid_first_depot");
@@ -395,6 +402,10 @@ public class AutoCommandFactory {
      * Pattern: {start}_first_{destination}
      */
     private String resolveFirstTrajectory(String start, String firstCycle) {
+        if ("close_outpost".equals(firstCycle)) {
+
+            return start + "_close_outpost"; // left n right
+        }
         return start + "_first_" + firstCycle;
     }
 
@@ -425,6 +436,7 @@ public class AutoCommandFactory {
      */
     private String resolveInitialPoseTrajectory(String start, String firstCycle) {
         if ("shoot_only".equals(firstCycle)) return start + "_shoot_only";
+        if ("close_outpost".equals(firstCycle)) return start + "_close_outpost";
         return resolveFirstTrajectory(start, firstCycle);
     }
 
@@ -433,6 +445,9 @@ public class AutoCommandFactory {
      * **********/
 
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
+        
+        if ("mid".equals(start) && "close_outpost".equals(firstCycle)) return false;
+
         // Middle can't do mid as first cycle
         if ("mid".equals(start) && "mid".equals(firstCycle)) return false;
 
