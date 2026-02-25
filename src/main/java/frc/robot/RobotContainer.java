@@ -21,6 +21,7 @@ import frc.robot.commands.FaceTowardHub;
 import frc.robot.commands.IntakeHome;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.RunIntake;
+import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
@@ -182,6 +183,7 @@ public class RobotContainer {
             drivetrain.setDefaultCommand(driveWithJoystick);
             new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
+            new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick));
 
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
