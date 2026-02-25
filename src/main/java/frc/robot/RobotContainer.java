@@ -14,9 +14,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.Shooter;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.DynamicRumble;
 import frc.robot.commands.FaceTowardHub;
 import frc.robot.commands.IntakeHome;
 import frc.robot.commands.JoyStickDrive;
@@ -134,11 +136,6 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
 
-            new Trigger(() -> elasticMotorController.goToIdle.get()).onTrue(Commands.runOnce(() -> {
-                intake.requestIdle();
-                elasticMotorController.homeButton.setValue(false);
-            }, intake));
-
             new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestRumble();
                 elasticMotorController.rumble.setValue(false);
@@ -166,7 +163,11 @@ public class RobotContainer {
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
             new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper, false));
-            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.runOnce(() -> intake.requestRumble(), intake));
+            //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
+            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
+                intake::requestRumble, intake::requestIdle, intake),
+                () -> Shooter.useDynamicRumble));
+
             new Trigger(() -> joystick.turnTowardsHub()).whileTrue(new FaceTowardHub(drivetrain));
 
         }
