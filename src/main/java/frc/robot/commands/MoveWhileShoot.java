@@ -8,7 +8,6 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
@@ -138,8 +137,8 @@ public class MoveWhileShoot extends StormCommand {
         Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE)
             ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
         Pose2d current = drivetrain.getPoseEstimator().getPose();
-        Translation2d trans = hubPose.getTranslation().minus(current.getTranslation());
-        goalAngle = Math.atan2(trans.getY(), trans.getX());
+        Rotation2d angle = hubPose.getTranslation().minus(current.getTranslation()).getAngle();
+        goalAngle = angle.getRadians();
     }
 
     @Override

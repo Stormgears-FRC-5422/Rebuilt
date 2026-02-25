@@ -37,7 +37,7 @@ public class FaceTowardHub extends StormCommand {
         //Finds goal angle based on X and Y component of the transltion
         double y = trans.getY();
         double x = trans.getX();
-        goalAngle = Math.atan2(y, x);
+        goalAngle = trans.getAngle().getRadians();
 
         headingController.reset();
         headingController.setSetpoint(goalAngle);
