@@ -62,16 +62,16 @@ public class Intake extends StormSubsystem {
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         config.Feedback.SensorToMechanismRatio = 53.33;
 
-        config.Slot0.kP = 40.0; //23.0
-        config.Slot0.kI = 0.5; //2.0
-        config.Slot0.kD = 1.0; //0.5
+        config.Slot0.kP = 60.0; //23.0
+        config.Slot0.kI = 2; //2.0
+        config.Slot0.kD = 0.3; //0.5
         config.Slot0.kG = 0.0; // probably need this 
 
         config.Slot0.kS = 0.20;  // static friction  V
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 0.9;  // rot/s 
-        config.MotionMagic.MotionMagicAcceleration   = 2.5;  // rot/s^2
-        config.MotionMagic.MotionMagicJerk           = 60.0; // rot/s^3
+        config.MotionMagic.MotionMagicCruiseVelocity = 5.0;  // rot/s 
+        config.MotionMagic.MotionMagicAcceleration   = 3.0;  // rot/s^2
+        config.MotionMagic.MotionMagicJerk           = 30; // rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
