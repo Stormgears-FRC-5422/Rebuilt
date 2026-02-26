@@ -284,7 +284,8 @@ public class AutoCommandFactory {
             stopDrive(),
             Commands.parallel(
                 new TimedShootCommand(shooterHopper, true, 8.0),
-                Commands.runOnce(intake::requestRumble)
+                new FaceTowardHub(drivetrainBase),
+                new DynamicRumble(intake)
             ),
             Commands.runOnce(intake::toggleIntakePosition),
             Commands.race(
@@ -336,14 +337,17 @@ public class AutoCommandFactory {
 
         // First cycle
         commands.add(new IntakeHome(intake));
-        commands.add(Commands.race(
-            choreoFactory.trajectoryCmd(firstTrajectory),
-            new RunIntake(intake)
-        ));
+        commands.add(
+            Commands.race(
+            new IntakeDown(intake).andThen(new RunIntake(intake)),
+            choreoFactory.trajectoryCmd(firstTrajectory)
+            )
+        );
         commands.add(stopDrive());
         commands.add(Commands.parallel(
             new TimedShootCommand(shooterHopper, true, 8.0),
-            Commands.runOnce(intake::requestRumble)
+            new FaceTowardHub(drivetrainBase),
+            new DynamicRumble(intake)
         ));
 
         // Second cycle (if selected)
