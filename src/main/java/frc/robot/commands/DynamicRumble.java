@@ -8,7 +8,7 @@ import frc.utils.StormCommand;
 public class DynamicRumble extends StormCommand {
     private final Intake intake;
 
-    private double currentMaxDeg;
+    private double currentMinDeg;
     private int topTimes;
 
     public DynamicRumble(Intake intake) {
@@ -19,9 +19,9 @@ public class DynamicRumble extends StormCommand {
     @Override
     public void initialize() {
         topTimes = 0;
-        currentMaxDeg = Shooter.maxRumbleAngle;
+        currentMinDeg = Shooter.minRumbleAngle;
 
-        intake.setRumbleMaxAngle(currentMaxDeg);
+        intake.setRumbleMinAngle(currentMinDeg);
         intake.requestRumble(); 
     }
 
@@ -29,8 +29,8 @@ public class DynamicRumble extends StormCommand {
     public void execute() {
         if (intake.intakeIsAtMax()) {
             topTimes++; //good if increasing it every iteration is tooo much which i suspect it will be 
-            currentMaxDeg += Shooter.dynamicRumbleIncrementDegrees;
-            intake.setRumbleMaxAngle(currentMaxDeg);
+            currentMinDeg -= Shooter.dynamicRumbleIncrementDegrees;
+            intake.setRumbleMinAngle(currentMinDeg);
         }
     }
 

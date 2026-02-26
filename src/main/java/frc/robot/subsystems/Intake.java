@@ -212,12 +212,8 @@ public class Intake extends StormSubsystem {
         }
     }
 
-    public void setRumbleMaxAngle(double degrees) {
-        rumbleMaxAngle = degrees;
-    }
-
-    public double getRumbleMaxAngle() {
-        return rumbleMaxAngle;
+    public void setRumbleMinAngle(double degrees) {
+        rumbleMinAngle = degrees;
     }
 
     public boolean intakeIsAtMax() {
