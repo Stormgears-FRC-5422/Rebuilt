@@ -187,14 +187,12 @@ public class AutoCommandFactory {
         Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
         Command printName = new PrintCommand("Auto: " + name);
 
-        Command setMirror = Commands.runOnce(() -> ChoreoAllianceFlipUtil.setYear(2024));
-        Command restoreRotate = Commands.runOnce(() -> ChoreoAllianceFlipUtil.setYear(2026));
 
-        if (intake == null || shooterHopper == null) return Commands.sequence(printName, setMirror, intakeLeg1, stopDrive(), restoreRotate);
+
+        if (intake == null || shooterHopper == null) return Commands.sequence(printName, intakeLeg1, stopDrive());
 
         return Commands.sequence(
             printName,
-            setMirror,
             Commands.parallel(
                 new IntakeHome(intake),
                 intakeLeg1
@@ -212,8 +210,8 @@ public class AutoCommandFactory {
             Commands.parallel(
                 new TimedShootCommand(shooterHopper, true,8),
                 Commands.runOnce(intake::requestRumble)
-            ),
-            restoreRotate
+            )
+
         );
     }
 

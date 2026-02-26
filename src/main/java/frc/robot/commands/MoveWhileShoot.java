@@ -108,7 +108,7 @@ public class MoveWhileShoot extends StormCommand {
         previousGoalAngle = goalAngle;
         previousTimestamp = now;
 
-        double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
+        double omega = MathUtil.clamp(pidOutput, -1.0, 1.0);
 
         boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
