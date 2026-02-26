@@ -18,6 +18,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> outtakeIntake;
   public final Option<Boolean> outtakeShooter;
   public final Option<Boolean> usePose;
+  public final Option<Boolean> moveWhileShoot;
   public final Option<Boolean> enabled;
   public final Option<Double> motor1;
   public final Option<Boolean> hopperIsEmpty;
@@ -42,6 +43,7 @@ public class ElasticMotorController extends OptionsController {
     outtakeIntake = createBooleanOption("outtake intake", false);
     outtakeShooter = createBooleanOption("outtakeshooter", false);
     usePose = createBooleanOption("usePose", false);
+    moveWhileShoot = createBooleanOption("move while shoot", false);
     enabled = createBooleanOption("Enabled", false);
     motor1   = createNumberOption("Motor 1 Output", 0.0);
     hopperIsEmpty = createBooleanOption("Toggle lights tester", false);

@@ -10,6 +10,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import choreo.auto.AutoFactory;
 import choreo.trajectory.Trajectory;
+import choreo.util.ChoreoAllianceFlipUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -244,6 +245,8 @@ public class AutoCommandFactory {
         Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
         Command printName = new PrintCommand("Auto: " + name);
 
+
+
         if (intake == null || shooterHopper == null) return Commands.sequence(printName, intakeLeg1, stopDrive());
 
         return Commands.sequence(
@@ -266,6 +269,7 @@ public class AutoCommandFactory {
                 new TimedShootCommand(shooterHopper, true,8),
                 Commands.runOnce(intake::requestRumble)
             )
+
         );
     }
 
