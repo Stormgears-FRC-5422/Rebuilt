@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
 public class RobotState {
+
+
     public enum StateAlliance {
         RED, BLUE, MISSING
     }
@@ -145,6 +147,23 @@ public class RobotState {
     public double getDistFromHub() {
         Pose2d hubPose = (alliance == StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
         return currentPose.minus(hubPose).getTranslation().getNorm();
+    }
+
+    public double GetDistFromAlliance() {
+        Pose2d targetPose;
+        if(RobotState.getInstance().isAllianceRed())
+            targetPose =
+                (getDriverStation()<3)
+                    ? FieldConstants.leftRed()
+                    : FieldConstants.rightRed()
+                ;
+        else
+            targetPose =
+                (getDriverStation()<3)
+                    ? FieldConstants.leftBlue()
+                    : FieldConstants.rightBlue()
+                ;
+        return currentPose.minus(targetPose).getTranslation().getNorm();
     }
 
 }

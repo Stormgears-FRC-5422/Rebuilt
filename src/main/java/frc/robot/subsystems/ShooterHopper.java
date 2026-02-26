@@ -164,7 +164,7 @@ public class ShooterHopper extends StormSubsystem {
         return (
             toHub
                 ? (shootSpeedMap.get(RobotState.getInstance().getDistFromHub()))
-                : (funnelSpeedMap.get(RobotState.getInstance().getDistFromHub()))
+                : (funnelSpeedMap.get(RobotState.getInstance().GetDistFromAlliance()))
         );
 
     }

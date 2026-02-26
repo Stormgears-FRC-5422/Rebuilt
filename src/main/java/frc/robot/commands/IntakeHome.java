@@ -64,6 +64,5 @@ public class IntakeHome extends StormCommand {
             }
         }
 
-        super.end(interrupted);
     }
 }
