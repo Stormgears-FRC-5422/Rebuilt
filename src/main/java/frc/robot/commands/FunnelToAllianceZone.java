@@ -13,7 +13,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
+import frc.robot.FieldConstants;
 import frc.robot.Options.DriveOptions;
+import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
@@ -36,10 +38,22 @@ public class FunnelToAllianceZone extends StormCommand {
     private double previousGoalAngle;
     private double previousTimestamp;
 
-    public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick, Pose2d targetPose) {
+    public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick) {
         this.drivetrain = drivetrain;
-        this.targetPose = targetPose;
         addRequirements(drivetrain);
+
+        if(RobotState.getInstance().isAllianceRed())
+            targetPose =
+                (RobotState.getInstance().getDriverStation()<3)
+                    ? FieldConstants.leftRed()
+                    : FieldConstants.rightRed()
+                ;
+        else
+            targetPose =
+                (RobotState.getInstance().getDriverStation()<3)
+                    ? FieldConstants.leftBlue()
+                    : FieldConstants.rightBlue()
+                ;
 
         txSupplier = joystick::getWpiX;
         tySupplier = joystick::getWpiY;
@@ -106,7 +120,7 @@ public class FunnelToAllianceZone extends StormCommand {
         previousGoalAngle = goalAngle;
         previousTimestamp = now;
 
-        double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
+        double omega = MathUtil.clamp(pidOutput, -1.0, 1.0);
 
         boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);

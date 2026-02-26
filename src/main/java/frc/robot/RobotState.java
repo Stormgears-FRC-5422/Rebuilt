@@ -3,10 +3,13 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
 public class RobotState {
+
+
     public enum StateAlliance {
         RED, BLUE, MISSING
     }
@@ -137,9 +140,30 @@ public class RobotState {
         return hopperState;
     }
 
+    public int getDriverStation() {
+        return DriverStation.getLocation().orElse(0);
+    }
+
     public double getDistFromHub() {
         Pose2d hubPose = (alliance == StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
         return currentPose.minus(hubPose).getTranslation().getNorm();
+    }
+
+    public double GetDistFromAlliance() {
+        Pose2d targetPose;
+        if(RobotState.getInstance().isAllianceRed())
+            targetPose =
+                (getDriverStation()<3)
+                    ? FieldConstants.leftRed()
+                    : FieldConstants.rightRed()
+                ;
+        else
+            targetPose =
+                (getDriverStation()<3)
+                    ? FieldConstants.leftBlue()
+                    : FieldConstants.rightBlue()
+                ;
+        return currentPose.minus(targetPose).getTranslation().getNorm();
     }
 
 }

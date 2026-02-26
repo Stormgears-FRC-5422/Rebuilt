@@ -46,7 +46,7 @@ public abstract class RebuiltJoystick {
     public double getLeftTriggerAxis() {
         return 0.0;
     }
-    public boolean shooterIsHeldManual() {
+    public boolean shootToHub() {
         return false;
     }
 
@@ -59,7 +59,7 @@ public abstract class RebuiltJoystick {
     public boolean enableRumble() {
         return false;
     }
-    public boolean turnTowardsHub() {
+    public boolean shootToAlliance() {
         return false;
     }
 }

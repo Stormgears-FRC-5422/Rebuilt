@@ -53,7 +53,10 @@ public class ShooterHopper extends StormSubsystem {
     private ShooterState state;
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
+    private final InterpolatingDoubleTreeMap funnelSpeedMap = new InterpolatingDoubleTreeMap();
     private boolean useRealDist = false;
+
+    private boolean toHub = true;
 
 
     public ShooterHopper() {
@@ -96,6 +99,14 @@ public class ShooterHopper extends StormSubsystem {
             shootSpeedMap.put(distances[i], speeds[i]);
         }
 
+        double[] funnelDistances = Arrays.stream(Shooter.funnelDistances.replaceAll("[{}]", "").split(","))
+                .mapToDouble(Double::parseDouble).toArray();
+        double[] funnelSpeeds = Arrays.stream(Shooter.funnelSpeeds.replaceAll("[{}]", "").split(","))
+                .mapToDouble(Double::parseDouble).toArray();
+        for (int i = 0; i < funnelDistances.length; i++) {
+            funnelSpeedMap.put(funnelDistances[i], funnelSpeeds[i]);
+        }
+
         configMotor();
     }
 
@@ -121,14 +132,16 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0.0;
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = useRealDist
-                        ? shootSpeedMap.get(RobotState.getInstance().getDistFromHub())
+                targetVelocityRPS =
+                    useRealDist
+                        ? getRPS()
                         : (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = 0.0;
             }
             case SHOOTING -> {
-                targetVelocityRPS = useRealDist
-                        ? shootSpeedMap.get(RobotState.getInstance().getDistFromHub())
+                targetVelocityRPS =
+                    useRealDist
+                        ? getRPS()
                         : (elasticMotorController.shootSpeed.get() * 100);
                 hopperSpeed = Shooter.hopperSpeed;
             }
@@ -145,6 +158,19 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0;
             }
         }
+    }
+
+    public double getRPS(){
+        return (
+            toHub
+                ? (shootSpeedMap.get(RobotState.getInstance().getDistFromHub()))
+                : (funnelSpeedMap.get(RobotState.getInstance().GetDistFromAlliance()))
+        );
+
+    }
+
+    public void setToHub(boolean toHub) {
+        this.toHub = toHub;
     }
 
     @Override
