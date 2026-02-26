@@ -42,7 +42,7 @@ public class ElasticMotorController extends OptionsController {
     visionCmd = createBooleanOption("vision cmd", false);
     outtakeIntake = createBooleanOption("outtake intake", false);
     outtakeShooter = createBooleanOption("outtakeshooter", false);
-    usePose = createBooleanOption("usePose", false);
+    usePose = createBooleanOption("usePose", true);
     moveWhileShoot = createBooleanOption("move while shoot", false);
     enabled = createBooleanOption("Enabled", false);
     motor1   = createNumberOption("Motor 1 Output", 0.0);

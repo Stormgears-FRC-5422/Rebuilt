@@ -168,7 +168,7 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
-                    new FunnelToAllianceZone(drivetrain, joystick, new Pose2d()),
+                    new FunnelToAllianceZone(drivetrain, joystick),
                     new ShootCommand(shooterHopper, false)
                 )
             );

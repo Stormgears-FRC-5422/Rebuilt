@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.junction.Logger;
 
 public class FieldConstants {
@@ -12,6 +13,17 @@ public class FieldConstants {
     static double rightOffset = 0;
 
     public static double inchesToMeters(double x){return x*0.0254;};
+
+    // Hub positions
+    public static final Pose2d hubPositionRed = new Pose2d(11.912, 4.024, Rotation2d.fromDegrees(0));
+    public static final Pose2d hubPositionBlue = new Pose2d(4.628, 4.024, Rotation2d.fromDegrees(0));
+
+    // 4x4 ft from each field corner
+    private static final double CORNER_OFFSET = Units.feetToMeters(4);
+    public static final Pose2d leftBlue = new Pose2d(CORNER_OFFSET, RebuiltField.FIELD_WIDTH - CORNER_OFFSET, new Rotation2d());
+    public static final Pose2d rightBlue = new Pose2d(CORNER_OFFSET, CORNER_OFFSET, new Rotation2d());
+    public static final Pose2d leftRed = new Pose2d(RebuiltField.FIELD_LENGTH - CORNER_OFFSET, CORNER_OFFSET, new Rotation2d());
+    public static final Pose2d rightRed = new Pose2d(RebuiltField.FIELD_LENGTH - CORNER_OFFSET, RebuiltField.FIELD_WIDTH - CORNER_OFFSET, new Rotation2d());
 
 
 
@@ -192,13 +204,28 @@ public class FieldConstants {
     }
 
     public static Pose2d hubPositionRED() {
-        return new Pose2d(11.912,4.024, Rotation2d.fromDegrees(0));
+        return hubPositionRed;
     }
 
     public static Pose2d hubPositionBLUE() {
-        return new Pose2d(4.628, 4.024, Rotation2d.fromDegrees(0));
+        return hubPositionBlue;
     }
 
+    public static Pose2d leftBlue() {
+        return leftBlue;
+    }
+
+    public static Pose2d rightBlue() {
+        return rightBlue;
+    }
+
+    public static Pose2d leftRed() {
+        return leftRed;
+    }
+
+    public static Pose2d rightRed() {
+        return rightRed;
+    }
 
 
 
