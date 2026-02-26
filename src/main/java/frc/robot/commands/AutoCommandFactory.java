@@ -52,10 +52,7 @@ public class AutoCommandFactory {
         this.intake = intake;
     }
 
-    /**
-     * Must be called after construction and after alliance color is known.
-     * Creates the Choreo factory, caches trajectories, and sets up the chooser.
-     */
+
     public void initialize() {
         choreoFactory = new AutoFactory(
             drivetrainBase::getPose,
@@ -98,16 +95,13 @@ public class AutoCommandFactory {
             secondCycleChooser.addDefaultOption("None", "none");
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Depot", "depot");
-            secondCycleChooser.addOption("Outpost", "outpost");            
+            secondCycleChooser.addOption("Outpost", "outpost");
             chooserInitialized = true;
         }
 
         setDirty();
     }
 
-    /* **********
-     * Chooser access
-     * **********/
 
     public Command getChosenCommand() {
         refreshIfDirty();
@@ -157,9 +151,6 @@ public class AutoCommandFactory {
         isDirty = false;
     }
 
-    /* **********
-     * Trajectory loading
-     * **********/
     private void loadTrajectories() {
         // Legacy trajectories
         loadTrajectory("Straight");
@@ -204,9 +195,7 @@ public class AutoCommandFactory {
         return trajectory;
     }
 
-    /* **********
-     * Legacy command building
-     * **********/
+
     private Command buildCommand(String trajectoryName) {
         if (trajectoryName == null) return Commands.none();
         switch (trajectoryName){
@@ -311,14 +300,7 @@ public class AutoCommandFactory {
         );
     }
 
-    /* **********
-     * Modular cycle auto
-     * **********/
 
-    /**
-     * Builds a cycle auto from the three sub-chooser selections.
-     * The trajectory names follow the pattern: {start}_{first|second}_{destination}
-     */
     private Command buildCycleAuto(String start, String firstCycle, String secondCycle) {
         String label = "Cycle Auto: " + start + " / " + firstCycle + " / " + secondCycle;
 
@@ -401,10 +383,6 @@ public class AutoCommandFactory {
         );
     }
 
-    /**
-     * Resolves the first cycle trajectory name.
-     * Pattern: {start}_first_{destination}
-     */
     private String resolveFirstTrajectory(String start, String firstCycle) {
         if ("close_outpost".equals(firstCycle)) {
 
@@ -413,11 +391,7 @@ public class AutoCommandFactory {
         return start + "_first_" + firstCycle;
     }
 
-    /**
-     * Determines which side's second-cycle trajectories to use.
-     * Left/Right starts stay on their side. Middle start picks a side
-     * based on where the first cycle goes.
-     */
+
     private String resolveEffectiveSide(String start, String firstCycle) {
         if ("left".equals(start) || "right".equals(start)) return start;
         // Middle start: depot and mid end at left scoring position, outpost ends at right
@@ -425,31 +399,20 @@ public class AutoCommandFactory {
         return "left";
     }
 
-    /**
-     * Resolves the second cycle trajectory name.
-     * Pattern: {effectiveSide}_second_{destination}
-     * Returns null if second cycle is "none".
-     */
     private String resolveSecondTrajectory(String effectiveSide, String secondCycle) {
         if ("none".equals(secondCycle)) return null;
         return effectiveSide + "_second_" + secondCycle;
     }
 
-    /**
-     * Returns the trajectory name to use for the initial pose.
-     */
     private String resolveInitialPoseTrajectory(String start, String firstCycle) {
         if ("shoot_only".equals(firstCycle)) return start + "_shoot_only";
         if ("close_outpost".equals(firstCycle)) return start + "_close_outpost";
         return resolveFirstTrajectory(start, firstCycle);
     }
 
-    /* **********
-     * Cycle auto validation
-     * **********/
 
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
-        
+
         if ("mid".equals(start) && "close_outpost".equals(firstCycle)) return false;
 
         // Middle can't do mid as first cycle

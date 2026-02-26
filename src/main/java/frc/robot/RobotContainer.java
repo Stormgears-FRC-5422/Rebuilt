@@ -13,18 +13,11 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Shooter;
 import frc.robot.Constants.Toggles;
-import frc.robot.commands.AutoCommandFactory;
-import frc.robot.commands.DriveCommands;
-import frc.robot.commands.DynamicRumble;
-import frc.robot.commands.FaceTowardHub;
-import frc.robot.commands.IntakeHome;
-import frc.robot.commands.JoyStickDrive;
-import frc.robot.commands.RunIntake;
-import frc.robot.commands.MoveWhileShoot;
-import frc.robot.commands.ShootCommand;
+import frc.robot.commands.*;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -162,19 +155,28 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
-            new Trigger(() -> joystick.shooterIsHeldManual()).whileTrue(new ShootCommand(shooterHopper, false));
+            new Trigger(() -> joystick.shootToHub()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootCommand(shooterHopper, true),
+                    new MoveWhileShoot(drivetrain, joystick)
+                )
+            );
             //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
                 intake::requestRumble, intake::requestIdle, intake),
                 () -> Shooter.useDynamicRumble));
 
-            new Trigger(() -> joystick.turnTowardsHub()).whileTrue(new FaceTowardHub(drivetrain));
-
+            new Trigger(() -> joystick.shootToAlliance()).whileTrue(
+                new ParallelCommandGroup(
+                    new FunnelToAllianceZone(drivetrain, joystick, new Pose2d()),
+                    new ShootCommand(shooterHopper, false)
+                )
+            );
         }
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
-            shootTrigger.onTrue(new ShootCommand(shooterHopper, false));
+            shootTrigger.onTrue(new ShootCommand(shooterHopper, true));
         }
         console("[Init] configureBindings");
 

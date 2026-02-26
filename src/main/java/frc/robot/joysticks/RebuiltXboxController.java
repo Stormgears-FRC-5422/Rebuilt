@@ -32,7 +32,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
         return xboxController.getYButtonIsHeld();
     }
     @Override
-    public boolean shooterIsHeldManual() {
+    public boolean shootToHub() {
         return xboxController.getBButtonIsHeld();
     }
 
@@ -54,7 +54,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
         return xboxController.getXisPressed();
     }
     @Override
-    public boolean turnTowardsHub() {
+    public boolean shootToAlliance() {
         return xboxController.getYButtonIsPressed();
     }
 }

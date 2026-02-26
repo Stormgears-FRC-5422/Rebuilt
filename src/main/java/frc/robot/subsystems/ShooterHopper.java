@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
@@ -54,6 +55,8 @@ public class ShooterHopper extends StormSubsystem {
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
     private boolean useRealDist = false;
+
+    private boolean toHub = true;
 
 
     public ShooterHopper() {
@@ -145,6 +148,15 @@ public class ShooterHopper extends StormSubsystem {
                 hopperSpeed = 0;
             }
         }
+    }
+
+    public double getRPS(){
+        return (toHub? (shootSpeedMap.get(RobotState.getInstance().getDistFromHub())) : 0);
+
+    }
+
+    public void setToHub(boolean toHub) {
+        this.toHub = toHub;
     }
 
     @Override
