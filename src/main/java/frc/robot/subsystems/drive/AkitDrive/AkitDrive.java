@@ -266,11 +266,16 @@ public class AkitDrive extends DrivetrainBase {
     }
 
     /**
-     * Returns the measured chassis speeds of the robot.
+     * Returns the measured chassis speeds of the robot (robot-relative).
      */
     @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
-    private ChassisSpeeds getChassisSpeeds() {
+    public ChassisSpeeds getChassisSpeeds() {
         return kinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    @Override
+    public ChassisSpeeds getMeasuredFieldSpeeds() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
     }
 
     /**
