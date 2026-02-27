@@ -159,15 +159,20 @@ public class FunnelToAllianceZone extends StormCommand {
         double px = current.getX() + vx * Shooter.phaseDelaySec;
         double py = current.getY() + vy * Shooter.phaseDelaySec;
 
-        // Iterative TOF lookahead
-        for (int i = 0; i < Shooter.lookaheadIterations; i++) {
-            double dx = targetPose.getX() - px;
-            double dy = targetPose.getY() - py;
-            double dist = Math.hypot(dx, dy);
-            double tof = shooterHopper.getTimeOfFlight(dist);
-            px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
-            py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
-        }
+        double dist0 = Math.hypot(targetPose.getX() - px, targetPose.getY() - py);
+        double tof = shooterHopper.getTimeOfFlight(dist0);
+        px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+
+        // Iterative TOF lookahead (if single pass proves insufficient)
+        // for (int i = 0; i < Shooter.lookaheadIterations; i++) {
+        //     double dx = targetPose.getX() - px;
+        //     double dy = targetPose.getY() - py;
+        //     double dist = Math.hypot(dx, dy);
+        //     double tof = shooterHopper.getTimeOfFlight(dist);
+        //     px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        //     py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+        // }
 
         // Aim from lookahead position to target
         double dx = targetPose.getX() - px;
