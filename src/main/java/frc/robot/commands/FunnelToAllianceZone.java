@@ -13,17 +13,20 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
+import frc.robot.Constants.Shooter;
 import frc.robot.FieldConstants;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class FunnelToAllianceZone extends StormCommand {
     private final DrivetrainBase drivetrain;
-    private final Pose2d targetPose;
+    private final ShooterHopper shooterHopper;
+    private Pose2d targetPose;
     private final DoubleSupplier txSupplier;
     private final DoubleSupplier tySupplier;
     private final DoubleSupplier turboSupplier;
@@ -38,22 +41,10 @@ public class FunnelToAllianceZone extends StormCommand {
     private double previousGoalAngle;
     private double previousTimestamp;
 
-    public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick) {
+    public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick, ShooterHopper shooterHopper) {
         this.drivetrain = drivetrain;
+        this.shooterHopper = shooterHopper;
         addRequirements(drivetrain);
-
-        if(RobotState.getInstance().isAllianceRed())
-            targetPose =
-                (RobotState.getInstance().getDriverStation()<3)
-                    ? FieldConstants.leftRed()
-                    : FieldConstants.rightRed()
-                ;
-        else
-            targetPose =
-                (RobotState.getInstance().getDriverStation()<3)
-                    ? FieldConstants.leftBlue()
-                    : FieldConstants.rightBlue()
-                ;
 
         txSupplier = joystick::getWpiX;
         tySupplier = joystick::getWpiY;
@@ -70,6 +61,19 @@ public class FunnelToAllianceZone extends StormCommand {
     @Override
     public void initialize() {
         super.initialize();
+
+        if(RobotState.getInstance().isAllianceRed())
+            targetPose =
+                (RobotState.getInstance().getDriverStation()<3)
+                    ? FieldConstants.leftRed()
+                    : FieldConstants.rightRed()
+                ;
+        else
+            targetPose =
+                (RobotState.getInstance().getDriverStation()<3)
+                    ? FieldConstants.leftBlue()
+                    : FieldConstants.rightBlue()
+                ;
         drivetrain.setDriveSpeedScale(Drive.driveSpeedScale);
         xScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
         yScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
@@ -120,7 +124,7 @@ public class FunnelToAllianceZone extends StormCommand {
         previousGoalAngle = goalAngle;
         previousTimestamp = now;
 
-        double omega = MathUtil.clamp(pidOutput, -1.0, 1.0);
+        double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
         boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
@@ -145,8 +149,40 @@ public class FunnelToAllianceZone extends StormCommand {
 
     private void updateGoalAngle() {
         Pose2d current = drivetrain.getPoseEstimator().getPose();
-        Translation2d trans = targetPose.getTranslation().minus(current.getTranslation());
-        goalAngle = Math.atan2(trans.getY(), trans.getX());
+
+        // Get field-relative velocity for compensation
+        ChassisSpeeds fieldVel = drivetrain.getMeasuredFieldSpeeds();
+        double vx = fieldVel.vxMetersPerSecond;
+        double vy = fieldVel.vyMetersPerSecond;
+
+        // Phase delay compensation: shift pose forward by velocity * phaseDelay
+        double px = current.getX() + vx * Shooter.phaseDelaySec;
+        double py = current.getY() + vy * Shooter.phaseDelaySec;
+
+        double dist0 = Math.hypot(targetPose.getX() - px, targetPose.getY() - py);
+        double tof = shooterHopper.getTimeOfFlight(dist0);
+        px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+
+        // Iterative TOF lookahead (if single pass proves insufficient)
+        // for (int i = 0; i < Shooter.lookaheadIterations; i++) {
+        //     double dx = targetPose.getX() - px;
+        //     double dy = targetPose.getY() - py;
+        //     double dist = Math.hypot(dx, dy);
+        //     double tof = shooterHopper.getTimeOfFlight(dist);
+        //     px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        //     py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+        // }
+
+        // Aim from lookahead position to target
+        double dx = targetPose.getX() - px;
+        double dy = targetPose.getY() - py;
+        goalAngle = Math.atan2(dy, dx);
+
+        Logger.recordOutput("FunnelToAllianceZone/CompensatedDist", Math.hypot(dx, dy));
+        Logger.recordOutput("FunnelToAllianceZone/TOF", shooterHopper.getTimeOfFlight(Math.hypot(dx, dy)));
+        Logger.recordOutput("FunnelToAllianceZone/LookaheadX", px);
+        Logger.recordOutput("FunnelToAllianceZone/LookaheadY", py);
     }
 
     @Override

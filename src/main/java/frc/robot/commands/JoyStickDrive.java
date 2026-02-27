@@ -43,7 +43,6 @@ public class JoyStickDrive extends StormCommand {
         }
 
         this.drivetrain = drivetrain;
-        addRequirements(drivetrain);
 
         txSupplier = joystick::getWpiX;
         tySupplier = joystick::getWpiY;

@@ -62,7 +62,6 @@ public class RobotContainer {
             if (Toggles.useDrive) {
                 console("Create drive type " + Constants.Drive.driveType);
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
-                // FaceTowardHub is created in configureBindings when joystick is available
             }
         } catch (IllegalDriveTypeException e) {
             console("Error: Invalid drive type specified: " + e.getMessage());
@@ -91,7 +90,7 @@ public class RobotContainer {
 
         if (Toggles.useShooter) {
             console("Create shooter");
-            shooterHopper = new ShooterHopper();
+            shooterHopper = new ShooterHopper(elasticMotorController);
             if (Toggles.usePidTuner) {
                 shooterTuner = new SingleMotorTuner("Shooter Tuner", shooterHopper.getPidConfig());
             }
@@ -158,7 +157,7 @@ public class RobotContainer {
             new Trigger(() -> joystick.shootToHub()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, true),
-                    new MoveWhileShoot(drivetrain, joystick)
+                    new MoveWhileShoot(drivetrain, joystick, shooterHopper)
                 )
             );
             //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
@@ -168,7 +167,7 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
-                    new FunnelToAllianceZone(drivetrain, joystick),
+                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
                     new ShootCommand(shooterHopper, false)
                 )
             );
@@ -186,7 +185,7 @@ public class RobotContainer {
             drivetrain.setDefaultCommand(driveWithJoystick);
             new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
-            new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick));
+            new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
 
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));

@@ -49,7 +49,7 @@ public class ShooterHopper extends StormSubsystem {
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
     private double hopperSpeed = 0.0;
-    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
+    private final ElasticMotorController elasticMotorController;
     private ShooterState state;
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
@@ -59,7 +59,8 @@ public class ShooterHopper extends StormSubsystem {
     private boolean toHub = true;
 
 
-    public ShooterHopper() {
+    public ShooterHopper(ElasticMotorController elasticMotorController) {
+        this.elasticMotorController = elasticMotorController;
 
         if (Shooter.useShooterHopperDiagnostic) {
             state = ShooterState.DIAGNOSTIC;
@@ -167,6 +168,14 @@ public class ShooterHopper extends StormSubsystem {
                 : (funnelSpeedMap.get(RobotState.getInstance().GetDistFromAlliance()))
         );
 
+    }
+
+    public double getTimeOfFlight(double distanceMeters) {
+        double rps = toHub ? shootSpeedMap.get(distanceMeters) : funnelSpeedMap.get(distanceMeters);
+        double exitVelocity = rps * Math.PI * Shooter.shooterWheelDiameterMeters;
+        double horizontalVelocity = exitVelocity * Math.cos(Math.toRadians(Shooter.launchAngleDeg));
+        if (horizontalVelocity < 0.1) return 0;
+        return distanceMeters / horizontalVelocity;
     }
 
     public void setToHub(boolean toHub) {
