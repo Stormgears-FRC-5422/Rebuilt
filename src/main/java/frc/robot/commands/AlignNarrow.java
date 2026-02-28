@@ -14,7 +14,6 @@ import frc.robot.Options.DriveOptions;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
-import org.littletonrobotics.junction.Logger;
 
 public class AlignNarrow extends StormCommand {
     private final DrivetrainBase drivetrain;
@@ -89,6 +88,13 @@ public class AlignNarrow extends StormCommand {
 
         boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
+
+        if (fieldRelative) {
+            Rotation2d perspective = drivetrain.getDriverPerspective();
+            if (perspective != null) {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+            }
+        }
 
         drivetrain.percentOutputDrive(speeds, fieldRelative);
     }
