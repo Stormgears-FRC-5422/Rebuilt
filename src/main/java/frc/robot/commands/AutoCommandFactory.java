@@ -251,7 +251,7 @@ public class AutoCommandFactory {
             stopDrive(),
             Commands.parallel(
                 new TimedShootCommand(shooterHopper, true,8),
-                Commands.runOnce(intake::requestRumble)
+                new DynamicRumble(intake)
             ),
             Commands.parallel(
                 new IntakeHome(intake),
@@ -260,7 +260,7 @@ public class AutoCommandFactory {
             stopDrive(),
             Commands.parallel(
                 new TimedShootCommand(shooterHopper, true,8),
-                Commands.runOnce(intake::requestRumble)
+                new DynamicRumble(intake)
             )
 
         );
@@ -300,7 +300,7 @@ public class AutoCommandFactory {
             shootLeg2,
             Commands.parallel(
                 new TimedShootCommand(shooterHopper, true, 8.0),
-                Commands.runOnce(intake::requestRumble)
+                new DynamicRumble(intake)
             )
         );
     }
@@ -340,10 +340,9 @@ public class AutoCommandFactory {
         }
 
         // First cycle
-        commands.add(new IntakeHome(intake));
         commands.add(
             Commands.race(
-            new IntakeDown(intake).andThen(new RunIntake(intake)),
+            new IntakeHome(intake).andThen(new IntakeDown(intake).andThen(new RunIntake(intake))),
             choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
@@ -364,7 +363,7 @@ public class AutoCommandFactory {
             commands.add(stopDrive());
             commands.add(Commands.parallel(
                 new TimedShootCommand(shooterHopper, true, 8.0),
-                Commands.runOnce(intake::requestRumble)
+                new DynamicRumble(intake)
             ));
         }
 
@@ -386,7 +385,7 @@ public class AutoCommandFactory {
             stopDrive(),
             Commands.parallel(
                 new ShootCommand(shooterHopper, true),
-                Commands.runOnce(intake::requestRumble)
+                new DynamicRumble(intake)
             )
         );
     }
