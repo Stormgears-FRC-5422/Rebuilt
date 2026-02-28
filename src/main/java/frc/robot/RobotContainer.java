@@ -157,12 +157,8 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
-            new Trigger(() -> joystick.shootToHub()).whileTrue(
-                new ParallelCommandGroup(
-                    new ShootCommand(shooterHopper, true),
-                    new MoveWhileShoot(drivetrain, joystick, shooterHopper)
-                )
-            );
+
+            
             //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
                 intake::requestRumble, intake::requestIdle, intake),
@@ -174,6 +170,17 @@ public class RobotContainer {
                     new ShootCommand(shooterHopper, false)
                 )
             );
+        }
+
+        if (Toggles.useDrive && Toggles.useShooter) {
+            new Trigger(() -> joystick.shootToHub()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootCommand(shooterHopper, true),
+                    new MoveWhileShoot(drivetrain, joystick, shooterHopper)
+                )
+            );
+        } else if (Toggles.useShooter) {
+            new Trigger(() -> joystick.shootToHub()).whileTrue(new ShootCommand(shooterHopper, true));
         }
 
         if (shooterHopper != null) {
