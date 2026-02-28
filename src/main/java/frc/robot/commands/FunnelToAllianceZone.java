@@ -142,6 +142,8 @@ public class FunnelToAllianceZone extends StormCommand {
         Logger.recordOutput("FunnelToAllianceZone/HeadingErrorRad", headingError);
         Logger.recordOutput("FunnelToAllianceZone/GoalAngleRad", goalAngle);
         Logger.recordOutput("FunnelToAllianceZone/MeasuredAngleRad", currentAngle);
+        Logger.recordOutput("FunnelToAllianceZone/PidOutput", pidOutput);
+        Logger.recordOutput("FunnelToAllianceZone/FeedforwardOutput", Drive.targetKFvcmd * goalAngleRate);
         Logger.recordOutput("FunnelToAllianceZone/OmegaOutput", omega);
         Logger.recordOutput("FunnelToAllianceZone/GoalAngleRateRadPerSec", goalAngleRate);
         Logger.recordOutput("FunnelToAllianceZone/LinearSpeed", Math.hypot(x, y));
