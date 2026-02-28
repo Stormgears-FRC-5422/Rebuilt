@@ -163,6 +163,15 @@ public abstract class DrivetrainBase extends StormSubsystem {
     }
 
     /**
+     * Get the measured field-relative chassis speeds.
+     * Converts robot-relative measured speeds to field-relative using current rotation.
+     * @return Field-relative ChassisSpeeds
+     */
+    public ChassisSpeeds getMeasuredFieldSpeeds() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(m_chassisSpeeds, getRotation());
+    }
+
+    /**
      * Get the current estimated pose of the robot.
      * @return Current pose estimate
      */

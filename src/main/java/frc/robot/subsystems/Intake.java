@@ -62,14 +62,14 @@ public class Intake extends StormSubsystem {
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         config.Feedback.SensorToMechanismRatio = 53.33;
 
-        config.Slot0.kP = 60.0; //23.0
-        config.Slot0.kI = 2; //2.0
+        config.Slot0.kP = 80.0; //23.0
+        config.Slot0.kI = 2.0; //2.0
         config.Slot0.kD = 0.3; //0.5
-        config.Slot0.kG = 0.0; // probably need this 
+        config.Slot0.kG = 0.0; // probably need this
 
         config.Slot0.kS = 0.20;  // static friction  V
 
-        config.MotionMagic.MotionMagicCruiseVelocity = 5.0;  // rot/s 
+        config.MotionMagic.MotionMagicCruiseVelocity = 5.0;  // rot/s
         config.MotionMagic.MotionMagicAcceleration   = 3.0;  // rot/s^2
         config.MotionMagic.MotionMagicJerk           = 30; // rot/s^3
 
@@ -110,7 +110,7 @@ public class Intake extends StormSubsystem {
             rumbleMinAngle = Shooter.minRumbleAngle;
             rumbleMaxAngle = Shooter.maxRumbleAngle;
             rumblePin = rumbleMinAngle;
-            rumbleHigh = false; 
+            rumbleHigh = false;
             rumbleHitMax = false;
             setState(IntakeState.RUMBLE);
         }
@@ -155,6 +155,13 @@ public class Intake extends StormSubsystem {
         Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
         Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
 
+        Logger.recordOutput("intake encoder degrees", getAngleDegrees());
+        Logger.recordOutput("intake raw encoder rotations", updownIntakeMotor.getPosition().getValueAsDouble());
+        Logger.recordOutput("intake target angle", elasticMotorController.intakeAngle.get().doubleValue());
+        Logger.recordOutput("intake at target", atTargetDegrees(elasticMotorController.intakeAngle.get().doubleValue()));
+        Logger.recordOutput("intake state", state.toString());
+        Logger.recordOutput("intake voltage", updownIntakeMotor.getMotorVoltage().getValueAsDouble());
+
         rollerOutput = 0.0;
         if (outtakeEnabled) {
             rollerOutput = Shooter.rollerOuttakeSpeed;
@@ -175,7 +182,7 @@ public class Intake extends StormSubsystem {
                 home();
             }
             case IDLE -> {
-                setAngleDegrees(1);
+                setAngleDegrees(4);
             }
             case INTAKING -> {
                 setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
@@ -185,7 +192,7 @@ public class Intake extends StormSubsystem {
 
                 if (atTargetDegrees(rumblePin)) {
                     if (rumbleHigh) {
-                        rumbleHitMax = true; 
+                        rumbleHitMax = true;
                     }
 
                     rumbleHigh = !rumbleHigh;
