@@ -28,7 +28,7 @@ public class DriveCommands {
     public DriveCommands(){}
 
 //    /** Measures the robot's wheel radius by spinning in a circle (per-wheel). */
-//    public static Command wheelRadiusCharacterization(DrivetrainBase drive) {
+//    public static Command narrow(DrivetrainBase drive) {
 //        SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
 //        WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
 //
