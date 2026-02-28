@@ -7,6 +7,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> goToIdle;
   public final Option<Boolean> rumble;
   public final Option<Boolean> intakeDown;
+  public final Option<Boolean> intakeUp;
   public final Option<Boolean> tester;
   public final Option<Boolean> shootButton;
   public final Option<Double> shootSpeed;
@@ -32,6 +33,7 @@ public class ElasticMotorController extends OptionsController {
     goToIdle = createBooleanOption("INTAKE IDLE", false);
     rumble = createBooleanOption("RUMBLE", false);
     intakeDown = createBooleanOption("INTAKE DOWN", false);
+    intakeUp = createBooleanOption("INTAKE UP", false);
     tester = createBooleanOption("wtv", false);
     shootButton = createBooleanOption("shoot", false);
     shootSpeed = createNumberOption("shooter speed diagnostic", 0.50);

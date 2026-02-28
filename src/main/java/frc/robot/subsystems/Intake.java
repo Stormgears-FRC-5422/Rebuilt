@@ -30,6 +30,26 @@ public class Intake extends StormSubsystem {
         PID_MOTION,
         SIMPLE_MOTION,
     }
+
+    public enum IntakePositions {
+        UNKNOWN(Double.NaN),
+        NEG_INFINITY(Double.NEGATIVE_INFINITY),
+        HOME(0),
+        TOP(Shooter.topIntakeLimit),
+        BOTTOM(Shooter.bottomIntakeLimit),
+        POS_INFINITY(Double.POSITIVE_INFINITY);
+
+        private double position;
+
+        IntakePositions(double position) {
+            this.position = position;
+        }
+
+        public double getValue() {
+            return position;
+        }
+    }
+
     private double target;
     private final TalonFXConfiguration config = new TalonFXConfiguration();
 
@@ -62,6 +82,7 @@ public class Intake extends StormSubsystem {
     private double rollerIntakeMotorSpeed = 0.0;
 
     private double updownVolts;
+    private double targetPosition;
 
     public Intake() {
         updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
@@ -91,6 +112,9 @@ public class Intake extends StormSubsystem {
         currentLimits.StatorCurrentLimitEnable = true;
 
         updownIntakeMotor.getConfigurator().apply(currentLimits);
+
+        targetPosition = IntakePositions.UNKNOWN.position;
+        updownVolts = 0;
     }
 
     public void setAngleDegrees(double degrees) {
@@ -101,6 +125,7 @@ public class Intake extends StormSubsystem {
 
     public void zeroHere() {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
+        enableSoftLimit(true);
     }
 
     public double getAngleDegrees() {
@@ -196,53 +221,54 @@ public class Intake extends StormSubsystem {
         rollerOutput = 0.0;
         if (outtakeEnabled) {
             rollerOutput = Shooter.rollerOuttakeSpeed;
-        }
-        else if (rollerEnabled && state == IntakeState.INTAKING) {
+        } else if (rollerEnabled && state == IntakeState.INTAKING) {
             rollerOutput = Shooter.rollerIntakeSpeed;
         }
-
         rollerIntakeMotor.set(rollerOutput);
 
         switch (state) {
             case UNKNOWN -> {
-                updownIntakeMotorSpeed = 0;
-                rollerIntakeMotorSpeed = 0;
-                break;
+                updownIntakeMotor.set(0);
             }
-            case HOMING -> {
-                home();
-                break;
-            }
-            case RUMBLE -> {
-                setAngleDegrees(rumblePin);
+            // case HOMING -> {
+            //     home();
+            // }
+            // case IDLE -> {
+            //     // setAngleDegrees(Shooter.topIntakeDegrees);
+            // }
+            // case INTAKING -> {
+            //     setAngleDegrees(elasticMotorController.intakeAngle.get().doubleValue());
+            // }
+            // case RUMBLE -> {
+            //     setAngleDegrees(rumblePin);
 
-                if (atTargetDegrees(rumblePin)) {
-                    if (rumbleHigh) {
-                        rumbleHitMax = true;
-                    }
+            //     if (atTargetDegrees(rumblePin)) {
+            //         if (rumbleHigh) {
+            //             rumbleHitMax = true;
+            //         }
 
-                    rumbleHigh = !rumbleHigh;
-                    rumblePin = rumbleHigh ? rumbleMaxAngle : rumbleMinAngle;
-                }
-                break;
-            }
+            //         rumbleHigh = !rumbleHigh;
+            //         rumblePin = rumbleHigh ? rumbleMaxAngle : rumbleMinAngle;
+            //     }
+            // }
             case PID_MOTION -> {
                 setAngleDegrees(target);
-                updownVolts = 0;
             }
             case SIMPLE_MOTION -> {
-                updownIntakeMotorSpeed = 0;
-                rollerIntakeMotorSpeed = 0;
-                updownVolts = Shooter.updownVolts;
+                if (hasBeenHomed) {
+                    simpleMove(currentPosition);
+                    elevatorLeader.set(elevatorSpeed);
+                } else {
+                    console("Stubbornly refusing to move before homed!", 25);
+                }
             }
         }
-        updownIntakeMotor.set(updownIntakeMotorSpeed);
-        rollerIntakeMotor.set(rollerIntakeMotorSpeed);
-
-        updownIntakeMotor.setVoltage(updownVolts);
     }
     private void setTarget(double target) {
         this.target = target;
+    }
+    private void setSimpleMotionVolts(double volts) {
+        volts = updownVolts;
     }
 
     private void home() {
@@ -276,12 +302,36 @@ public class Intake extends StormSubsystem {
     public void enableSoftLimit(boolean enable) {
         softLimitEnabled = enable;
 
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Shooter.bottomIntakeLimit;
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Shooter.bottomIntakeLimit / 360.0;
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;
 
-        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Shooter.topIntakeLimit;
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Shooter.topIntakeLimit / 360.0;
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
+    }
+
+
+    public void requestPidMotion(double degrees) {
+        if (!hasBeenHomed) return;
+
+        setTarget(degrees);
+        setState(IntakeState.PID_MOTION);
+    }
+
+    private void simpleMove(double currentPosition) {
+        if (currentPosition < targetPosition) {
+            setSimpleMotionVolts(Shooter.updownVolts);
+        } else if (currentPosition > targetPosition) {
+            setSimpleMotionVolts(-updownVolts);
+        } else {
+            setSimpleMotionVolts(0);
+        }
+    }
+    public void setTargetPosition(IntakePositions targetPosition) {
+        setTargetPosition(targetPosition.getValue());
+    }
+    public void setTargetPosition(double position) {
+        this.targetPosition = position;
     }
 }
