@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.commands.intake;
 
 import frc.robot.Constants.Shooter;
 import frc.robot.subsystems.Intake;

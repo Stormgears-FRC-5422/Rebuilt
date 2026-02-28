@@ -27,7 +27,12 @@ public class Intake extends StormSubsystem {
         IDLE, // Once homing has homed the intake, it is sent to IDLE. also brings intake arm back up, leaving it there
         INTAKING, // in the position to intake
         RUMBLE, // rumbles to funnel balls into shooter
+        PID_MOTION,
+        SIMPLE_MOTION,
     }
+    private double target;
+    private final TalonFXConfiguration config = new TalonFXConfiguration();
+
     public ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     public final TalonFX updownIntakeMotor;
@@ -43,6 +48,7 @@ public class Intake extends StormSubsystem {
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
     public boolean hasBeenHomed = false;
+    private boolean softLimitEnabled = false;
     public double rollerOutput;
 
     //rumble stuff
@@ -52,11 +58,15 @@ public class Intake extends StormSubsystem {
     private boolean rumbleHigh = false;
 
     private double rumblePin = 40.0;
+    private double updownIntakeMotorSpeed = 0.0;
+    private double rollerIntakeMotorSpeed = 0.0;
+
+    private double updownVolts;
+
     public Intake() {
         updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
 
-        TalonFXConfiguration config = new TalonFXConfiguration();
         mmRequest = new MotionMagicVoltage(0.0);
 
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -99,6 +109,27 @@ public class Intake extends StormSubsystem {
 
     public void setState(IntakeState newState) {
         state = newState;
+        
+        switch (state) {
+            case UNKNOWN -> {
+                break;
+            }
+            case HOMING -> {
+                break;
+            }
+            case IDLE -> {
+                setAngleDegrees(Shooter.topIntakeDegrees);
+                break;
+            }
+            case INTAKING -> {
+                setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
+                break;
+            }
+            case RUMBLE -> {
+                break;
+            }
+        }
+
     }
 
     public boolean atTargetDegrees(double deg) {
@@ -173,19 +204,14 @@ public class Intake extends StormSubsystem {
         rollerIntakeMotor.set(rollerOutput);
 
         switch (state) {
-            case UNKNOWN -> { //insta go home
-                // setState(IntakeState.HOMING);
-                updownIntakeMotor.set(0);
-                rollerIntakeMotor.set(0);
+            case UNKNOWN -> {
+                updownIntakeMotorSpeed = 0;
+                rollerIntakeMotorSpeed = 0;
+                break;
             }
             case HOMING -> {
                 home();
-            }
-            case IDLE -> {
-                setAngleDegrees(4);
-            }
-            case INTAKING -> {
-                setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
+                break;
             }
             case RUMBLE -> {
                 setAngleDegrees(rumblePin);
@@ -198,9 +224,27 @@ public class Intake extends StormSubsystem {
                     rumbleHigh = !rumbleHigh;
                     rumblePin = rumbleHigh ? rumbleMaxAngle : rumbleMinAngle;
                 }
+                break;
+            }
+            case PID_MOTION -> {
+                setAngleDegrees(target);
+                updownVolts = 0;
+            }
+            case SIMPLE_MOTION -> {
+                updownIntakeMotorSpeed = 0;
+                rollerIntakeMotorSpeed = 0;
+                updownVolts = Shooter.updownVolts;
             }
         }
+        updownIntakeMotor.set(updownIntakeMotorSpeed);
+        rollerIntakeMotor.set(rollerIntakeMotorSpeed);
+
+        updownIntakeMotor.setVoltage(updownVolts);
     }
+    private void setTarget(double target) {
+        this.target = target;
+    }
+
     private void home() {
         if (Shooter.stratlimit) {
             // might want to use an average here to minimize spikes
@@ -224,9 +268,20 @@ public class Intake extends StormSubsystem {
     }
 
     public boolean intakeIsAtMax() {
-//im forgetting smth here
         boolean hit = rumbleHitMax;
         rumbleHitMax = false;
         return hit;
+    }
+    
+    public void enableSoftLimit(boolean enable) {
+        softLimitEnabled = enable;
+
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Shooter.bottomIntakeLimit;
+        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;
+
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Shooter.topIntakeLimit;
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
+
+        updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
 }
