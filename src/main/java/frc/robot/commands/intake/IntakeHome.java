@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.commands.intake;
 
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
@@ -59,7 +59,8 @@ public class IntakeHome extends StormCommand {
                 intake.setState(Intake.IntakeState.IDLE);
                 intake.hasBeenHomed = true;
                 intake.zeroHere();
-            } else {
+                intake.enableSoftLimit(true);
+           } else {
                 intake.setState(Intake.IntakeState.UNKNOWN);
             }
         }
