@@ -130,7 +130,7 @@ public class RobotContainer {
                 .onTrue(new IntakeHome(intake));
 
             new Trigger(() -> elasticMotorController.alignNarrow.get())
-                .onTrue(new AlignNarrow(drivetrain));
+                .whileTrue(new AlignNarrow(drivetrain, joystick));
 
             new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
                 intake.requestRumble();
