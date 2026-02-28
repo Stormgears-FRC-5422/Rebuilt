@@ -139,26 +139,36 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.outtakeIntake.get()).onTrue(Commands.runOnce(() -> {
                 intake.setOuttakeRollers(true);
             }, intake));
-            new Trigger(() -> elasticMotorController.outtakeIntake.get()).onFalse(Commands.runOnce(() -> {
+            new Trigger(elasticMotorController.outtakeIntake::get).onFalse(Commands.runOnce(() -> {
                 intake.setOuttakeRollers(false);
             }, intake));
 
-            new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(Commands.runOnce(() -> {
+            new Trigger(elasticMotorController.intakeDown::get).onTrue(Commands.runOnce(() -> {
                 intake.toggleIntakePosition();
             }, intake));
-            new Trigger(() -> elasticMotorController.intakeDown.get()).onFalse(Commands.runOnce(() -> {
+            new Trigger(elasticMotorController.intakeDown::get).onFalse(Commands.runOnce(() -> {
                 intake.toggleIntakePosition();
             }, intake));
 
-            new Trigger(() -> elasticMotorController.outtakeShooter.get()).onTrue(Commands.runOnce(() -> {
+            new Trigger(elasticMotorController.outtakeShooter::get).onTrue(Commands.runOnce(() -> {
                 shooterHopper.setState(ShooterHopper.ShooterState.OUTTAKE);
                 elasticMotorController.outtakeShooter.setValue(false);
             }, shooterHopper));
 
+            new Trigger(()-> joystick.intakeDown()).whileTrue(Commands.runOnce(() -> {
+                intake.toggleIntakePosition();
+            }, intake));
+
+            new Trigger(()-> joystick.narrow()).whileTrue(
+                new InstantCommand(()-> System.out.println("not implements")));
+
+            new Trigger(() -> joystick.intakeHome())
+                .onTrue(new IntakeHome(intake));
+
             new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
 
-            
+
             //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
                 intake::requestRumble, intake::requestIdle, intake),
@@ -173,14 +183,24 @@ public class RobotContainer {
         }
 
         if (Toggles.useDrive && Toggles.useShooter) {
-            new Trigger(() -> joystick.shootToHub()).whileTrue(
+            new Trigger(() -> joystick.autoShoot()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, true),
                     new MoveWhileShoot(drivetrain, joystick, shooterHopper)
                 )
             );
-        } else if (Toggles.useShooter) {
-            new Trigger(() -> joystick.shootToHub()).whileTrue(new ShootCommand(shooterHopper, true));
+        } else if (Toggles.useShooter && Toggles.useIntake) {
+            new Trigger(() -> joystick.autoShoot()).whileTrue(
+                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
+                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
+                            intake::requestRumble, intake::requestIdle, intake),
+                        () -> Shooter.useDynamicRumble)));
+
+            new Trigger(() -> joystick.manualShoot()).whileTrue(
+                new ParallelCommandGroup(new ShootCommand(shooterHopper, false),
+                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
+                            intake::requestRumble, intake::requestIdle, intake),
+                        () -> Shooter.useDynamicRumble)));
         }
 
         if (shooterHopper != null) {
@@ -193,11 +213,10 @@ public class RobotContainer {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
 
             drivetrain.setDefaultCommand(driveWithJoystick);
-            new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
             new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
 
-//            new Trigger(() -> joystick.wheelRadiusCharacterization())
+//            new Trigger(() -> joystick.narrow())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
         }
@@ -207,10 +226,6 @@ public class RobotContainer {
     public void periodic() {
         if (shooterTuner != null) {
             shooterTuner.periodic();
-        }
-
-        if (Toggles.useShooter && shooterHopper != null) {
-            ;;;
         }
     }
 
