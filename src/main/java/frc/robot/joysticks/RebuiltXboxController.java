@@ -60,7 +60,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
     @Override
     public boolean shootToAlliance() {
-        return xboxController.getYButtonIsPressed();
+        return xboxController.getBButtonIsHeld();
     }
 
     @Override
