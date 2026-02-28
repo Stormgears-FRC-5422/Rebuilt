@@ -19,6 +19,7 @@ public class IntakeDiagnostic extends StormCommand {
 
     @Override
     public void initialize() {
+        super.initialize();
         if (skip){
             return;
         }

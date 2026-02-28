@@ -46,7 +46,8 @@ public class IntakeHome extends StormCommand {
 
     @Override
     public boolean isFinished() {
-        return skip || num > 15;
+        // return skip || num > 15;
+        return true;
     }
 
     @Override
@@ -56,10 +57,8 @@ public class IntakeHome extends StormCommand {
         intake.updownIntakeMotor.set(0);
         if (!skip) {
             if (!interrupted) {
-                intake.setState(Intake.IntakeState.IDLE);
-                intake.hasBeenHomed = true;
                 intake.zeroHere();
-                intake.enableSoftLimit(true);
+                intake.setState(Intake.IntakeState.IDLE);
            } else {
                 intake.setState(Intake.IntakeState.UNKNOWN);
             }

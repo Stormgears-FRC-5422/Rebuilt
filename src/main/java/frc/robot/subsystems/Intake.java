@@ -83,6 +83,7 @@ public class Intake extends StormSubsystem {
 
     private double updownVolts;
     private double targetPosition;
+    private double currentPosition;
 
     public Intake() {
         updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
@@ -125,7 +126,8 @@ public class Intake extends StormSubsystem {
 
     public void zeroHere() {
         updownIntakeMotor.getConfigurator().setPosition(0.0);
-        enableSoftLimit(true);
+        enableSoftLimits(true);
+        hasBeenHomed = true;
     }
 
     public double getAngleDegrees() {
@@ -137,21 +139,21 @@ public class Intake extends StormSubsystem {
         
         switch (state) {
             case UNKNOWN -> {
-                break;
+                console("***** UNKNOWN state *****");
             }
             case HOMING -> {
-                break;
+                console("***** HOMING state *****");
+                enableSoftLimits(false);
             }
             case IDLE -> {
+                console("***** IDLE state *****");
                 setAngleDegrees(Shooter.topIntakeDegrees);
-                break;
             }
             case INTAKING -> {
+                console("***** INTAKING state *****");
                 setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
-                break;
             }
             case RUMBLE -> {
-                break;
             }
         }
 
@@ -201,6 +203,7 @@ public class Intake extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+        currentPosition = updownIntakeMotor.getPosition().getValueAsDouble();
 
         current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
 
@@ -257,7 +260,7 @@ public class Intake extends StormSubsystem {
             case SIMPLE_MOTION -> {
                 if (hasBeenHomed) {
                     simpleMove(currentPosition);
-                    elevatorLeader.set(elevatorSpeed);
+                    updownIntakeMotor.setVoltage(updownVolts);
                 } else {
                     console("Stubbornly refusing to move before homed!", 25);
                 }
@@ -299,7 +302,7 @@ public class Intake extends StormSubsystem {
         return hit;
     }
     
-    public void enableSoftLimit(boolean enable) {
+    public void enableSoftLimits(boolean enable) {
         softLimitEnabled = enable;
 
         config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Shooter.bottomIntakeLimit / 360.0;
