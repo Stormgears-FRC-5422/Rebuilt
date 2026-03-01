@@ -8,8 +8,11 @@ import frc.robot.RobotState;
 import frc.robot.RobotState.HopperState;
 import frc.utils.StormSubsystem;
 import frc.robot.subsystems.misc.BatteryMonitor;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import static edu.wpi.first.units.Units.*;
+
+import java.util.Optional;
 
 public class Lights extends StormSubsystem {
 
@@ -38,6 +41,17 @@ public class Lights extends StormSubsystem {
     private int lEDLength = Constants.Lights.ledLength;
     private int halfLEDLength = Constants.Lights.ledLength/2;
 
+    private enum periodicStates{
+        ACTIVE_SHIFT,
+        TRANSITION_PERIOD,
+        INACTIVE_SHIFT,
+        ALIGN_TO_SHOOT,
+        CAN_SEE_TAG,
+    }
+    // private String alliance = DriverStation.getAlliance().toString();
+    private Optional<DriverStation.Alliance> alliance;
+    private String team;
+    
     public Lights() {
         addressableLED = new AddressableLED(Constants.Lights.port);
         addressableLEDBuffer = new AddressableLEDBuffer(Constants.Lights.ledLength);
@@ -49,7 +63,18 @@ public class Lights extends StormSubsystem {
         addressableLED.start();
         setViews();
         m_robotState = RobotState.getInstance();
-
+        alliance = DriverStation.getAlliance();
+        if (alliance.isPresent()) {
+            if (alliance.get().equals(DriverStation.Alliance.Red)) {
+                team = "RED";
+            }
+            if (alliance.get().equals(DriverStation.Alliance.Blue)) {
+                team = "BLUE";
+            }
+        }
+        else {
+            team = "MISSING"; // Default value if alliance is not detected
+        }
     }
 
     @Override
@@ -160,5 +185,49 @@ public class Lights extends StormSubsystem {
                 break;
         }
     }
+    public boolean checkShift(){
+        String gameData;
+        gameData = DriverStation.getGameSpecificMessage();
+        if(gameData.length() > 0)
+        {
+        switch (gameData.charAt(0))
+        {
+            case 'B' :
+            //Blue case code
+            break;
+            case 'R' :
+            //Red case code
+            break;
+            default :
+            //This is corrupt data
+            break;
+        }
+        } else {
+        //Code for no data received yet
+        }
+        boolean shoot = false;
+        return shoot;
+    }
+    public boolean switchingShiftSoon(){
+        return false;
+    }
+    public void setShift(){
+        if(team.equals("RED")){
+            
+        }
+        else if(team.equals("BLUE")){
+
+        }
+        else if (team.equals("MISSING")){
+
+        }
+    }
+    public void setTransitionPeriod(){
+
+    }
+    public void setPeriod(){
+
+    }
+
 
 }
