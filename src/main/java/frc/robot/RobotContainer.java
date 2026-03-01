@@ -171,7 +171,7 @@ public class RobotContainer {
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
                 new SimpleRumble(intake),
-                () -> Shooter.useDynamicRumble));
+                () -> frc.robot.Constants.Intake.useDynamicRumble));
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(

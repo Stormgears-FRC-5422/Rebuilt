@@ -1,6 +1,5 @@
 package frc.robot.commands.intake;
 
-import frc.robot.Constants.Shooter;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakeState;
 import frc.utils.StormCommand;
@@ -22,8 +21,8 @@ public class DynamicRumble extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
-        minAngle = Shooter.minRumbleAngle;
-        maxAngle = Shooter.maxRumbleAngle;
+        minAngle = frc.robot.Constants.Intake.minRumbleAngleDeg;
+        maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
         goingUp = true;
 
         intake.setTargetPosition(maxAngle);
@@ -36,7 +35,7 @@ public class DynamicRumble extends StormCommand {
         if (skip) return;
         if (intake.isAtTarget()) {
             if (goingUp) {
-                minAngle -= Shooter.dynamicRumbleIncrementDegrees;
+                minAngle -= frc.robot.Constants.Intake.dynamicRumbleIncrementDegrees;
             }
             goingUp = !goingUp;
             intake.setTargetPosition(goingUp ? maxAngle : minAngle);
