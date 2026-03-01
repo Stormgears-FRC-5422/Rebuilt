@@ -28,6 +28,7 @@ public class Robot extends LoggedRobot {
     private RobotState state;
     private int iteration = 0;
     private Command autonomousCommand;
+    private boolean autoHasCompleted = false;
 
 
     public Robot() {
@@ -144,7 +145,9 @@ public class Robot extends LoggedRobot {
         if (iteration % 25 == 0) {
             if (robotContainer != null) {
                 robotContainer.updateAlliance();
-                robotContainer.updateAutoPose();
+                if (!autoHasCompleted) {
+                    robotContainer.updateAutoPose();
+                }
             }
         }
 
@@ -192,6 +195,7 @@ public class Robot extends LoggedRobot {
     @Override
     public void autonomousExit() {
         console("AutoExit");
+        autoHasCompleted = true;
     }
 
     @Override
