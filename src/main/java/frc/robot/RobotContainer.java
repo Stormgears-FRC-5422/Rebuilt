@@ -26,6 +26,7 @@ import frc.robot.commands.ShootCommand;
 import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeDiagnostic;
 import frc.robot.commands.intake.IntakeHome;
+import frc.robot.commands.intake.SimpleRumble;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -56,6 +57,7 @@ public class RobotContainer {
     private Intake intake;
     //elastic control
     private SingleMotorTuner shooterTuner;
+    private SingleMotorTuner intakeTuner;
 
     // **********
     // Commands
@@ -94,6 +96,9 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
+            if (Toggles.usePidTuner) {
+                intakeTuner = new SingleMotorTuner("Intake Tuner", intake.getPidConfig());
+            }
         }
 
         if (Toggles.useShooter) {
@@ -155,7 +160,7 @@ public class RobotContainer {
 
             // new Trigger(() -> joystick.intakeTogglePressed()).onTrue(new IntakeGoToPosition(intake, 80.0));
 
-            // new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
+            // new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
             // new Trigger(() -> joystick.shootToHub()).whileTrue(
             //     new ParallelCommandGroup(
             //         new ShootCommand(shooterHopper, true),
@@ -163,9 +168,9 @@ public class RobotContainer {
             //     )
             // );
 
-            //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
-            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                intake::requestRumble, intake::requestIdle, intake),
+            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
+                new DynamicRumble(intake),
+                new SimpleRumble(intake),
                 () -> Shooter.useDynamicRumble));
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
@@ -200,6 +205,9 @@ public class RobotContainer {
     public void periodic() {
         if (shooterTuner != null) {
             shooterTuner.periodic();
+        }
+        if (intakeTuner != null) {
+            intakeTuner.periodic();
         }
 
         if (Toggles.useShooter && shooterHopper != null) {

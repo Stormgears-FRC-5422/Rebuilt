@@ -6,42 +6,43 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
-import frc.robot.Constants;
 import frc.robot.Constants.Shooter;
 import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
-
+import frc.utils.pid.PidConfig;
 
 public class Intake extends StormSubsystem {
+
+    // ===== Enums =====
+
     public enum IntakeState {
         UNKNOWN,
         HOMING,
-        IDLE, // Once homing has homed the intake, it is sent to IDLE. also brings intake arm back up, leaving it there
-        INTAKING, // in the position to intake
-        RUMBLE, // rumbles to funnel balls into shooter
+        IDLE,
+        HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
     }
 
-    public enum IntakePositions {
+    public enum IntakePosition {
         UNKNOWN(Double.NaN),
-        NEG_INFINITY(Double.NEGATIVE_INFINITY),
-        HOME(0),
+        HOME(Shooter.homePosition),
         TOP(Shooter.topIntakeLimit),
-        BOTTOM(Shooter.bottomIntakeLimit),
-        POS_INFINITY(Double.POSITIVE_INFINITY);
+        BOTTOM(Shooter.bottomIntakeLimit);
 
-        private double position;
+        private final double position;
 
-        IntakePositions(double position) {
+        IntakePosition(double position) {
             this.position = position;
         }
 
@@ -50,258 +51,263 @@ public class Intake extends StormSubsystem {
         }
     }
 
-    private double target;
-    private final TalonFXConfiguration config = new TalonFXConfiguration();
-
-    public ElasticMotorController elasticMotorController = new ElasticMotorController();
+    // ===== Fields =====
 
     public final TalonFX updownIntakeMotor;
     private final SparkMax rollerIntakeMotor;
-
     private final MotionMagicVoltage mmRequest;
+    private final TalonFXConfiguration config = new TalonFXConfiguration();
+    private final PidConfig pid;
 
-    double current;
+    public ElasticMotorController elasticMotorController = new ElasticMotorController();
+
     public IntakeState state = IntakeState.UNKNOWN;
+    public boolean hasBeenHomed = false;
+    private boolean softLimitEnabled = false;
 
-    String canBusName = Constants.Imu.canBusName;
+    private double targetPosition;
+    private double currentPosition;
+    private double updownVolts;
 
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
-    public boolean hasBeenHomed = false;
-    private boolean softLimitEnabled = false;
     public double rollerOutput;
 
-    //rumble stuff
-    private double rumbleMinAngle = Shooter.minRumbleAngle;
-    private double rumbleMaxAngle = Shooter.maxRumbleAngle;
-    private boolean rumbleHitMax = false;
-    private boolean rumbleHigh = false;
-
-    private double rumblePin = 40.0;
-    private double updownIntakeMotorSpeed = 0.0;
-    private double rollerIntakeMotorSpeed = 0.0;
-
-    private double updownVolts;
-    private double targetPosition;
-    private double currentPosition;
+    // ===== Constructor =====
 
     public Intake() {
-        updownIntakeMotor = new TalonFX(Shooter.upDownMotorID, new CANBus(""));
-        rollerIntakeMotor = new SparkMax(Shooter.rollerMotorID,MotorType.kBrushless);
+        updownIntakeMotor = new TalonFX(frc.robot.Constants.Intake.updownIntakeID, new CANBus(""));
+        rollerIntakeMotor = new SparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless);
 
         mmRequest = new MotionMagicVoltage(0.0);
 
+        // PID config for hot-tuning (initial values from properties)
+        // Units: output is Volts, error is mechanism rotations (after SensorToMechanismRatio)
+        pid = new PidConfig()
+                .withKP(frc.robot.Constants.Intake.kP)      // V per mechanism rotation of error
+                .withKI(frc.robot.Constants.Intake.kI)      // V per mechanism rotation-second
+                .withKD(frc.robot.Constants.Intake.kD)      // V per mechanism rotation/second
+                .withKG(frc.robot.Constants.Intake.kG)      // V gravity feedforward (Arm_Cosine)
+                .withKS(frc.robot.Constants.Intake.kS);     // V static friction feedforward
+
+        // Motor configuration
         config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        config.Feedback.SensorToMechanismRatio = 53.33;
+        config.Feedback.SensorToMechanismRatio = frc.robot.Constants.Intake.sensorToMechanismRatio;
 
-        config.Slot0.kP = 80.0; //23.0
-        config.Slot0.kI = 2.0; //2.0
-        config.Slot0.kD = 0.3; //0.5
-        config.Slot0.kG = 0.0; // probably need this
+        // Slot0 PID from config
+        config.Slot0.kP = pid.kP;
+        config.Slot0.kI = pid.kI;
+        config.Slot0.kD = pid.kD;
+        config.Slot0.kG = pid.kG;
+        config.Slot0.kS = pid.kS;
+        config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
 
-        config.Slot0.kS = 0.20;  // static friction  V
-
-        config.MotionMagic.MotionMagicCruiseVelocity = 5.0;  // rot/s
-        config.MotionMagic.MotionMagicAcceleration   = 3.0;  // rot/s^2
-        config.MotionMagic.MotionMagicJerk           = 30; // rot/s^3
+        // MotionMagic profile constraints (units: mechanism rotations per second)
+        config.MotionMagic.MotionMagicCruiseVelocity = frc.robot.Constants.Intake.cruiseVelocity;  // mechanism rot/s
+        config.MotionMagic.MotionMagicAcceleration   = frc.robot.Constants.Intake.acceleration;    // mechanism rot/s^2
+        config.MotionMagic.MotionMagicJerk           = frc.robot.Constants.Intake.jerk;            // mechanism rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
         updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
 
+        // Current limits
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
-        currentLimits.StatorCurrentLimit = 35.0;
+        currentLimits.StatorCurrentLimit = frc.robot.Constants.Intake.statorCurrentLimit;
         currentLimits.StatorCurrentLimitEnable = true;
-
         updownIntakeMotor.getConfigurator().apply(currentLimits);
 
-        targetPosition = IntakePositions.UNKNOWN.position;
+        targetPosition = 0;
         updownVolts = 0;
+
+        setState(IntakeState.UNKNOWN);
     }
 
-    public void setAngleDegrees(double degrees) {
-        double accRotations = degrees / 360.0;
+    // ===== Periodic =====
 
-        updownIntakeMotor.setControl(mmRequest.withPosition(accRotations));
+    @Override
+    public void periodic() {
+        super.periodic();
+
+        // Hot-tune PID if changed via dashboard
+        if (pid.isDirty()) {
+            configMotor();
+            pid.clearDirty();
+            console(String.valueOf(pid), 1);
+        }
+
+        // Read sensors
+        currentPosition = getAngleDegrees();
+
+        // Roller control
+        rollerOutput = 0.0;
+        if (outtakeEnabled) {
+            rollerOutput = Shooter.rollerOuttakeSpeed;
+        } else if (rollerEnabled) {
+            rollerOutput = Shooter.rollerIntakeSpeed;
+        }
+        rollerIntakeMotor.set(rollerOutput);
+
+        // Arm motor — switch on motion mode only (like elevator)
+        switch (state) {
+            case HOMING:
+                home();
+                break;
+
+            case HOLD:
+            case PID_MOTION:
+                if (hasBeenHomed) {
+                    setAngleDegrees(targetPosition);
+                } else {
+                    console("Stubbornly refusing to move before homed!", 25);
+                }
+                break;
+
+            case SIMPLE_MOTION:
+                if (hasBeenHomed) {
+                    simpleMove();
+                    updownIntakeMotor.setVoltage(updownVolts);
+                } else {
+                    console("Stubbornly refusing to move before homed!", 25);
+                }
+                break;
+
+            default:
+                updownIntakeMotor.set(0);
+        }
+
+        // Logging
+        Logger.recordOutput("Intake/State", state.toString());
+        Logger.recordOutput("Intake/EncoderDegrees", currentPosition);
+        Logger.recordOutput("Intake/RawRotations", updownIntakeMotor.getPosition().getValueAsDouble());
+        Logger.recordOutput("Intake/TargetPosition", targetPosition);
+        Logger.recordOutput("Intake/SupplyCurrent", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
+        Logger.recordOutput("Intake/StatorCurrent", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
+        Logger.recordOutput("Intake/Voltage", updownIntakeMotor.getMotorVoltage().getValueAsDouble());
+        Logger.recordOutput("Intake/RollerOutput", rollerOutput);
     }
 
-    public void zeroHere() {
-        updownIntakeMotor.getConfigurator().setPosition(0.0);
-        enableSoftLimits(true);
-        hasBeenHomed = true;
+    // ===== State Transitions =====
+
+    public void setState(IntakeState newState) {
+        state = newState;
+
+        switch (state) {
+            case UNKNOWN:
+                console("***** UNKNOWN state *****");
+                break;
+
+            case HOMING:
+                console("***** HOMING state *****");
+                enableSoftLimits(false);
+                break;
+
+            case IDLE:
+                console("***** IDLE state *****");
+                break;
+
+            case HOLD:
+                console("***** HOLD state *****");
+                break;
+
+            case PID_MOTION:
+                console("***** PID_MOTION state *****");
+                break;
+
+            case SIMPLE_MOTION:
+                console("***** SIMPLE_MOTION state *****");
+                break;
+        }
     }
+
+    // ===== Motor Control Helpers =====
+
+    // Converts degrees to mechanism rotations for MotionMagic position command
+    private void setAngleDegrees(double degrees) {
+        updownIntakeMotor.setControl(mmRequest.withPosition(degrees / 360.0));
+    }
+
+    private void home() {
+        if (Shooter.stratlimit) {
+            updownIntakeMotor.setVoltage(-2.0);
+        } else {
+            updownIntakeMotor.setVoltage(0.0);
+        }
+    }
+
+    private void simpleMove() {
+        if (currentPosition < targetPosition) {
+            this.updownVolts = Shooter.updownVolts;
+        } else if (currentPosition > targetPosition) {
+            this.updownVolts = -Shooter.updownVolts;
+        } else {
+            this.updownVolts = 0;
+        }
+    }
+
+    // Applies current PidConfig gains to motor Slot0 (for hot-tuning)
+    private void configMotor() {
+        Slot0Configs slot0 = new Slot0Configs();
+        slot0.kP = pid.kP;
+        slot0.kI = pid.kI;
+        slot0.kD = pid.kD;
+        slot0.kG = pid.kG;
+        slot0.kS = pid.kS;
+        slot0.GravityType = GravityTypeValue.Arm_Cosine;
+        updownIntakeMotor.getConfigurator().apply(slot0);
+    }
+
+    // ===== Position Queries =====
 
     public double getAngleDegrees() {
         return updownIntakeMotor.getPosition().getValue().in(Degrees);
     }
 
-    public void setState(IntakeState newState) {
-        state = newState;
-        
-        switch (state) {
-            case UNKNOWN -> {
-                console("***** UNKNOWN state *****");
-            }
-            case HOMING -> {
-                console("***** HOMING state *****");
-                enableSoftLimits(false);
-            }
-            case IDLE -> {
-                console("***** IDLE state *****");
-                setAngleDegrees(Shooter.topIntakeDegrees);
-            }
-            case INTAKING -> {
-                console("***** INTAKING state *****");
-                setAngleDegrees((elasticMotorController.intakeAngle.get().doubleValue()));
-            }
-            case RUMBLE -> {
-            }
-        }
-
-    }
-
-    public boolean atTargetDegrees(double deg) {
-        return Math.abs(getAngleDegrees() - deg) < Shooter.targetDegreesTolerance;
-    }
-
-    public void requestRumble() {
-        if (hasBeenHomed) {
-            rumbleMinAngle = Shooter.minRumbleAngle;
-            rumbleMaxAngle = Shooter.maxRumbleAngle;
-            rumblePin = rumbleMinAngle;
-            rumbleHigh = false;
-            rumbleHitMax = false;
-            setState(IntakeState.RUMBLE);
-        }
-    }
-
-    public void requestIntakeDown() {
-        if (hasBeenHomed) {
-            setState(IntakeState.INTAKING);
-        }
-    }
-    public void requestIdle() {
-        if (hasBeenHomed) {
-            setState(IntakeState.IDLE);
-        }
-    }
-    public void setRollerEnabled(boolean enabled) {
-        rollerEnabled = enabled;
-    }
-    public void setOuttakeRollers(boolean enabled) {
-        outtakeEnabled = enabled;
-    }
-    public void toggleIntakePosition() {
-        if (!hasBeenHomed) return;
-
-        if (state == IntakeState.INTAKING) {
-            rollerEnabled = false;
-            setState(IntakeState.IDLE);
-        } else {
-            setState(IntakeState.INTAKING);
-        }
-    }
-    @Override
-    public void periodic() {
-        super.periodic();
-        currentPosition = updownIntakeMotor.getPosition().getValueAsDouble();
-
-        current = updownIntakeMotor.getSupplyCurrent().getValueAsDouble();
-
-        Logger.recordOutput("rumble target", rumblePin);
-        Logger.recordOutput("rumble position", getAngleDegrees());
-        Logger.recordOutput("rumble at target", atTargetDegrees(rumblePin));
-
-        Logger.recordOutput("intake motor up down current", updownIntakeMotor.getSupplyCurrent().getValueAsDouble());
-        Logger.recordOutput("intake stator current", updownIntakeMotor.getStatorCurrent().getValueAsDouble());
-
-        Logger.recordOutput("intake encoder degrees", getAngleDegrees());
-        Logger.recordOutput("intake raw encoder rotations", updownIntakeMotor.getPosition().getValueAsDouble());
-        Logger.recordOutput("intake target angle", elasticMotorController.intakeAngle.get().doubleValue());
-        Logger.recordOutput("intake at target", atTargetDegrees(elasticMotorController.intakeAngle.get().doubleValue()));
-        Logger.recordOutput("intake state", state.toString());
-        Logger.recordOutput("intake voltage", updownIntakeMotor.getMotorVoltage().getValueAsDouble());
-
-        rollerOutput = 0.0;
-        if (outtakeEnabled) {
-            rollerOutput = Shooter.rollerOuttakeSpeed;
-        } else if (rollerEnabled && state == IntakeState.INTAKING) {
-            rollerOutput = Shooter.rollerIntakeSpeed;
-        }
-        rollerIntakeMotor.set(rollerOutput);
-
-        switch (state) {
-            case UNKNOWN -> {
-                updownIntakeMotor.set(0);
-            }
-            // case HOMING -> {
-            //     home();
-            // }
-            // case IDLE -> {
-            //     // setAngleDegrees(Shooter.topIntakeDegrees);
-            // }
-            // case INTAKING -> {
-            //     setAngleDegrees(elasticMotorController.intakeAngle.get().doubleValue());
-            // }
-            // case RUMBLE -> {
-            //     setAngleDegrees(rumblePin);
-
-            //     if (atTargetDegrees(rumblePin)) {
-            //         if (rumbleHigh) {
-            //             rumbleHitMax = true;
-            //         }
-
-            //         rumbleHigh = !rumbleHigh;
-            //         rumblePin = rumbleHigh ? rumbleMaxAngle : rumbleMinAngle;
-            //     }
-            // }
-            case PID_MOTION -> {
-                setAngleDegrees(target);
-            }
-            case SIMPLE_MOTION -> {
-                if (hasBeenHomed) {
-                    simpleMove(currentPosition);
-                    updownIntakeMotor.setVoltage(updownVolts);
-                } else {
-                    console("Stubbornly refusing to move before homed!", 25);
-                }
-            }
-        }
-    }
-    private void setTarget(double target) {
-        this.target = target;
-    }
-    private void setSimpleMotionVolts(double volts) {
-        volts = updownVolts;
-    }
-
-    private void home() {
-        if (Shooter.stratlimit) {
-            // might want to use an average here to minimize spikes
-            updownIntakeMotor.setVoltage(-2.0);
-        } else { //assume you're at home
-            updownIntakeMotor.setVoltage(0.0);
-        }
-    }
     public boolean isAtHome() {
         if (Shooter.stratlimit) {
-            // might want to use an average here to minimize spikes
-            return (updownIntakeMotor.getStatorCurrent().getValueAsDouble()) > Shooter.intakeCurrentLimit;
+            return updownIntakeMotor.getStatorCurrent().getValueAsDouble() > Shooter.intakeCurrentLimit;
         } else {
-            console("isAtHome current position: " + updownIntakeMotor.getPosition());
+            console("isAtHome current position: " + currentPosition);
             return true;
         }
     }
 
-    public void setRumbleMinAngle(double degrees) {
-        rumbleMinAngle = degrees;
+    public boolean isAtTarget() {
+        return Math.abs(currentPosition - targetPosition) < Shooter.targetDegreesTolerance;
     }
 
-    public boolean intakeIsAtMax() {
-        boolean hit = rumbleHitMax;
-        rumbleHitMax = false;
-        return hit;
+    // ===== Public API =====
+
+    public PidConfig getPidConfig() {
+        return pid;
     }
-    
+
+    public void declareHome() {
+        hasBeenHomed = true;
+        updownIntakeMotor.getConfigurator().setPosition(0.0);
+        enableSoftLimits(true);
+    }
+
+    public void setTargetPosition(IntakePosition position) {
+        setTargetPosition(position.getValue());
+    }
+
+    public void setTargetPosition(double degrees) {
+        this.targetPosition = degrees;
+    }
+
+    public double getTargetPosition() {
+        return targetPosition;
+    }
+
+    public void setRollerEnabled(boolean enabled) {
+        rollerEnabled = enabled;
+    }
+
+    public void setOuttakeRollers(boolean enabled) {
+        outtakeEnabled = enabled;
+    }
+
+    // Soft limits (thresholds in mechanism rotations, converted from degrees)
     public void enableSoftLimits(boolean enable) {
         softLimitEnabled = enable;
 
@@ -312,29 +318,5 @@ public class Intake extends StormSubsystem {
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
-    }
-
-
-    public void requestPidMotion(double degrees) {
-        if (!hasBeenHomed) return;
-
-        setTarget(degrees);
-        setState(IntakeState.PID_MOTION);
-    }
-
-    private void simpleMove(double currentPosition) {
-        if (currentPosition < targetPosition) {
-            setSimpleMotionVolts(Shooter.updownVolts);
-        } else if (currentPosition > targetPosition) {
-            setSimpleMotionVolts(-updownVolts);
-        } else {
-            setSimpleMotionVolts(0);
-        }
-    }
-    public void setTargetPosition(IntakePositions targetPosition) {
-        setTargetPosition(targetPosition.getValue());
-    }
-    public void setTargetPosition(double position) {
-        this.targetPosition = position;
     }
 }

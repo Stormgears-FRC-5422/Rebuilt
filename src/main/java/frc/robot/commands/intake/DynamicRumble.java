@@ -6,40 +6,54 @@ import frc.robot.subsystems.Intake.IntakeState;
 import frc.utils.StormCommand;
 
 public class DynamicRumble extends StormCommand {
+    private boolean skip;
     private final Intake intake;
 
-    private double currentMinDeg;
-    private int topTimes;
+    private double minAngle;
+    private double maxAngle;
+    private boolean goingUp;
 
     public DynamicRumble(Intake intake) {
         this.intake = intake;
-        addRequirements(intake);
+        skip = safeAddRequirements(intake);
     }
 
     @Override
     public void initialize() {
-        topTimes = 0;
-        currentMinDeg = Shooter.minRumbleAngle;
+        super.initialize();
+        if (skip) return;
+        minAngle = Shooter.minRumbleAngle;
+        maxAngle = Shooter.maxRumbleAngle;
+        goingUp = true;
 
-        intake.setRumbleMinAngle(currentMinDeg);
-        intake.requestRumble(); 
+        intake.setTargetPosition(maxAngle);
+        intake.setState(IntakeState.PID_MOTION);
     }
 
     @Override
     public void execute() {
-        if (intake.intakeIsAtMax()) {
-            topTimes++; //good if increasing it every iteration is tooo much which i suspect it will be 
-            currentMinDeg -= Shooter.dynamicRumbleIncrementDegrees;
-            intake.setRumbleMinAngle(currentMinDeg);
+        super.execute();
+        if (skip) return;
+        if (intake.isAtTarget()) {
+            if (goingUp) {
+                minAngle -= Shooter.dynamicRumbleIncrementDegrees;
+            }
+            goingUp = !goingUp;
+            intake.setTargetPosition(goingUp ? maxAngle : minAngle);
         }
     }
 
     @Override
-    public void end(boolean interrupted) {
+    public boolean isFinished() {
+        return skip || !intake.hasBeenHomed || (intake.state != IntakeState.PID_MOTION);
     }
 
     @Override
-    public boolean isFinished() {
-        return !intake.hasBeenHomed || (intake.state != IntakeState.RUMBLE);
+    public void end(boolean interrupted) {
+        if (!skip) {
+            intake.setRollerEnabled(false);
+            intake.setState(IntakeState.IDLE);
+        }
+        super.end(interrupted);
     }
 }

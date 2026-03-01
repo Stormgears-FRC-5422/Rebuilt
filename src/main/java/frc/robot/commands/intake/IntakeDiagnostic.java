@@ -1,7 +1,7 @@
 package frc.robot.commands.intake;
 
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Intake.IntakePositions;
+import frc.robot.subsystems.Intake.IntakePosition;
 import frc.utils.StormCommand;
 
 public class IntakeDiagnostic extends StormCommand {
@@ -23,7 +23,7 @@ public class IntakeDiagnostic extends StormCommand {
         if (skip){
             return;
         }
-        intake.setTargetPosition(down ? IntakePositions.BOTTOM : IntakePositions.TOP);
+        intake.setTargetPosition(down ? IntakePosition.BOTTOM : IntakePosition.TOP);
         intake.setState(Intake.IntakeState.SIMPLE_MOTION);
     }
 
@@ -40,6 +40,7 @@ public class IntakeDiagnostic extends StormCommand {
     @Override
     public void end(boolean interrupted) {
         if (!skip){
+            intake.setRollerEnabled(false);
             intake.setState(Intake.IntakeState.IDLE);
         } else if (intake != null){
             intake.setState(Intake.IntakeState.UNKNOWN);
