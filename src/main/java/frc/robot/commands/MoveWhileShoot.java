@@ -131,6 +131,8 @@ public class MoveWhileShoot extends StormCommand {
         Logger.recordOutput("MoveWhileShoot/HeadingErrorRad", headingError);
         Logger.recordOutput("MoveWhileShoot/GoalAngleRad", goalAngle);
         Logger.recordOutput("MoveWhileShoot/MeasuredAngleRad", currentAngle);
+        Logger.recordOutput("MoveWhileShoot/PidOutput", pidOutput);
+        Logger.recordOutput("MoveWhileShoot/FeedforwardOutput", Drive.targetKFvcmd * goalAngleRate);
         Logger.recordOutput("MoveWhileShoot/OmegaOutput", omega);
         Logger.recordOutput("MoveWhileShoot/GoalAngleRateRadPerSec", goalAngleRate);
         Logger.recordOutput("MoveWhileShoot/LinearSpeed", Math.hypot(x, y));
