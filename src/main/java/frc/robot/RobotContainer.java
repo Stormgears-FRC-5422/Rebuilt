@@ -196,8 +196,7 @@ public class RobotContainer {
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, true),
                     new MoveWhileShoot(drivetrain, joystick, shooterHopper),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                        intake::requestRumble, intake::requestIdle, intake),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                     () -> Constants.Intake.useDynamicRumble)
                 )
             );
@@ -206,30 +205,26 @@ public class RobotContainer {
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, false),
                     new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                         () -> Constants.Intake.useDynamicRumble)
                 )
             );
         } else if (Toggles.useShooter && Toggles.useIntake) {
             new Trigger(() -> joystick.autoShoot()).whileTrue(
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                         () -> Constants.Intake.useDynamicRumble)));
 
             new Trigger(() -> joystick2.autoShoot()).whileTrue(
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                         () -> Constants.Intake.useDynamicRumble)));
         }
 
         if(Toggles.useShooter && Toggles.useIntake){
             new Trigger(() -> joystick.manualShoot()).whileTrue(
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                         () -> Constants.Intake.useDynamicRumble)));
         }
 

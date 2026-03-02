@@ -87,7 +87,7 @@ public class Climber extends StormSubsystem {
     }
 
     public boolean isAtHome() {
-        return leadMotor.getStatorCurrent().getValueAsDouble() > Constants.Shooter.intakeCurrentLimit;
+        return leadMotor.getStatorCurrent().getValueAsDouble() > 15.0;
     }
 
     @Override
