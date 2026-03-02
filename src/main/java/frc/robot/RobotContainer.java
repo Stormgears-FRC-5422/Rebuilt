@@ -23,6 +23,7 @@ import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
+import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
@@ -151,6 +152,9 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
                 
+            new Trigger(() -> elasticMotorController.alignNarrow.get())
+                .whileTrue(new AlignNarrow(drivetrain, joystick));
+
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
             
             new Trigger(() -> joystick.intakeTogglePressed())

@@ -23,6 +23,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> enabled;
   public final Option<Double> motor1;
   public final Option<Boolean> hopperIsEmpty;
+  public final Option<Boolean> alignNarrow;
   // public final Option<Double> motor2;
   // public final Option<String> lightState; 
   public final Option<Boolean> intakeGoToDegrees;
@@ -56,6 +57,7 @@ public class ElasticMotorController extends OptionsController {
     enabled = createBooleanOption("Enabled", false);
     motor1   = createNumberOption("Motor 1 Output", 0.0);
     hopperIsEmpty = createBooleanOption("Toggle lights tester", false);
+    alignNarrow = createBooleanOption("narrow", false);
     intakeGoToDegrees = createBooleanOption("go to position cmd", false);
     // lightState = createStringOption("Light State", "IDLE");
     // motor2   = createNumberOption("Motor 2 Output", 0.0);
