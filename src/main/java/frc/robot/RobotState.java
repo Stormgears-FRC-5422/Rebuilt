@@ -27,10 +27,12 @@ public class RobotState {
         TELEOP,
         TEST
     }
+
     public enum HopperState{
         IDLE,
         HOPPER_FULL,
         HOPPER_HALF,
+        HOPPER_LOW,
         HOPPER_EMPTY,
         UNKNOWN
     }
