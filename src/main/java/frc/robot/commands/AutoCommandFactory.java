@@ -341,11 +341,14 @@ public class AutoCommandFactory {
         }
 
         // First cycle
-        commands.add(new IntakeHome(intake));
         commands.add(
             Commands.race(
-            new IntakeGoToPosition(intake, IntakePosition.BOTTOM).andThen(new RunRoller(intake, true)),
-            choreoFactory.trajectoryCmd(firstTrajectory)
+                Commands.sequence(
+                    new IntakeHome(intake),
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true)
+                ),
+                choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
         commands.add(stopDrive());
@@ -357,10 +360,12 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
-            commands.add(new IntakeGoToPosition(intake, IntakePosition.HOME));
             commands.add(Commands.race(
-                choreoFactory.trajectoryCmd(secondTrajectory),
-                new RunRoller(intake, true)
+                Commands.sequence(
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true)
+                ),
+                choreoFactory.trajectoryCmd(secondTrajectory)
             ));
             commands.add(stopDrive());
             commands.add(Commands.parallel(
