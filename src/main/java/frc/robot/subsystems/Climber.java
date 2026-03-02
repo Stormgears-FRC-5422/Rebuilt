@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import frc.robot.Constants;
 import frc.utils.StormSubsystem;
@@ -40,7 +41,7 @@ public class Climber extends StormSubsystem {
     public Climber() {
         leadMotor = new TalonFX(Constants.Climber.leftMotorID, new CANBus(""));
         followerMotor = new TalonFX(Constants.Climber.rightMotorID, new CANBus(""));
-        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), true));
+        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.Aligned));
 
         config.Feedback.SensorToMechanismRatio = 16;
         config.Slot0.kP = Constants.Climber.kP;
