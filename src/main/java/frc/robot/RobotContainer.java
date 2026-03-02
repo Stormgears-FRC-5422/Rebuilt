@@ -166,7 +166,7 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
-                    new FunnelToAllianceZone(drivetrain, joystick2, shooterHopper),
+                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
                     new ShootCommand(shooterHopper, false)
                 )
             );
@@ -207,7 +207,7 @@ public class RobotContainer {
             new Trigger(() -> joystick2.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, false),
-                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
+                    new FunnelToAllianceZone(drivetrain, joystick2, shooterHopper),
                     Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
                         () -> Constants.Intake.useDynamicRumble)
                 )
