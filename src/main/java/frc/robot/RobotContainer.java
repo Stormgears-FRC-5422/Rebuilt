@@ -51,6 +51,7 @@ public class RobotContainer {
     // Control
     // **********
     RebuiltJoystick joystick;
+    RebuiltJoystick joystick2;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
@@ -138,6 +139,7 @@ public class RobotContainer {
         console("Configuring Joystick and bindings");
         try {
             joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
+            joystick2 = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
@@ -196,7 +198,7 @@ public class RobotContainer {
                     new MoveWhileShoot(drivetrain, joystick, shooterHopper),
                     Commands.either(new DynamicRumble(intake), Commands.startEnd(
                         intake::requestRumble, intake::requestIdle, intake),
-                    () -> Shooter.useDynamicRumble)
+                    () -> frc.robot.Constants.Intake.useDynamicRumble)
                 )
             );
 
@@ -206,7 +208,7 @@ public class RobotContainer {
                     new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
                     Commands.either(new DynamicRumble(intake), Commands.startEnd(
                             intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)
+                        () -> frc.robot.Constants.Intake.useDynamicRumble)
                 )
             );
         } else if (Toggles.useShooter && Toggles.useIntake) {
@@ -214,13 +216,13 @@ public class RobotContainer {
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
                     Commands.either(new DynamicRumble(intake), Commands.startEnd(
                             intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
+                        () -> frc.robot.Constants.Intake.useDynamicRumble)));
 
             new Trigger(() -> joystick2.autoShoot()).whileTrue(
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
                     Commands.either(new DynamicRumble(intake), Commands.startEnd(
                             intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
+                        () -> frc.robot.Constants.Intake.useDynamicRumble)));
         }
 
         if(Toggles.useShooter && Toggles.useIntake){
@@ -228,7 +230,7 @@ public class RobotContainer {
                 new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
                     Commands.either(new DynamicRumble(intake), Commands.startEnd(
                             intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
+                        () -> frc.robot.Constants.Intake.useDynamicRumble)));
         }
 
         if (shooterHopper != null) {
