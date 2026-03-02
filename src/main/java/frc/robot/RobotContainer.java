@@ -17,24 +17,22 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
-import frc.robot.commands.DriveCommands;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.climber.ClimberHome;
+import frc.robot.commands.climber.ClimberSequence;
 import frc.robot.commands.intake.DynamicRumble;
-import frc.robot.commands.intake.RunRoller;
-import frc.robot.commands.intake.IntakeDiagnostic;
-import frc.robot.commands.intake.IntakeGoToPosition;
 import frc.robot.commands.intake.IntakeHome;
+import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
+import frc.robot.commands.intake.UpDownCommand;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
-import frc.robot.commands.climber.ClimberHome;
-import frc.robot.commands.climber.ClimberSequence;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Lights;
@@ -154,7 +152,12 @@ public class RobotContainer {
                 .onTrue(new IntakeHome(intake));
                 
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+            
+            new Trigger(() -> joystick.intakeTogglePressed())
+                .onTrue(new UpDownCommand(intake));
 
+            new Trigger(() -> joystick2.intakeTogglePressed())
+                .onTrue(new UpDownCommand(intake));
 
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
@@ -163,7 +166,7 @@ public class RobotContainer {
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
-                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
+                    new FunnelToAllianceZone(drivetrain, joystick2, shooterHopper),
                     new ShootCommand(shooterHopper, false)
                 )
             );
@@ -191,7 +194,7 @@ public class RobotContainer {
                                   () -> climber.setManualDirection(null), climber));
         }
 
-        if (Toggles.useDrive && Toggles.useShooter) {
+        if (Toggles.useDrive && Toggles.useShooter && Toggles.useIntake) {
             new Trigger(() -> joystick.autoShoot()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, true),
