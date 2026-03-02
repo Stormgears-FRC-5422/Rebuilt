@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import choreo.auto.AutoFactory;
@@ -345,6 +347,7 @@ public class AutoCommandFactory {
             Commands.race(
                 Commands.sequence(
                     new IntakeHome(intake),
+                    new WaitCommand(1.0),
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
                     new RunRoller(intake, true)
                 ),
