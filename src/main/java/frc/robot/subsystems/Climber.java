@@ -1,16 +1,17 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoeix6.signals.MotorAlignmentValue;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import frc.robot.Constants;
+import frc.utils.StormSubsystem;
 
-import static java.lang.System.console;
+public class Climber extends StormSubsystem {
 
-public class Climber extends SubsystemBase {
-    // MOTORS
     private final TalonFX leadMotor;
     private final TalonFX followerMotor;
 
@@ -23,122 +24,82 @@ public class Climber extends SubsystemBase {
         CLIMBED,
         MANUALCLIMB,
     }
-    public ClimberState state = ClimberState.UNKNOWN;
-    private final TalonFXConfiguration config = new TalonFXConfiguration();
-    private double leadMotorSpeed = 0.0;
 
     public enum Direction {
         FORWARD,
         BACKWARD,
     }
 
+    private final TalonFXConfiguration config = new TalonFXConfiguration();
+    private final PositionTorqueCurrentFOC posRequest = new PositionTorqueCurrentFOC(0);
 
-
-    /**
-     * constructs a new climber system & initializes motors
-     *
-     *
-     */
+    public ClimberState state = ClimberState.IDLE;
+    public boolean hasBeenHomed = true;
+    private double manualVoltage = 0.0;
 
     public Climber() {
-        leadMotor = new TalonFX(53, "");
-        followerMotor = new TalonFX(54, "");
-        followerMotor.setControl(
-            new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.Opposed)
-        );
-        config.Feedback.SensorToMechanismRatio = 16;// .Opposed
+        leadMotor = new TalonFX(Constants.Climber.leftMotorID, new CANBus(""));
+        followerMotor = new TalonFX(Constants.Climber.rightMotorID, new CANBus(""));
+        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), true));
+
+        config.Feedback.SensorToMechanismRatio = 16;
+        config.Slot0.kP = Constants.Climber.kP;
+        leadMotor.getConfigurator().apply(config);
+        leadMotor.setNeutralMode(NeutralModeValue.Brake);
+
+        CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
+        currentLimits.StatorCurrentLimit = 40.0;
+        currentLimits.StatorCurrentLimitEnable = true;
+        leadMotor.getConfigurator().apply(currentLimits);
     }
 
     public void setState(ClimberState newState) {
         state = newState;
-
-        switch (state) {
-            case UNKNOWN -> {
-                break;
-            }
-            case HOMING -> {
-                break;
-            }
-            case IDLE -> {
-                break;
-            }
-            case READYTOCLIMB ->{
-                break;
-            }
-            case CLIMBING -> {
-                break;
-            }
-            case CLIMBED -> {
-                break;
-            }
-            case MANUALCLIMB -> {
-                break;
-            }
-        }
-
     }
 
+    public void setPositionDegrees(double degrees) {
+        leadMotor.setControl(posRequest.withPosition(degrees / 360.0));
+    }
 
-    /**
-     * This method is called periodically by the scheduler.
-     */
+    public void zeroHere() {
+        leadMotor.getConfigurator().setPosition(0.0);
+    }
+
+    public double getAngleDegrees() {
+        return leadMotor.getPosition().getValueAsDouble() * 360.0;
+    }
+
+    public boolean atTargetDegrees(double deg) {
+        return Math.abs(getAngleDegrees() - deg) < 2.0;
+    }
+
+    public void setManualDirection(Direction dir) {
+        if (dir == null) {
+            setState(ClimberState.IDLE);
+        } else if (dir == Direction.FORWARD) {
+            manualVoltage = 3.0;
+            setState(ClimberState.MANUALCLIMB);
+        } else {
+            manualVoltage = -3.0;
+            setState(ClimberState.MANUALCLIMB);
+        }
+    }
+
+    public boolean isAtHome() {
+        return leadMotor.getStatorCurrent().getValueAsDouble() > Constants.Shooter.intakeCurrentLimit;
+    }
 
     @Override
     public void periodic() {
         super.periodic();
         switch (state) {
-            case UNKNOWN -> {
-                leadMotorSpeed = 0;
-                break;
-            }
-            case HOMING -> {
-                home();
-                break;
-            }
-            case IDLE -> {
-                break;
-            }
-            case READYTOCLIMB -> {
-                break;
-            }
-            case CLIMBING -> {
-                break;
-            }
-            case CLIMBED -> {
-                break;
-            }
-            case MANUALCLIMB -> {
-                break;
-            }
-        }
-        leadMotor.set(leadMotorSpeed);
-
-    }
-
-    /**
-     * This method is called periodically by the scheduler.
-     */
-
-    public void setClimberState(Climber.ClimberState state) {
-
-    }
-
-    private void home() {
-        if (Constants.Shooter.stratlimit) {
-            // might want to use an average here to minimize spikes
-            leadMotor.setVoltage(-2.0);
-        } else { //assume you're at home
-            leadMotor.setVoltage(0.0);
+            case UNKNOWN -> leadMotor.setVoltage(0);
+            case HOMING -> leadMotor.setVoltage(-2.0);
+            case IDLE -> setPositionDegrees(Constants.Climber.homedDegrees);
+            case READYTOCLIMB -> setPositionDegrees(Constants.Climber.readyToClimbDegrees);
+            case CLIMBING -> setPositionDegrees(Constants.Climber.climbedDegrees);
+            case CLIMBED -> setPositionDegrees(Constants.Climber.climbedDegrees);
+            case MANUALCLIMB -> leadMotor.setVoltage(manualVoltage);
         }
     }
-
-    public boolean isAtHome() {
-        if (Constants.Shooter.stratlimit) {
-            // might want to use an average here to minimize spikes
-            return (leadMotor.getStatorCurrent().getValueAsDouble()) > Constants.Shooter.intakeCurrentLimit;
-        } else {
-            return true;
-        }
-    }
-
 }

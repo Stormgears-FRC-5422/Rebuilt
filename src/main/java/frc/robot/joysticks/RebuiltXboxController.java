@@ -72,4 +72,13 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean intakeDown() {
         return xboxController.getXButtonIsHeld();
     }
+
+    @Override
+    public boolean climbHome()       { return xboxController.getBackIsPressed(); }
+    @Override
+    public boolean climbSequence()   { return xboxController.getRightBumperIsPressed(); }
+    @Override
+    public boolean climbManualUp()   { return xboxController.getUpArrowPressed(); }
+    @Override
+    public boolean climbManualDown() { return xboxController.getDownArrowPressed(); }
 }
