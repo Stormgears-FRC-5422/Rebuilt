@@ -13,6 +13,7 @@ public final class PidTuningGroup {
     private final DoublePublisher kiPub;
     private final DoublePublisher kdPub;
     private final DoublePublisher kAPub;
+    private final DoublePublisher kGPub;
     private final DoublePublisher kMinPub;
     private final DoublePublisher kMaxPub;
     private final DoublePublisher kVPub;
@@ -22,6 +23,7 @@ public final class PidTuningGroup {
     private final DoubleSubscriber kiSub;
     private final DoubleSubscriber kdSub;
     private final DoubleSubscriber kASub;
+    private final DoubleSubscriber kGSub;
     private final DoubleSubscriber kMinSub;
     private final DoubleSubscriber kMaxSub;
     private final DoubleSubscriber kVSub;
@@ -37,6 +39,7 @@ public final class PidTuningGroup {
         var kiTopic = tuner.getTable().getDoubleTopic(prefix + "/kI");
         var kdTopic = tuner.getTable().getDoubleTopic(prefix + "/kD");
         var kATopic = tuner.getTable().getDoubleTopic(prefix + "/kA");
+        var kGTopic = tuner.getTable().getDoubleTopic(prefix + "/kG");
         var kMinTopic = tuner.getTable().getDoubleTopic(prefix + "/kMin");
         var kMaxTopic = tuner.getTable().getDoubleTopic(prefix + "/kMax");
         var kVTopic = tuner.getTable().getDoubleTopic(prefix + "/kV");
@@ -46,6 +49,7 @@ public final class PidTuningGroup {
         kiPub = kiTopic.publish();
         kdPub = kdTopic.publish();
         kAPub = kATopic.publish();
+        kGPub = kGTopic.publish();
         kMinPub = kMinTopic.publish();
         kMaxPub = kMaxTopic.publish();
         kVPub = kVTopic.publish();
@@ -55,6 +59,7 @@ public final class PidTuningGroup {
         kiSub = kiTopic.subscribe(config.kI);
         kdSub = kdTopic.subscribe(config.kD);
         kASub = kATopic.subscribe(config.kA);
+        kGSub = kGTopic.subscribe(config.kG);
         kMinSub = kMinTopic.subscribe(config.kMin);
         kMaxSub = kMaxTopic.subscribe(config.kMax);
         kVSub = kVTopic.subscribe(config.kV);
@@ -77,6 +82,7 @@ public final class PidTuningGroup {
         kiPub.set(config.kI);
         kdPub.set(config.kD);
         kAPub.set(config.kA);
+        kGPub.set(config.kG);
         kMinPub.set(config.kMin);
         kMaxPub.set(config.kMax);
         kVPub.set(config.kV);
@@ -88,6 +94,7 @@ public final class PidTuningGroup {
                 .withKI(kiSub.get())
                 .withKD(kdSub.get())
                 .withKA(kASub.get())
+                .withKG(kGSub.get())
                 .withKMinMax(kMinSub.get(), kMaxSub.get())
                 .withKV(kVSub.get())
                 .withKS(kSSub.get());

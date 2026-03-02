@@ -15,12 +15,19 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants.Shooter;
 import frc.robot.Constants.Toggles;
-import frc.robot.commands.*;
+import frc.robot.commands.AutoCommandFactory;
+import frc.robot.commands.DriveCommands;
+import frc.robot.commands.FunnelToAllianceZone;
+import frc.robot.commands.JoyStickDrive;
+import frc.robot.commands.MoveWhileShoot;
+import frc.robot.commands.ShootCommand;
 import frc.robot.commands.intake.DynamicRumble;
+import frc.robot.commands.intake.RunRoller;
+import frc.robot.commands.intake.IntakeDiagnostic;
+import frc.robot.commands.intake.IntakeGoToPosition;
 import frc.robot.commands.intake.IntakeHome;
-import frc.robot.commands.intake.RunIntake;
+import frc.robot.commands.intake.SimpleRumble;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -44,7 +51,6 @@ public class RobotContainer {
     // Control
     // **********
     RebuiltJoystick joystick;
-    RebuiltJoystick joystick2;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
@@ -56,6 +62,7 @@ public class RobotContainer {
     private Climber climber;
     //elastic control
     private SingleMotorTuner shooterTuner;
+    private SingleMotorTuner intakeTuner;
 
     // **********
     // Commands
@@ -94,6 +101,9 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
+            if (Toggles.usePidTuner) {
+                intakeTuner = new SingleMotorTuner("Intake Tuner", intake.getPidConfig());
+            }
         }
 
         if (Toggles.useClimber) {
@@ -128,7 +138,6 @@ public class RobotContainer {
         console("Configuring Joystick and bindings");
         try {
             joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
-            joystick2 = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
@@ -141,60 +150,14 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
-
-            new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
-                intake.requestRumble();
-                elasticMotorController.rumble.setValue(false);
-            }, intake));
-
-            new Trigger(() -> elasticMotorController.outtakeIntake.get()).onTrue(Commands.runOnce(() -> {
-                intake.setOuttakeRollers(true);
-            }, intake));
-            new Trigger(elasticMotorController.outtakeIntake::get).onFalse(Commands.runOnce(() -> {
-                intake.setOuttakeRollers(false);
-            }, intake));
-
-            new Trigger(elasticMotorController.intakeDown::get).onTrue(Commands.runOnce(() -> {
-                intake.toggleIntakePosition();
-            }, intake));
-            new Trigger(elasticMotorController.intakeDown::get).onFalse(Commands.runOnce(() -> {
-                intake.toggleIntakePosition();
-            }, intake));
-
-            new Trigger(elasticMotorController.outtakeShooter::get).onTrue(Commands.runOnce(() -> {
-                shooterHopper.setState(ShooterHopper.ShooterState.OUTTAKE);
-                elasticMotorController.outtakeShooter.setValue(false);
-            }, shooterHopper));
-
-            new Trigger(()-> joystick.intakeDown()).whileTrue(Commands.runOnce(() -> {
-                intake.toggleIntakePosition();
-            }, intake));
-
-            new Trigger(()-> joystick2.intakeDown()).whileTrue(Commands.runOnce(() -> {
-                intake.toggleIntakePosition();
-            }, intake));
-
-            new Trigger(()-> joystick.narrow()).whileTrue(
-                new InstantCommand(()-> System.out.println("not implements")));
-
-            new Trigger(()-> joystick2.narrow()).whileTrue(
-                new InstantCommand(()-> System.out.println("not implements")));
-
-            new Trigger(() -> joystick.intakeHome())
-                .onTrue(new IntakeHome(intake));
-
-            new Trigger(() -> joystick2.intakeHome())
-                .onTrue(new IntakeHome(intake));
-
-            new Trigger(() -> joystick.intakeTogglePressed()).onTrue(Commands.runOnce(() -> intake.toggleIntakePosition(), intake));
-            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunIntake(intake));
-            new Trigger(() -> joystick2.getIntakeRun()).whileTrue(new RunIntake(intake));
+                
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
 
-            //Commands.either(Command onTrue, Command onFalse, BooleanSupplier selector)
-            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                intake::requestRumble, intake::requestIdle, intake),
-                () -> Shooter.useDynamicRumble));
+            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
+                new DynamicRumble(intake),
+                new SimpleRumble(intake),
+                () -> frc.robot.Constants.Intake.useDynamicRumble));
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
@@ -278,10 +241,11 @@ public class RobotContainer {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
 
             drivetrain.setDefaultCommand(driveWithJoystick);
+            // new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
             new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
 
-//            new Trigger(() -> joystick.narrow())
+//            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
         }
@@ -291,6 +255,13 @@ public class RobotContainer {
     public void periodic() {
         if (shooterTuner != null) {
             shooterTuner.periodic();
+        }
+        if (intakeTuner != null) {
+            intakeTuner.periodic();
+        }
+
+        if (Toggles.useShooter && shooterHopper != null) {
+            ;;;
         }
     }
 
