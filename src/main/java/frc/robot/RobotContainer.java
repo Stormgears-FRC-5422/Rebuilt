@@ -48,7 +48,6 @@ public class RobotContainer {
     // Control
     // **********
     RebuiltJoystick joystick;
-    RebuiltJoystick joystick2;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
@@ -130,7 +129,6 @@ public class RobotContainer {
         console("Configuring Joystick and bindings");
         try {
             joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
-            joystick2 = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
@@ -160,48 +158,6 @@ public class RobotContainer {
             );
         }
 
-        if (Toggles.useDrive && Toggles.useShooter) {
-            new Trigger(() -> joystick.autoShoot()).whileTrue(
-                new ParallelCommandGroup(
-                    new ShootCommand(shooterHopper, true),
-                    new MoveWhileShoot(drivetrain, joystick, shooterHopper),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                        intake::requestRumble, intake::requestIdle, intake),
-                    () -> Shooter.useDynamicRumble)
-                )
-            );
-
-            new Trigger(() -> joystick2.shootToAlliance()).whileTrue(
-                new ParallelCommandGroup(
-                    new ShootCommand(shooterHopper, false),
-                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)
-                )
-            );
-        } else if (Toggles.useShooter && Toggles.useIntake) {
-            new Trigger(() -> joystick.autoShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
-
-            new Trigger(() -> joystick2.autoShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
-        }
-
-        if(Toggles.useShooter && Toggles.useIntake){
-            new Trigger(() -> joystick.manualShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), Commands.startEnd(
-                            intake::requestRumble, intake::requestIdle, intake),
-                        () -> Shooter.useDynamicRumble)));
-        }
-
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
             shootTrigger.onTrue(new ShootCommand(shooterHopper, true));
@@ -212,10 +168,11 @@ public class RobotContainer {
             JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
 
             drivetrain.setDefaultCommand(driveWithJoystick);
+            // new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
             new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
 
-//            new Trigger(() -> joystick.narrow())
+//            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
         }

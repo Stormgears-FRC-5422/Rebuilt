@@ -341,9 +341,10 @@ public class AutoCommandFactory {
         }
 
         // First cycle
+        commands.add(new IntakeHome(intake));
         commands.add(
             Commands.race(
-            new IntakeHome(intake).andThen(new IntakeDown(intake).andThen(new RunIntake(intake))),
+            new IntakeGoToPosition(intake, IntakePosition.BOTTOM).andThen(new RunRoller(intake, true)),
             choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
