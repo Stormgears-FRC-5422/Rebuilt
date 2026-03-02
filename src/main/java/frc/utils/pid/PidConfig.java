@@ -13,6 +13,7 @@ public class PidConfig {
     public double kS = 0;
     public double kV = 0;
     public double kA = 0;
+    public double kG = 0;
     public double kMin = 0;
     public double kMax = 0;
 
@@ -37,6 +38,7 @@ public class PidConfig {
                 kS = value.kS;
                 kV = value.kV;
                 kA = value.kA;
+                kG = value.kG;
                 kMin = value.kMin;
                 kMax = value.kMax;
             }
@@ -73,6 +75,11 @@ public class PidConfig {
         return this;
     }
 
+    public PidConfig withKG(double newKG) {
+        kG = newKG;
+        return this;
+    }
+
     public PidConfig withKMinMax(double newKMin, double newKMax) {
         kMin = newKMin;
         kMax = newKMax;
@@ -88,6 +95,7 @@ public class PidConfig {
         ss += "       kS: " + kS + "\n";
         ss += "       kV: " + kV + "\n";
         ss += "       kA: " + kA + "\n";
+        ss += "       kG: " + kG + "\n";
         ss += "  kMinOut: " + kMin + "\n";
         ss += "  kMaxOut: " + kMax + "\n";
         return ss;

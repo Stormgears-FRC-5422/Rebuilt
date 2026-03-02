@@ -28,12 +28,17 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
 
     @Override
-    public boolean wheelRadiusCharacterization() {
+    public boolean narrow() {
         return xboxController.getYButtonIsHeld();
     }
     @Override
-    public boolean shootToHub() {
-        return xboxController.getBButtonIsHeld();
+    public boolean autoShoot() {
+        return xboxController.getAButtonIsHeld();
+    }
+
+    @Override
+    public boolean intakeHome() {
+        return xboxController.getLeftBumperIsHeld();
     }
 
     // getSlider() uses base default (0.0)
@@ -55,6 +60,25 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
     @Override
     public boolean shootToAlliance() {
-        return xboxController.getYButtonIsPressed();
+        return xboxController.getBButtonIsHeld();
     }
+
+    @Override
+    public boolean manualShoot() {
+        return xboxController.getBButtonIsHeld();
+    }
+
+    @Override
+    public boolean intakeDown() {
+        return xboxController.getXButtonIsHeld();
+    }
+
+    @Override
+    public boolean climbHome()       { return xboxController.getBackIsPressed(); }
+    @Override
+    public boolean climbSequence()   { return xboxController.getRightBumperIsPressed(); }
+    @Override
+    public boolean climbManualUp()   { return xboxController.getUpArrowPressed(); }
+    @Override
+    public boolean climbManualDown() { return xboxController.getDownArrowPressed(); }
 }

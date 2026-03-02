@@ -12,16 +12,19 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
+import frc.robot.Constants.Shooter;
 import frc.robot.FieldConstants;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
+import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class MoveWhileShoot extends StormCommand {
     private final DrivetrainBase drivetrain;
+    private final ShooterHopper shooterHopper;
     private final DoubleSupplier txSupplier;
     private final DoubleSupplier tySupplier;
     private final DoubleSupplier turboSupplier;
@@ -36,8 +39,9 @@ public class MoveWhileShoot extends StormCommand {
     private double previousGoalAngle;
     private double previousTimestamp;
 
-    public MoveWhileShoot(DrivetrainBase drivetrain, RebuiltJoystick joystick) {
+    public MoveWhileShoot(DrivetrainBase drivetrain, RebuiltJoystick joystick, ShooterHopper shooterHopper) {
         this.drivetrain = drivetrain;
+        this.shooterHopper = shooterHopper;
         addRequirements(drivetrain);
 
         txSupplier = joystick::getWpiX;
@@ -108,7 +112,7 @@ public class MoveWhileShoot extends StormCommand {
         previousGoalAngle = goalAngle;
         previousTimestamp = now;
 
-        double omega = MathUtil.clamp(pidOutput, -1.0, 1.0);
+        double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
         boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
         ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
@@ -127,6 +131,8 @@ public class MoveWhileShoot extends StormCommand {
         Logger.recordOutput("MoveWhileShoot/HeadingErrorRad", headingError);
         Logger.recordOutput("MoveWhileShoot/GoalAngleRad", goalAngle);
         Logger.recordOutput("MoveWhileShoot/MeasuredAngleRad", currentAngle);
+        Logger.recordOutput("MoveWhileShoot/PidOutput", pidOutput);
+        Logger.recordOutput("MoveWhileShoot/FeedforwardOutput", Drive.targetKFvcmd * goalAngleRate);
         Logger.recordOutput("MoveWhileShoot/OmegaOutput", omega);
         Logger.recordOutput("MoveWhileShoot/GoalAngleRateRadPerSec", goalAngleRate);
         Logger.recordOutput("MoveWhileShoot/LinearSpeed", Math.hypot(x, y));
@@ -137,8 +143,40 @@ public class MoveWhileShoot extends StormCommand {
         Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE)
             ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
         Pose2d current = drivetrain.getPoseEstimator().getPose();
-        Rotation2d angle = hubPose.getTranslation().minus(current.getTranslation()).getAngle();
-        goalAngle = angle.getRadians();
+
+        // Get field-relative velocity for compensation
+        ChassisSpeeds fieldVel = drivetrain.getMeasuredFieldSpeeds();
+        double vx = fieldVel.vxMetersPerSecond;
+        double vy = fieldVel.vyMetersPerSecond;
+
+        // Phase delay compensation: shift pose forward by velocity * phaseDelay
+        double px = current.getX() + vx * Shooter.phaseDelaySec;
+        double py = current.getY() + vy * Shooter.phaseDelaySec;
+
+       double dist0 = Math.hypot(hubPose.getX() - px, hubPose.getY() - py);
+        double tof = shooterHopper.getTimeOfFlight(dist0);
+        px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+
+        // Iterative TOF lookahead (if single pass proves insufficient)
+        // for (int i = 0; i < Shooter.lookaheadIterations; i++) {
+        //     double dx = hubPose.getX() - px;
+        //     double dy = hubPose.getY() - py;
+        //     double dist = Math.hypot(dx, dy);
+        //     double tof = shooterHopper.getTimeOfFlight(dist);
+        //     px = current.getX() + vx * (Shooter.phaseDelaySec + tof);
+        //     py = current.getY() + vy * (Shooter.phaseDelaySec + tof);
+        // }
+
+        // Aim from lookahead position to target
+        double dx = hubPose.getX() - px;
+        double dy = hubPose.getY() - py;
+        goalAngle = Math.atan2(dy, dx);
+
+        Logger.recordOutput("MoveWhileShoot/CompensatedDist", Math.hypot(dx, dy));
+        Logger.recordOutput("MoveWhileShoot/TOF", shooterHopper.getTimeOfFlight(Math.hypot(dx, dy)));
+        Logger.recordOutput("MoveWhileShoot/LookaheadX", px);
+        Logger.recordOutput("MoveWhileShoot/LookaheadY", py);
     }
 
     @Override

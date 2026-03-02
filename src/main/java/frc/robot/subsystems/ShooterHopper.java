@@ -2,7 +2,9 @@ package frc.robot.subsystems;
 
 import org.littletonrobotics.junction.Logger;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -12,6 +14,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.units.measure.AngularVelocity;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -49,7 +52,7 @@ public class ShooterHopper extends StormSubsystem {
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
     private double hopperSpeed = 0.0;
-    private final ElasticMotorController elasticMotorController = new ElasticMotorController();
+    private final ElasticMotorController elasticMotorController;
     private ShooterState state;
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
@@ -58,8 +61,12 @@ public class ShooterHopper extends StormSubsystem {
 
     private boolean toHub = true;
 
+    // Cached CAN status signal — refreshed in a single batch each cycle
+    private final StatusSignal<AngularVelocity> rotorVelocitySignal;
 
-    public ShooterHopper() {
+
+    public ShooterHopper(ElasticMotorController elasticMotorController) {
+        this.elasticMotorController = elasticMotorController;
 
         if (Shooter.useShooterHopperDiagnostic) {
             state = ShooterState.DIAGNOSTIC;
@@ -106,6 +113,9 @@ public class ShooterHopper extends StormSubsystem {
         for (int i = 0; i < funnelDistances.length; i++) {
             funnelSpeedMap.put(funnelDistances[i], funnelSpeeds[i]);
         }
+
+        // Cache status signal for batched CAN reads
+        rotorVelocitySignal = leaderMotor.getRotorVelocity();
 
         configMotor();
     }
@@ -169,6 +179,14 @@ public class ShooterHopper extends StormSubsystem {
 
     }
 
+    public double getTimeOfFlight(double distanceMeters) {
+        double rps = toHub ? shootSpeedMap.get(distanceMeters) : funnelSpeedMap.get(distanceMeters);
+        double exitVelocity = rps * Math.PI * Shooter.shooterWheelDiameterMeters;
+        double horizontalVelocity = exitVelocity * Math.cos(Math.toRadians(Shooter.launchAngleDeg));
+        if (horizontalVelocity < 0.1) return 0;
+        return distanceMeters / horizontalVelocity;
+    }
+
     public void setToHub(boolean toHub) {
         this.toHub = toHub;
     }
@@ -176,6 +194,9 @@ public class ShooterHopper extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+
+        // Refresh cached signal (non-blocking — reads from local cache)
+        BaseStatusSignal.refreshAll(rotorVelocitySignal);
 
         useRealDist = elasticMotorController.usePose.get();
 
@@ -193,7 +214,7 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
-        Logger.recordOutput("shooter rps", (leaderMotor.getRotorVelocity()).getValueAsDouble());
+        Logger.recordOutput("shooter rps", rotorVelocitySignal.getValueAsDouble());
     }
 
     public void setUseRealDist(boolean useRealDist) {
