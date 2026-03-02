@@ -24,7 +24,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
 
     @Override
     public boolean resetGyro() {
-        return xboxController.getRightBumperIsPressed();
+        return xboxController.getBackIsPressed();
     }
 
     @Override
@@ -38,7 +38,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
 
     @Override
     public boolean intakeHome() {
-        return xboxController.getLeftBumperIsHeld();
+        return xboxController.getLeftBumperIsPressed();
     }
 
     // getSlider() uses base default (0.0)
@@ -52,15 +52,15 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
     @Override
     public boolean intakeTogglePressed() {
-        return xboxController.getAButtonIsPressed();
-    }
-    @Override
-    public boolean enableRumble() {
         return xboxController.getXisPressed();
     }
     @Override
+    public boolean enableRumble() {
+        return xboxController.getRightBumperIsPressed();
+    }
+    @Override
     public boolean shootToAlliance() {
-        return xboxController.getBButtonIsHeld();
+        return false;
     }
 
     @Override

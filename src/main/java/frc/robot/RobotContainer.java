@@ -163,6 +163,9 @@ public class RobotContainer {
             new Trigger(() -> joystick2.intakeTogglePressed())
                 .onTrue(new UpDownCommand(intake));
 
+            new Trigger(() -> joystick2.intakeHome())
+                .onTrue(new IntakeHome(intake));
+
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
                 new SimpleRumble(intake),
