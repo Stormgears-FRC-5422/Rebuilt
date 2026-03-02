@@ -18,11 +18,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.Auto;
 import frc.robot.commands.intake.DynamicRumble;
-import frc.robot.commands.intake.IntakeDown;
+import frc.robot.commands.intake.IntakeGoToPosition;
 import frc.robot.commands.intake.IntakeHome;
-import frc.robot.commands.intake.RunIntake;
+import frc.robot.commands.intake.RunRoller;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Intake.IntakePosition;
 import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.drive.DrivetrainBase;
 
@@ -280,7 +281,7 @@ public class AutoCommandFactory {
                 new IntakeHome(intake),
                 Commands.race(
                     intakeLeg1,
-                    new RunIntake(intake)
+                    new RunRoller(intake, true)
                 )
             ),
             stopDrive(),
@@ -291,10 +292,10 @@ public class AutoCommandFactory {
                 new FaceTowardHub(drivetrainBase),
                 new DynamicRumble(intake)
             ),
-            Commands.runOnce(intake::toggleIntakePosition),
+            new IntakeGoToPosition(intake, IntakePosition.HOME),
             Commands.race(
                 intakeLeg2,
-                new RunIntake(intake)
+                new RunRoller(intake, true)
             ),
             stopDrive(),
             shootLeg2,
@@ -340,9 +341,10 @@ public class AutoCommandFactory {
         }
 
         // First cycle
+        commands.add(new IntakeHome(intake));
         commands.add(
             Commands.race(
-            new IntakeHome(intake).andThen(new IntakeDown(intake).andThen(new RunIntake(intake))),
+            new IntakeGoToPosition(intake, IntakePosition.BOTTOM).andThen(new RunRoller(intake, true)),
             choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
@@ -355,10 +357,10 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
-            commands.add(Commands.runOnce(intake::toggleIntakePosition));
+            commands.add(new IntakeGoToPosition(intake, IntakePosition.HOME));
             commands.add(Commands.race(
                 choreoFactory.trajectoryCmd(secondTrajectory),
-                new RunIntake(intake)
+                new RunRoller(intake, true)
             ));
             commands.add(stopDrive());
             commands.add(Commands.parallel(
