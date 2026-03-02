@@ -11,6 +11,7 @@ public class DynamicRumble extends StormCommand {
     private double minAngle;
     private double maxAngle;
     private boolean goingUp;
+    private int counter;
 
     public DynamicRumble(Intake intake) {
         this.intake = intake;
@@ -21,9 +22,11 @@ public class DynamicRumble extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
+
         minAngle = frc.robot.Constants.Intake.minRumbleAngleDeg;
         maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
         goingUp = true;
+        counter = 0;
 
         intake.setTargetPosition(maxAngle);
         intake.setState(IntakeState.PID_MOTION);
@@ -33,10 +36,17 @@ public class DynamicRumble extends StormCommand {
     public void execute() {
         super.execute();
         if (skip) return;
+
         if (intake.isAtTarget()) {
             if (goingUp) {
-                minAngle -= frc.robot.Constants.Intake.dynamicRumbleIncrementDegrees;
+                if (counter < 3) {
+                    minAngle -= 25.0;
+                } else {
+                    minAngle -= frc.robot.Constants.Intake.dynamicRumbleIncrementDegrees;
+                }
+                counter++;
             }
+
             goingUp = !goingUp;
             intake.setTargetPosition(goingUp ? maxAngle : minAngle);
         }
@@ -44,7 +54,10 @@ public class DynamicRumble extends StormCommand {
 
     @Override
     public boolean isFinished() {
-        return skip || !intake.hasBeenHomed || (intake.state != IntakeState.PID_MOTION);
+        return skip
+            || !intake.hasBeenHomed
+            || (intake.state != IntakeState.PID_MOTION
+            || (intake.updownIntakeMotor.getPosition().getValueAsDouble() < 20.0));
     }
 
     @Override

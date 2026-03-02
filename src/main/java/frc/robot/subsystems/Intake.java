@@ -41,8 +41,9 @@ public class Intake extends StormSubsystem {
     public enum IntakePosition {
         UNKNOWN(Double.NaN),
         HOME(frc.robot.Constants.Intake.homePosition),
-        TOP(frc.robot.Constants.Intake.topIntakeLimit),
-        BOTTOM(frc.robot.Constants.Intake.bottomIntakeLimit);
+        TOP(Double.NEGATIVE_INFINITY),
+        // BOTTOM(frc.robot.Constants.Intake.bottomIntakeLimit);
+        BOTTOM(Double.POSITIVE_INFINITY);
 
         private final double position;
 
@@ -62,8 +63,6 @@ public class Intake extends StormSubsystem {
     private final MotionMagicVoltage mmRequest;
     private final TalonFXConfiguration config = new TalonFXConfiguration();
     private final PidConfig pid;
-
-    public ElasticMotorController elasticMotorController = new ElasticMotorController();
 
     public IntakeState state = IntakeState.UNKNOWN;
     public boolean hasBeenHomed = false;
@@ -212,28 +211,28 @@ public class Intake extends StormSubsystem {
 
         switch (state) {
             case UNKNOWN:
-                console("***** UNKNOWN state *****");
+                console("***** UNKNOWN state *****", 1);
                 break;
 
             case HOMING:
-                console("***** HOMING state *****");
+                console("***** HOMING state *****", 1);
                 enableSoftLimits(false);
                 break;
 
             case IDLE:
-                console("***** IDLE state *****");
+                console("***** IDLE state *****", 1);
                 break;
 
             case HOLD:
-                console("***** HOLD state *****");
+                console("***** HOLD state *****", 1);
                 break;
 
             case PID_MOTION:
-                console("***** PID_MOTION state *****");
+                console("***** PID_MOTION state *****", 1);
                 break;
 
             case SIMPLE_MOTION:
-                console("***** SIMPLE_MOTION state *****");
+                console("***** SIMPLE_MOTION state *****", 1);
                 break;
         }
     }

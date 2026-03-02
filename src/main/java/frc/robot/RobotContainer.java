@@ -15,7 +15,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants.Shooter;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.DriveCommands;
@@ -24,7 +23,9 @@ import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.intake.DynamicRumble;
+import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.IntakeDiagnostic;
+import frc.robot.commands.intake.IntakeGoToPosition;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.SimpleRumble;
 import frc.robot.elastic.ElasticMotorController;
@@ -140,33 +141,9 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
+                
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
-            new Trigger(() -> elasticMotorController.intakeDown.get()).onTrue(new IntakeDiagnostic(intake, true));
-            new Trigger(() -> elasticMotorController.intakeUp.get()).onTrue(new IntakeDiagnostic(intake, false));
-
-            // new Trigger(() -> elasticMotorController.rumble.get()).onTrue(Commands.runOnce(() -> {
-            //     intake.requestRumble();
-            //     elasticMotorController.rumble.setValue(false);
-            // }, intake));
-
-            // new Trigger(() -> elasticMotorController.outtakeIntake.get()).onTrue(Commands.runOnce(() -> {
-            //     intake.setOuttakeRollers(true);
-            // }, intake));
-
-            // new Trigger(() -> elasticMotorController.outtakeShooter.get()).onTrue(Commands.runOnce(() -> {
-            //     shooterHopper.setState(ShooterHopper.ShooterState.OUTTAKE);
-            //     elasticMotorController.outtakeShooter.setValue(false);
-            // }, shooterHopper));
-
-            // new Trigger(() -> joystick.intakeTogglePressed()).onTrue(new IntakeGoToPosition(intake, 80.0));
-
-            // new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
-            // new Trigger(() -> joystick.shootToHub()).whileTrue(
-            //     new ParallelCommandGroup(
-            //         new ShootCommand(shooterHopper, true),
-            //         new MoveWhileShoot(drivetrain, joystick, shooterHopper)
-            //     )
-            // );
 
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
