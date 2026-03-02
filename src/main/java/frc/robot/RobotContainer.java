@@ -33,6 +33,9 @@ import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.joysticks.RebuiltJoystickFactory;
+import frc.robot.commands.climber.ClimberHome;
+import frc.robot.commands.climber.ClimberSequence;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ShooterHopper;
@@ -48,6 +51,7 @@ public class RobotContainer {
     // Control
     // **********
     RebuiltJoystick joystick;
+    RebuiltJoystick joystick2;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
@@ -56,6 +60,7 @@ public class RobotContainer {
     private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
     private Intake intake;
+    private Climber climber;
     //elastic control
     private SingleMotorTuner shooterTuner;
     private SingleMotorTuner intakeTuner;
@@ -102,6 +107,11 @@ public class RobotContainer {
             }
         }
 
+        if (Toggles.useClimber) {
+            console("Create climber");
+            climber = new Climber();
+        }
+
         if (Toggles.useShooter) {
             console("Create shooter");
             shooterHopper = new ShooterHopper(elasticMotorController);
@@ -129,6 +139,7 @@ public class RobotContainer {
         console("Configuring Joystick and bindings");
         try {
             joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
+            joystick2 = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
@@ -148,7 +159,7 @@ public class RobotContainer {
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
                 new SimpleRumble(intake),
-                () -> frc.robot.Constants.Intake.useDynamicRumble));
+                () -> Constants.Intake.useDynamicRumble));
 
             new Trigger(() -> joystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
@@ -156,6 +167,65 @@ public class RobotContainer {
                     new ShootCommand(shooterHopper, false)
                 )
             );
+        }
+
+        if (Toggles.useClimber) {
+            new Trigger(() -> elasticMotorController.homeClimber.get())
+                .onTrue(new ClimberHome(climber));
+            new Trigger(() -> elasticMotorController.climberSequence.get())
+                .onTrue(new ClimberSequence(climber));
+            new Trigger(() -> elasticMotorController.climberManualUp.get()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.FORWARD),
+                                  () -> climber.setManualDirection(null), climber));
+            new Trigger(() -> elasticMotorController.climberManualDown.get()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
+                                  () -> climber.setManualDirection(null), climber));
+
+            new Trigger(() -> joystick2.climbHome()).onTrue(new ClimberHome(climber));
+            new Trigger(() -> joystick2.climbSequence()).onTrue(new ClimberSequence(climber));
+            new Trigger(() -> joystick2.climbManualUp()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.FORWARD),
+                                  () -> climber.setManualDirection(null), climber));
+            new Trigger(() -> joystick2.climbManualDown()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
+                                  () -> climber.setManualDirection(null), climber));
+        }
+
+        if (Toggles.useDrive && Toggles.useShooter) {
+            new Trigger(() -> joystick.autoShoot()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootCommand(shooterHopper, true),
+                    new MoveWhileShoot(drivetrain, joystick, shooterHopper),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
+                    () -> Constants.Intake.useDynamicRumble)
+                )
+            );
+
+            new Trigger(() -> joystick2.shootToAlliance()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootCommand(shooterHopper, false),
+                    new FunnelToAllianceZone(drivetrain, joystick, shooterHopper),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
+                        () -> Constants.Intake.useDynamicRumble)
+                )
+            );
+        } else if (Toggles.useShooter && Toggles.useIntake) {
+            new Trigger(() -> joystick.autoShoot()).whileTrue(
+                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
+                        () -> Constants.Intake.useDynamicRumble)));
+
+            new Trigger(() -> joystick2.autoShoot()).whileTrue(
+                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
+                        () -> Constants.Intake.useDynamicRumble)));
+        }
+
+        if(Toggles.useShooter && Toggles.useIntake){
+            new Trigger(() -> joystick.manualShoot()).whileTrue(
+                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
+                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
+                        () -> Constants.Intake.useDynamicRumble)));
         }
 
         if (shooterHopper != null) {

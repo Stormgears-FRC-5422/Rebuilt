@@ -27,6 +27,12 @@ public class ElasticMotorController extends OptionsController {
   // public final Option<String> lightState; 
   public final Option<Boolean> intakeGoToDegrees;
 
+  // Climber controls
+  public final Option<Boolean> homeClimber;
+  public final Option<Boolean> climberSequence;
+  public final Option<Boolean> climberManualUp;
+  public final Option<Boolean> climberManualDown;
+
   public ElasticMotorController() {
     super("Motor tester with elastic");
 
@@ -53,6 +59,11 @@ public class ElasticMotorController extends OptionsController {
     intakeGoToDegrees = createBooleanOption("go to position cmd", false);
     // lightState = createStringOption("Light State", "IDLE");
     // motor2   = createNumberOption("Motor 2 Output", 0.0);
+
+    homeClimber       = createBooleanOption("HOME CLIMBER", false);
+    climberSequence   = createBooleanOption("CLIMBER SEQUENCE", false);
+    climberManualUp   = createBooleanOption("CLIMBER MANUAL UP", false);
+    climberManualDown = createBooleanOption("CLIMBER MANUAL DOWN", false);
 
     OptionsRegistry.register(this);
   }
