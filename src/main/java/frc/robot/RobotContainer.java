@@ -158,10 +158,10 @@ public class RobotContainer {
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
             
             new Trigger(() -> joystick.intakeTogglePressed())
-                .onTrue(new UpDownCommand(intake));
+                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
 
             new Trigger(() -> joystick2.intakeTogglePressed())
-                .onTrue(new UpDownCommand(intake));
+                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
 
             new Trigger(() -> joystick2.intakeHome())
                 .onTrue(new IntakeHome(intake));
