@@ -74,7 +74,6 @@ public abstract class RebuiltJoystick {
     // --- Game data overrides (joystick2 / operator) ---
     public boolean wonAutoOverride()  { return false; }
     public boolean lostAutoOverride() { return false; }
-    public boolean ignoreHubState()   { return false; }
 
     // --- Controller rumble ---
     public void setRumble(double strength) {}

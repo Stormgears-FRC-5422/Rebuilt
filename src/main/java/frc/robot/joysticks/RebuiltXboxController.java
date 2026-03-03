@@ -86,8 +86,6 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean wonAutoOverride()  { return xboxController.getRightArrowPressed(); }
     @Override
     public boolean lostAutoOverride() { return xboxController.getLeftArrowPressed(); }
-    @Override
-    public boolean ignoreHubState()   { return xboxController.getRightLittleButtonIsHeld(); }
 
     @Override
     public void setRumble(double strength) {

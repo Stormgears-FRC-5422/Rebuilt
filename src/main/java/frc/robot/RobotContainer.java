@@ -259,10 +259,6 @@ public class RobotContainer {
                 return Optional.empty();
             });
 
-        new Trigger(() -> joystick2.ignoreHubState())
-            .onTrue(Commands.runOnce(() -> GameDataTracker.setIgnoreHubState(true)).ignoringDisable(true))
-            .onFalse(Commands.runOnce(() -> GameDataTracker.setIgnoreHubState(false)).ignoringDisable(true));
-
         // Alert + rumble when game data is missing after 1s in teleop
         new Trigger(DriverStation::isTeleopEnabled)
             .onTrue(Commands.runOnce(teleopElapsedTimer::restart));

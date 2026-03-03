@@ -18,8 +18,6 @@ public class GameDataTracker {
     //   Optional.of(false) = our alliance lost auto
     //   Optional.empty()   = no override, rely on FMS
     private static Supplier<Optional<Boolean>> allianceWinOverride = Optional::empty;
-    private static boolean ignoreHubState = false;
-
     private GameDataTracker() {}
 
     public static void setAllianceWinOverride(Supplier<Optional<Boolean>> supplier) {
@@ -28,14 +26,6 @@ public class GameDataTracker {
 
     public static Optional<Boolean> getAllianceWinOverride() {
         return allianceWinOverride.get();
-    }
-
-    public static void setIgnoreHubState(boolean ignore) {
-        ignoreHubState = ignore;
-    }
-
-    public static boolean getIgnoreHubState() {
-        return ignoreHubState;
     }
 
     /** True if FMS sent a non-empty game-specific message this match. */
