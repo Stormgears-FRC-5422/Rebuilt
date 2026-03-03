@@ -233,9 +233,7 @@ public class RobotContainer {
 
         if(Toggles.useShooter && Toggles.useIntake){
             new Trigger(() -> joystick.manualShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
-                        () -> Constants.Intake.useDynamicRumble)));
+               new ShootCommand(shooterHopper, true));
         }
 
         if (shooterHopper != null) {

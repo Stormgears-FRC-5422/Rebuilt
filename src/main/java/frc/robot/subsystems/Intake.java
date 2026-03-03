@@ -104,9 +104,9 @@ public class Intake extends StormSubsystem {
         config.Feedback.SensorToMechanismRatio = frc.robot.Constants.Intake.sensorToMechanismRatio;
 
         // Slot0 PID from config
-        config.Slot0.kP = pid.kP;
-        config.Slot0.kI = pid.kI;
-        config.Slot0.kD = pid.kD;
+        config.Slot0.kP = 80.0;
+        config.Slot0.kI = 0.0;
+        config.Slot0.kD = 0.5;
         config.Slot0.kG = pid.kG;
         config.Slot0.kS = pid.kS;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
@@ -117,7 +117,7 @@ public class Intake extends StormSubsystem {
         config.MotionMagic.MotionMagicJerk           = frc.robot.Constants.Intake.jerk;            // mechanism rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
-        updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
+        updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
 
         // Current limits
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
