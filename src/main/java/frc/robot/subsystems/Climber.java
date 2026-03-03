@@ -41,7 +41,7 @@ public class Climber extends StormSubsystem {
     public Climber() {
         leadMotor = new TalonFX(Constants.Climber.leftMotorID, new CANBus(""));
         followerMotor = new TalonFX(Constants.Climber.rightMotorID, new CANBus(""));
-        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.OpposeMaster));
+        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.Opposd));
 
         config.Feedback.SensorToMechanismRatio = 16;
         config.Slot0.kP = Constants.Climber.kP;
