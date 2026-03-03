@@ -81,4 +81,16 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean climbManualUp()   { return xboxController.getUpArrowPressed(); }
     @Override
     public boolean climbManualDown() { return xboxController.getDownArrowPressed(); }
+
+    @Override
+    public boolean wonAutoOverride()  { return xboxController.getRightArrowPressed(); }
+    @Override
+    public boolean lostAutoOverride() { return xboxController.getLeftArrowPressed(); }
+    @Override
+    public boolean ignoreHubState()   { return xboxController.getRightLittleButtonIsHeld(); }
+
+    @Override
+    public void setRumble(double strength) {
+        xboxController.setRumble(edu.wpi.first.wpilibj.GenericHID.RumbleType.kBothRumble, strength);
+    }
 }
