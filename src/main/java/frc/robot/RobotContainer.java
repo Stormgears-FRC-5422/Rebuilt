@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
@@ -29,12 +30,11 @@ import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
-import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
-import frc.robot.commands.intake.UpDownCommand;
+import frc.robot.commands.intake.IntakeManual;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -164,13 +164,9 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.alignNarrow.get())
                 .whileTrue(new AlignNarrow(drivetrain, joystick));
 
-            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
-            
-            new Trigger(() -> joystick.intakeTogglePressed())
-                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
+            intake.setDefaultCommand(new IntakeManual(intake, joystick2));
 
-            new Trigger(() -> joystick2.intakeTogglePressed())
-                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
             new Trigger(() -> joystick2.intakeHome())
                 .onTrue(new IntakeHome(intake));
@@ -242,9 +238,7 @@ public class RobotContainer {
 
         if(Toggles.useShooter && Toggles.useIntake){
             new Trigger(() -> joystick.manualShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
-                        () -> Constants.Intake.useDynamicRumble)));
+               new ShootCommand(shooterHopper, true));
         }
 
         if (shooterHopper != null) {

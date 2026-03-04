@@ -41,7 +41,7 @@ public class IntakeDiagnostic extends StormCommand {
     public void end(boolean interrupted) {
         if (!skip){
             intake.setRollerEnabled(false);
-            intake.setState(Intake.IntakeState.IDLE);
+            intake.holdCurrentPosition();
         } else if (intake != null){
             intake.setState(Intake.IntakeState.UNKNOWN);
         }
