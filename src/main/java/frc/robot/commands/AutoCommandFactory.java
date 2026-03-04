@@ -133,6 +133,16 @@ public class AutoCommandFactory {
         String currentFirst = firstCycleChooser.get();
         String currentSecond = secondCycleChooser.get();
 
+        // Always log validity for Elastic dashboard
+        if ("CycleAuto".equals(currentSelection)) {
+            boolean validCombo = isValidCycleCombo(currentStart, currentFirst, currentSecond);
+            Logger.recordOutput("Auto/ValidCombo", validCombo);
+            Logger.recordOutput("Auto/CycleDescription", currentStart + " / " + currentFirst + " / " + currentSecond);
+        } else {
+            Logger.recordOutput("Auto/ValidCombo", currentSelection != null);
+            Logger.recordOutput("Auto/CycleDescription", currentSelection != null ? currentSelection : "Nothing");
+        }
+
         boolean selectionChanged = !Objects.equals(currentSelection, chooserTrajectoryName)
             || !Objects.equals(currentStart, lastStartPosition)
             || !Objects.equals(currentFirst, lastFirstCycle)
