@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import choreo.auto.AutoFactory;
@@ -130,6 +132,16 @@ public class AutoCommandFactory {
         String currentStart = startPositionChooser.get();
         String currentFirst = firstCycleChooser.get();
         String currentSecond = secondCycleChooser.get();
+
+        // Always log validity for Elastic dashboard
+        if ("CycleAuto".equals(currentSelection)) {
+            boolean validCombo = isValidCycleCombo(currentStart, currentFirst, currentSecond);
+            Logger.recordOutput("Auto/ValidCombo", validCombo);
+            Logger.recordOutput("Auto/CycleDescription", currentStart + " / " + currentFirst + " / " + currentSecond);
+        } else {
+            Logger.recordOutput("Auto/ValidCombo", currentSelection != null);
+            Logger.recordOutput("Auto/CycleDescription", currentSelection != null ? currentSelection : "Nothing");
+        }
 
         boolean selectionChanged = !Objects.equals(currentSelection, chooserTrajectoryName)
             || !Objects.equals(currentStart, lastStartPosition)
@@ -341,11 +353,15 @@ public class AutoCommandFactory {
         }
 
         // First cycle
-        commands.add(new IntakeHome(intake));
         commands.add(
             Commands.race(
-            new IntakeGoToPosition(intake, IntakePosition.BOTTOM).andThen(new RunRoller(intake, true)),
-            choreoFactory.trajectoryCmd(firstTrajectory)
+                Commands.sequence(
+                    new IntakeHome(intake),
+                    new WaitCommand(1.0),
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true)
+                ),
+                choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
         commands.add(stopDrive());
@@ -357,10 +373,12 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
-            commands.add(new IntakeGoToPosition(intake, IntakePosition.HOME));
             commands.add(Commands.race(
-                choreoFactory.trajectoryCmd(secondTrajectory),
-                new RunRoller(intake, true)
+                Commands.sequence(
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true)
+                ),
+                choreoFactory.trajectoryCmd(secondTrajectory)
             ));
             commands.add(stopDrive());
             commands.add(Commands.parallel(

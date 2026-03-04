@@ -41,13 +41,14 @@ public class Climber extends StormSubsystem {
     public Climber() {
         leadMotor = new TalonFX(Constants.Climber.leftMotorID, new CANBus(""));
         followerMotor = new TalonFX(Constants.Climber.rightMotorID, new CANBus(""));
-        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.Aligned));
+        followerMotor.setControl(new Follower(leadMotor.getDeviceID(), MotorAlignmentValue.Opposed));
 
         config.Feedback.SensorToMechanismRatio = 16;
         config.Slot0.kP = Constants.Climber.kP;
         leadMotor.getConfigurator().apply(config);
-        leadMotor.setNeutralMode(
-            Constants.Climber.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
+        NeutralModeValue neutralMode = Constants.Climber.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
+        leadMotor.setNeutralMode(neutralMode);
+        followerMotor.setNeutralMode(neutralMode);
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
         currentLimits.StatorCurrentLimit = Constants.Climber.statorCurrentLimit;

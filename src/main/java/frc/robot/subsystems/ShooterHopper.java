@@ -89,8 +89,9 @@ public class ShooterHopper extends StormSubsystem {
         followerMotor.setControl(
             new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
         ); // .Opposed
-        leaderMotor.setNeutralMode(
-            Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
+        NeutralModeValue neutralMode = Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
+        leaderMotor.setNeutralMode(neutralMode);
+        followerMotor.setNeutralMode(neutralMode);
 
         // Initialize PID configs
         pid = new PidConfig()
@@ -252,9 +253,8 @@ public class ShooterHopper extends StormSubsystem {
         out.PeakReverseDutyCycle = pid.kMin;
         out.Inverted = InvertedValue.Clockwise_Positive; //used to invert
 
-        //follower coast config, for testing 1 motor at a time
         MotorOutputConfigs followerOut = new MotorOutputConfigs();
-        followerOut.NeutralMode = NeutralModeValue.Coast;
+        followerOut.NeutralMode = Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
         currentLimits.StatorCurrentLimit = Shooter.statorCurrentLimit;
