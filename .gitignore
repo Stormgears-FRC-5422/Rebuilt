@@ -315,3 +315,4 @@ src/main/java/frc/robot/Options.java
 # Folder that has CTRE Phoenix Sim device config storage
 ctre_sim/
 # End of https://www.toptal.com/developers/gitignore/api/c++,java,linux,macos,gradle,windows,intellij,visualstudiocode
+.claude/settings.local.json
