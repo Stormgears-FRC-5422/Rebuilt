@@ -89,6 +89,8 @@ public class ShooterHopper extends StormSubsystem {
         followerMotor.setControl(
             new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
         ); // .Opposed
+        leaderMotor.setNeutralMode(
+            Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
 
         // Initialize PID configs
         pid = new PidConfig()
@@ -255,17 +257,18 @@ public class ShooterHopper extends StormSubsystem {
         followerOut.NeutralMode = NeutralModeValue.Coast;
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
-        currentLimits.StatorCurrentLimit = 60.0; //amps
+        currentLimits.StatorCurrentLimit = Shooter.statorCurrentLimit;
         currentLimits.StatorCurrentLimitEnable = true;
 
         leaderMotor.getConfigurator().apply(currentLimits);
+        followerMotor.getConfigurator().apply(currentLimits);
 
         followerMotor.getConfigurator().apply(followerOut);
         leaderMotor.getConfigurator().apply(out);
     }
     public double getCurrentVelocityRPS() {
-    return rotorVelocitySignal.getValueAsDouble();
-}
+        return rotorVelocitySignal.getValueAsDouble();
+    }
 
     public double getTargetVelocityRPS() {
         return targetVelocityRPS;
@@ -273,8 +276,8 @@ public class ShooterHopper extends StormSubsystem {
 
     public boolean isReadyToFeed() {
         double target = Math.abs(targetVelocityRPS);
+        if (target < 1.0) return false;
         double actual = Math.abs(rotorVelocitySignal.getValueAsDouble());
-
         return actual >= target * Shooter.percentTargetReady;
     }
 }

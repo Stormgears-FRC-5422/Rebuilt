@@ -15,8 +15,11 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
@@ -65,7 +68,6 @@ public class Intake extends StormSubsystem {
     public IntakeState state = IntakeState.UNKNOWN;
     public boolean hasBeenHomed = false;
     private boolean softLimitEnabled = false;
-    private boolean goToIntakingAngle = true;
 
     private double targetPosition;
     private double currentPosition;
@@ -87,6 +89,10 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor = new TalonFX(frc.robot.Constants.Intake.updownIntakeID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless);
 
+        SparkMaxConfig rollerConfig = new SparkMaxConfig();
+        rollerConfig.smartCurrentLimit(frc.robot.Constants.Intake.rollerCurrentLimitAmps);
+        rollerIntakeMotor.configure(rollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
         mmRequest = new MotionMagicVoltage(0.0);
 
         // PID config for hot-tuning (initial values from properties)
@@ -103,9 +109,9 @@ public class Intake extends StormSubsystem {
         config.Feedback.SensorToMechanismRatio = frc.robot.Constants.Intake.sensorToMechanismRatio;
 
         // Slot0 PID from config
-        config.Slot0.kP = 80.0;
-        config.Slot0.kI = 0.0;
-        config.Slot0.kD = 0.5;
+        config.Slot0.kP = pid.kP;
+        config.Slot0.kI = pid.kI;
+        config.Slot0.kD = pid.kD;
         config.Slot0.kG = pid.kG;
         config.Slot0.kS = pid.kS;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
@@ -116,7 +122,8 @@ public class Intake extends StormSubsystem {
         config.MotionMagic.MotionMagicJerk           = frc.robot.Constants.Intake.jerk;            // mechanism rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
-        updownIntakeMotor.setNeutralMode(NeutralModeValue.Brake);
+        updownIntakeMotor.setNeutralMode(
+            frc.robot.Constants.Intake.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
 
         // Current limits
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
@@ -332,13 +339,6 @@ public class Intake extends StormSubsystem {
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
-    
-    public void toggleUpDownTarget() {
-        setTargetPosition(goToIntakingAngle ? frc.robot.Constants.Intake.intakingAngle : frc.robot.Constants.Intake.topIntakeDegrees);
-
-        goToIntakingAngle = !goToIntakingAngle;
-    }
-
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
         setState(IntakeState.HOLD);

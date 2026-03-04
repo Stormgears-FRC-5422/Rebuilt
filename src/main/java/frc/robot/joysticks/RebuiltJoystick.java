@@ -63,6 +63,7 @@ public abstract class RebuiltJoystick {
         return false;
     }
     public boolean manualShoot(){return false;}
+    public boolean intakeUp(){return false;}
     public boolean intakeDown(){return false;}
     public boolean intakeHome(){return false;}
 

@@ -28,8 +28,7 @@ import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
-import frc.robot.commands.intake.UpDownCommand;
-import frc.robot.commands.intake.IntakeHold;
+import frc.robot.commands.intake.IntakeManual;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -102,7 +101,6 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
-            intake.setDefaultCommand(new IntakeHold(intake));
             if (Toggles.usePidTuner) {
                 intakeTuner = new SingleMotorTuner("Intake Tuner", intake.getPidConfig());
             }
@@ -157,13 +155,9 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.alignNarrow.get())
                 .whileTrue(new AlignNarrow(drivetrain, joystick));
 
-            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
-            
-            new Trigger(() -> joystick.intakeTogglePressed())
-                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
+            intake.setDefaultCommand(new IntakeManual(intake, joystick2));
 
-            new Trigger(() -> joystick2.intakeTogglePressed())
-                .onTrue(Commands.defer(() -> new UpDownCommand(intake), java.util.Set.of(intake)));
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
             new Trigger(() -> joystick2.intakeHome())
                 .onTrue(new IntakeHome(intake));
