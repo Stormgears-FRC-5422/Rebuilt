@@ -83,7 +83,7 @@ public class VisionSubsystem extends StormSubsystem {
         //   that doesn't depend on the pose at all.
         double minDist = Double.MAX_VALUE;
         for (LimelightHelpers.RawFiducial fid : poseEstimate.rawFiducials) {
-            if (fid.distToRobot < minDist) {
+            if (fid != null && fid.distToRobot < minDist) {
                 minDist = fid.distToRobot;
             }
         }
@@ -150,6 +150,7 @@ public class VisionSubsystem extends StormSubsystem {
             // Logging the locations of all the April Tags with their dist, id
             for (int i = 0; i < estimate.rawFiducials.length; i++) {
                 LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
+                if (fid == null) continue;
                 Logger.recordOutput(start + "Tags/Tag" + i + "_ID", fid.id);
                 Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", fid.distToRobot);
             }
