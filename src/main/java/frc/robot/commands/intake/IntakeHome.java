@@ -45,7 +45,7 @@ public class IntakeHome extends StormCommand {
         if (!skip) {
             if (!interrupted) {
                 intake.declareHome();
-                intake.setState(IntakeState.IDLE);
+                intake.holdCurrentPosition();
             } else {
                 intake.setState(IntakeState.UNKNOWN);
             }

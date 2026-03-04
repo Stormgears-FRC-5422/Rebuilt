@@ -48,7 +48,7 @@ public class SimpleRumble extends StormCommand {
     public void end(boolean interrupted) {
         if (!skip) {
             intake.setRollerEnabled(false);
-            intake.setState(IntakeState.IDLE);
+            intake.holdCurrentPosition();
         }
         super.end(interrupted);
     }

@@ -24,7 +24,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
 
     @Override
     public boolean resetGyro() {
-        return xboxController.getRightBumperIsPressed();
+        return xboxController.getBackIsPressed();
     }
 
     @Override
@@ -38,7 +38,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
 
     @Override
     public boolean intakeHome() {
-        return xboxController.getLeftBumperIsHeld();
+        return xboxController.getLeftBumperIsPressed();
     }
 
     // getSlider() uses base default (0.0)
@@ -52,15 +52,15 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
     @Override
     public boolean intakeTogglePressed() {
-        return xboxController.getAButtonIsPressed();
-    }
-    @Override
-    public boolean enableRumble() {
         return xboxController.getXisPressed();
     }
     @Override
+    public boolean enableRumble() {
+        return xboxController.getRightBumperIsPressed();
+    }
+    @Override
     public boolean shootToAlliance() {
-        return xboxController.getBButtonIsHeld();
+        return false;
     }
 
     @Override
@@ -69,8 +69,13 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
 
     @Override
+    public boolean intakeUp() {
+        return xboxController.getLeftJoystickY() > frc.robot.Constants.ButtonBoard.intakeStickThreshold;
+    }
+
+    @Override
     public boolean intakeDown() {
-        return xboxController.getXButtonIsHeld();
+        return xboxController.getLeftJoystickY() < -frc.robot.Constants.ButtonBoard.intakeStickThreshold;
     }
 
     @Override
@@ -81,4 +86,14 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean climbManualUp()   { return xboxController.getUpArrowPressed(); }
     @Override
     public boolean climbManualDown() { return xboxController.getDownArrowPressed(); }
+
+    @Override
+    public boolean wonAutoOverride()  { return xboxController.getRightArrowPressed(); }
+    @Override
+    public boolean lostAutoOverride() { return xboxController.getLeftArrowPressed(); }
+
+    @Override
+    public void setRumble(double strength) {
+        xboxController.setRumble(edu.wpi.first.wpilibj.GenericHID.RumbleType.kBothRumble, strength);
+    }
 }

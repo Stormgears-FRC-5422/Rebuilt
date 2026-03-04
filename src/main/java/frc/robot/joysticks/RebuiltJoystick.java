@@ -63,6 +63,7 @@ public abstract class RebuiltJoystick {
         return false;
     }
     public boolean manualShoot(){return false;}
+    public boolean intakeUp(){return false;}
     public boolean intakeDown(){return false;}
     public boolean intakeHome(){return false;}
 
@@ -70,4 +71,11 @@ public abstract class RebuiltJoystick {
     public boolean climbSequence()   { return false; }
     public boolean climbManualUp()   { return false; }
     public boolean climbManualDown() { return false; }
+
+    // --- Game data overrides (joystick2 / operator) ---
+    public boolean wonAutoOverride()  { return false; }
+    public boolean lostAutoOverride() { return false; }
+
+    // --- Controller rumble ---
+    public void setRumble(double strength) {}
 }

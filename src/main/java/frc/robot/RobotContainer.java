@@ -6,16 +6,23 @@ package frc.robot;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.elastic.GameDataDashboard;
+import frc.robot.util.GameDataTracker;
+import frc.utils.Alert;
+import frc.utils.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
@@ -23,12 +30,11 @@ import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
-import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
-import frc.robot.commands.intake.UpDownCommand;
+import frc.robot.commands.intake.IntakeManual;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -45,6 +51,9 @@ import frc.robot.subsystems.drive.IllegalDriveTypeException;
 
 public class RobotContainer {
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
+    private final Alert autoWinnerNotSet = new Alert("!!! AUTO WINNER NOT SET !!!", AlertType.ERROR);
+    private final Timer teleopElapsedTimer = new Timer();
+    private final GameDataDashboard gameDataDashboard = new GameDataDashboard();
     RobotState robotState;
     // **********
     // Control
@@ -155,13 +164,12 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.alignNarrow.get())
                 .whileTrue(new AlignNarrow(drivetrain, joystick));
 
-            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
-            
-            new Trigger(() -> joystick.intakeTogglePressed())
-                .onTrue(new UpDownCommand(intake));
+            intake.setDefaultCommand(new IntakeManual(intake, joystick2));
 
-            new Trigger(() -> joystick2.intakeTogglePressed())
-                .onTrue(new UpDownCommand(intake));
+            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+
+            new Trigger(() -> joystick2.intakeHome())
+                .onTrue(new IntakeHome(intake));
 
             new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
@@ -230,15 +238,41 @@ public class RobotContainer {
 
         if(Toggles.useShooter && Toggles.useIntake){
             new Trigger(() -> joystick.manualShoot()).whileTrue(
-                new ParallelCommandGroup(new ShootCommand(shooterHopper, true),
-                    Commands.either(new DynamicRumble(intake), new SimpleRumble(intake),
-                        () -> Constants.Intake.useDynamicRumble)));
+               new ShootCommand(shooterHopper, true));
         }
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
             shootTrigger.onTrue(new ShootCommand(shooterHopper, true));
         }
+        // --- Game data overrides ---
+        GameDataTracker.setAllianceWinOverride(
+            () -> {
+                if (joystick2.lostAutoOverride()) return Optional.of(false);
+                if (joystick2.wonAutoOverride())  return Optional.of(true);
+                return Optional.empty();
+            });
+
+        // Alert + rumble when game data is missing after 1s in teleop
+        new Trigger(DriverStation::isTeleopEnabled)
+            .onTrue(Commands.runOnce(teleopElapsedTimer::restart));
+
+        new Trigger(DriverStation::isTeleopEnabled)
+            .and(() -> !GameDataTracker.isGameDataReceived())
+            .and(() -> GameDataTracker.getAllianceWinOverride().isEmpty())
+            .and(() -> teleopElapsedTimer.hasElapsed(1.0))
+            .whileTrue(Commands.runEnd(
+                () -> {
+                    joystick.setRumble(1.0);
+                    joystick2.setRumble(1.0);
+                    autoWinnerNotSet.set(true);
+                },
+                () -> {
+                    joystick.setRumble(0.0);
+                    joystick2.setRumble(0.0);
+                    autoWinnerNotSet.set(false);
+                }));
+
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
@@ -267,6 +301,8 @@ public class RobotContainer {
         if (Toggles.useShooter && shooterHopper != null) {
             ;;;
         }
+
+        gameDataDashboard.periodic();
     }
 
     /**

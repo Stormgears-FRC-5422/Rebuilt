@@ -15,13 +15,15 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
-
-import frc.robot.elastic.ElasticMotorController;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 
@@ -32,7 +34,6 @@ public class Intake extends StormSubsystem {
     public enum IntakeState {
         UNKNOWN,
         HOMING,
-        IDLE,
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
@@ -88,6 +89,10 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor = new TalonFX(frc.robot.Constants.Intake.updownIntakeID, new CANBus(""));
         rollerIntakeMotor = new SparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless);
 
+        SparkMaxConfig rollerConfig = new SparkMaxConfig();
+        rollerConfig.smartCurrentLimit(frc.robot.Constants.Intake.rollerCurrentLimitAmps);
+        rollerIntakeMotor.configure(rollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
         mmRequest = new MotionMagicVoltage(0.0);
 
         // PID config for hot-tuning (initial values from properties)
@@ -117,7 +122,8 @@ public class Intake extends StormSubsystem {
         config.MotionMagic.MotionMagicJerk           = frc.robot.Constants.Intake.jerk;            // mechanism rot/s^3
 
         updownIntakeMotor.getConfigurator().apply(config);
-        updownIntakeMotor.setNeutralMode(NeutralModeValue.Coast);
+        updownIntakeMotor.setNeutralMode(
+            frc.robot.Constants.Intake.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
 
         // Current limits
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
@@ -217,10 +223,6 @@ public class Intake extends StormSubsystem {
             case HOMING:
                 console("***** HOMING state *****", 1);
                 enableSoftLimits(false);
-                break;
-
-            case IDLE:
-                console("***** IDLE state *****", 1);
                 break;
 
             case HOLD:
@@ -336,5 +338,13 @@ public class Intake extends StormSubsystem {
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
+    }
+    public void holdCurrentPosition() {
+        setTargetPosition(currentPosition);
+        setState(IntakeState.HOLD);
+    }
+
+    public double getCurrentPosition() {
+        return currentPosition;
     }
 }
