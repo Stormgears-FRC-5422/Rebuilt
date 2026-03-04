@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import java.util.Arrays;
+
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -14,18 +16,14 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.units.measure.AngularVelocity;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-import java.util.Arrays;
-
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-
-import frc.robot.Constants;
+import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.elastic.ElasticMotorController;
@@ -77,9 +75,13 @@ public class ShooterHopper extends StormSubsystem {
         hopperNeo = new SparkMax(Shooter.hopperMotorID, MotorType.kBrushless);
 
         SparkMaxConfig hopperConfig = new SparkMaxConfig();
-        hopperConfig.inverted(true);
-        hopperNeo.configure(hopperConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        hopperConfig
+            .inverted(true)
+            .smartCurrentLimit(Shooter.hopperCurrentLimitAmps)
+            .openLoopRampRate(Shooter.hopperRampRateOpen);
 
+        hopperNeo.configure(hopperConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        
         // These are on the standard rio CAN, not the canivore
         leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
         followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
@@ -260,5 +262,19 @@ public class ShooterHopper extends StormSubsystem {
 
         followerMotor.getConfigurator().apply(followerOut);
         leaderMotor.getConfigurator().apply(out);
+    }
+    public double getCurrentVelocityRPS() {
+    return rotorVelocitySignal.getValueAsDouble();
+}
+
+    public double getTargetVelocityRPS() {
+        return targetVelocityRPS;
+    }
+
+    public boolean isReadyToFeed() {
+        double target = Math.abs(targetVelocityRPS);
+        double actual = Math.abs(rotorVelocitySignal.getValueAsDouble());
+
+        return actual >= target * Shooter.percentTargetReady;
     }
 }

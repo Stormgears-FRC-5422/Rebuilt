@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.Toggles;
+import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
@@ -23,12 +24,12 @@ import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
-import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.intake.DynamicRumble;
 import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
 import frc.robot.commands.intake.UpDownCommand;
+import frc.robot.commands.intake.IntakeHold;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -101,6 +102,7 @@ public class RobotContainer {
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
+            intake.setDefaultCommand(new IntakeHold(intake));
             if (Toggles.usePidTuner) {
                 intakeTuner = new SingleMotorTuner("Intake Tuner", intake.getPidConfig());
             }

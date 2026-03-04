@@ -15,13 +15,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
-import frc.robot.elastic.ElasticMotorController;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 
@@ -32,7 +31,6 @@ public class Intake extends StormSubsystem {
     public enum IntakeState {
         UNKNOWN,
         HOMING,
-        IDLE,
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
@@ -67,6 +65,7 @@ public class Intake extends StormSubsystem {
     public IntakeState state = IntakeState.UNKNOWN;
     public boolean hasBeenHomed = false;
     private boolean softLimitEnabled = false;
+    private boolean goToIntakingAngle = true;
 
     private double targetPosition;
     private double currentPosition;
@@ -219,10 +218,6 @@ public class Intake extends StormSubsystem {
                 enableSoftLimits(false);
                 break;
 
-            case IDLE:
-                console("***** IDLE state *****", 1);
-                break;
-
             case HOLD:
                 console("***** HOLD state *****", 1);
                 break;
@@ -336,5 +331,20 @@ public class Intake extends StormSubsystem {
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = enable;
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
+    }
+    
+    public void toggleUpDownTarget() {
+        setTargetPosition(goToIntakingAngle ? frc.robot.Constants.Intake.intakingAngle : frc.robot.Constants.Intake.topIntakeDegrees);
+
+        goToIntakingAngle = !goToIntakingAngle;
+    }
+
+    public void holdCurrentPosition() {
+        setTargetPosition(currentPosition);
+        setState(IntakeState.HOLD);
+    }
+
+    public double getCurrentPosition() {
+        return currentPosition;
     }
 }

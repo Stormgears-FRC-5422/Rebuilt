@@ -29,7 +29,7 @@ public class ShootCommand extends StormCommand {
     @Override
     public void execute() {
         // log motor speed and iterations of periodic to see how long it takes to spin up
-        if (timer.hasElapsed(1.0)) {
+        if (shooter.isReadyToFeed()) {
             shooter.setState(ShooterState.SHOOTING);
         }
     }

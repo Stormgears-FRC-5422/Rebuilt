@@ -37,6 +37,9 @@ public class UpDownCommand extends StormCommand {
 
     @Override
     public void end(boolean interrupted) {
-        super.end(interrupted);
+        if (!skip) {
+            intake.holdCurrentPosition();
+        }
+        super.end(interrupted);    
     }
 }
