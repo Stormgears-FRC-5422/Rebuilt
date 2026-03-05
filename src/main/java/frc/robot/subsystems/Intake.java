@@ -14,14 +14,12 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.units.measure.Angle;
@@ -75,7 +73,6 @@ public class Intake extends StormSubsystem {
 
     public IntakeState state = IntakeState.UNKNOWN;
     public boolean hasBeenHomed = false;
-    private boolean softLimitEnabled = false;
 
     private double targetPosition;
     private double currentPosition;
@@ -93,6 +90,7 @@ public class Intake extends StormSubsystem {
 
     // ===== Constructor =====
 
+    @SuppressWarnings("resource")
     public Intake() {
         updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor");
         rollerIntakeMotor = new StormSparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless).withName("rollerIntakeMotor");
@@ -340,8 +338,6 @@ public class Intake extends StormSubsystem {
 
     // Soft limits (thresholds in mechanism rotations, converted from degrees)
     public void enableSoftLimits(boolean enable) {
-        softLimitEnabled = enable;
-
         config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = frc.robot.Constants.Intake.bottomIntakeLimit / 360.0;
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = enable;
 

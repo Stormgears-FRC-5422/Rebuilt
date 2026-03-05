@@ -1,31 +1,29 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.subsystems.misc;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
 import frc.robot.RobotState;
 import frc.robot.RobotState.HopperState;
-
+import frc.robot.sensors.stormnet.StormNet;
 import frc.utils.StormSubsystem;
 import org.littletonrobotics.junction.Logger;
 
-
-
-public class StormNetSubsystem extends StormSubsystem {
+public class SensorSubsystem extends StormSubsystem {
     private final DigitalInput bottomBeamBreak;
-    // private final DigitalInput topBeamBreak;
 
     private StormNet stormNet;
     private RobotState robotState;
 
-    public StormNetSubsystem() {
-        bottomBeamBreak = new DigitalInput(Constants.StormNet.bottomBeamBreakPort);
-        // topBeamBreak = new DigitalInput(Constants.StormNet.topBeamBreakPort);
+    public SensorSubsystem() {
+        bottomBeamBreak = new DigitalInput(Constants.SensorSubsystem.bottomBeamBreakPort);
 
-        StormNet.init();
-        stormNet = StormNet.getInstance();
+        if (Constants.SensorSubsystem.useStormNet) {
+            StormNet.init();
+            stormNet = StormNet.getInstance();
 
-        if (Constants.Debug.debug) {
-            stormNet.test();
+            if (Constants.Debug.debug) {
+                stormNet.test();
+            }
         }
 
         robotState = RobotState.getInstance();
@@ -41,25 +39,31 @@ public class StormNetSubsystem extends StormSubsystem {
     // Report hopper depth based on all available sensors.
     // Combines lidar (continuous distance) with beam break (binary).
     // Takes the "fuller" of the two readings as the conservative estimate.
+    // When StormNet is disabled, falls back to beam break only.
     private HopperState getHopperDepth() {
-        double distance = stormNet.getLidarDistance();
-        boolean bottomBB = bottomBeamBreak.get();
-        // boolean topBB = topBeamBreak.get();
-
-        Logger.recordOutput("StormNet/LidarDistance", distance);
-        Logger.recordOutput("StormNet/BottomBeamBreak", bottomBB);
+        boolean bottomBB = !bottomBeamBreak.get();
+        Logger.recordOutput("SensorSubsystem/BottomBeamBreak", bottomBB);
 
         // Beam break: can only distinguish EMPTY from LOW
         HopperState bbState = bottomBB ? HopperState.HOPPER_LOW : HopperState.HOPPER_EMPTY;
 
+        if (stormNet == null) {
+            Logger.recordOutput("SensorSubsystem/HopperState", bbState.toString());
+            return bbState;
+        }
+
+        // Full fusion: lidar (continuous) + beam break (binary)
+        double distance = stormNet.getLidarDistance();
+        Logger.recordOutput("SensorSubsystem/LidarDistance", distance);
+
         // Lidar: lower distance = fuller hopper. Negative means bad data.
         HopperState lidarState = HopperState.UNKNOWN;
         if (distance >= 0) {
-            if (distance < Constants.StormNet.lidarDepthFull) {
+            if (distance < Constants.SensorSubsystem.lidarDepthFull) {
                 lidarState = HopperState.HOPPER_FULL;
-            } else if (distance < Constants.StormNet.lidarDepthHalf) {
+            } else if (distance < Constants.SensorSubsystem.lidarDepthHalf) {
                 lidarState = HopperState.HOPPER_HALF;
-            } else if (distance < Constants.StormNet.lidarDepthLow) {
+            } else if (distance < Constants.SensorSubsystem.lidarDepthLow) {
                 lidarState = HopperState.HOPPER_LOW;
             } else {
                 lidarState = HopperState.HOPPER_EMPTY;
@@ -79,7 +83,7 @@ public class StormNetSubsystem extends StormSubsystem {
             result = lidarState;
         }
 
-        Logger.recordOutput("StormNet/HopperState", result.toString());
+        Logger.recordOutput("SensorSubsystem/HopperState", result.toString());
         return result;
     }
 

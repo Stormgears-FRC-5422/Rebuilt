@@ -158,6 +158,12 @@ public class Lights extends StormSubsystem {
             case HOPPER_FULL:
                 setSolid(GREEN_COLOR);
                 break;
+            case HOPPER_LOW:
+                setSolid(ORANGE_COLOR);
+                break;
+            case UNKNOWN:
+                setAllianceColor();
+                break;
         }
     }
 

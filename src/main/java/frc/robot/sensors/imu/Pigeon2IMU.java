@@ -12,6 +12,7 @@ import frc.robot.Constants;
  */
 public class Pigeon2IMU extends IMUBase {
     private final Pigeon2 pigeon;
+    @SuppressWarnings("unused")
     private final boolean ownsHardware;
     private double simAngleDegrees = 0.0;
     private final Object simLock = new Object(); // Synchronize sim angle access between main and Notifier threads

@@ -9,6 +9,7 @@ import frc.robot.Constants;
  */
 public class NavXIMU extends IMUBase {
     private final AHRS navx;
+    @SuppressWarnings("unused")
     private final boolean ownsHardware;
     private double yawOffset = 0.0;
     private double simAngleDegrees = 0.0;

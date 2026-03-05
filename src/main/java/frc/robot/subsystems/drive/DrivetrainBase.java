@@ -11,8 +11,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.Drive;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
@@ -51,6 +53,8 @@ public abstract class DrivetrainBase extends StormSubsystem {
 
     /** Collision manager for simulation (null on real robot or if disabled) */
     private frc.robot.simulation.collision.CollisionManager collisionManager;
+
+    private boolean m_dashboardRegistered = false;
 
     public DrivetrainBase() {
         state = RobotState.getInstance();
@@ -132,6 +136,24 @@ public abstract class DrivetrainBase extends StormSubsystem {
      */
     protected boolean usesInternalIMU() {
         return false;
+    }
+
+    /**
+     * Returns the ordered module names for the SmartDashboard SwerveDrive widget.
+     * Override in concrete drivetrain subclasses (e.g., "Front Left", "Front Right", ...).
+     * Default: no modules (widget shows robot angle only).
+     */
+    protected String[] getDashboardModuleNames() {
+        return new String[0];
+    }
+
+    /**
+     * Returns the current module states for the SmartDashboard SwerveDrive widget.
+     * Must match the order of getDashboardModuleNames().
+     * Default: no modules.
+     */
+    protected SwerveModuleState[] getDashboardModuleStates() {
+        return new SwerveModuleState[0];
     }
 
     // ==================== Core API ====================
@@ -309,6 +331,25 @@ public abstract class DrivetrainBase extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+
+        // Register the SwerveDrive widget on the first periodic call, not in the constructor.
+        // addDoubleProperty eagerly calls getters when NT is connected, which would fire during
+        // the super() chain before subclass field initializers have run.
+        if (!m_dashboardRegistered) {
+            m_dashboardRegistered = true;
+            SmartDashboard.putData("Swerve Drive", builder -> {
+                builder.setSmartDashboardType("SwerveDrive");
+                builder.addDoubleProperty("Robot Angle", () -> getRotation().getDegrees(), null);
+                String[] names = getDashboardModuleNames();
+                for (int i = 0; i < names.length; i++) {
+                    final int idx = i;
+                    builder.addDoubleProperty(names[idx] + " Angle",
+                        () -> getDashboardModuleStates()[idx].angle.getDegrees(), null);
+                    builder.addDoubleProperty(names[idx] + " Velocity",
+                        () -> getDashboardModuleStates()[idx].speedMetersPerSecond, null);
+                }
+            });
+        }
 
         state.setPose(getPoseEstimator().getPose());
 

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.sensors.stormnet;
 
 public abstract class StormNetVoice {
 

@@ -1,5 +1,6 @@
 package frc.utils;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -10,6 +11,7 @@ public class StormSubsystem extends SubsystemBase {
     public StormSubsystem() {
         _name = getClass().getName();
         _name = _name.substring(_name.lastIndexOf('.') + 1);
+        SmartDashboard.putData(this);
         console("created");
     }
 

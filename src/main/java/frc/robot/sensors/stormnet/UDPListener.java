@@ -1,4 +1,4 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.sensors.stormnet;
 
 import frc.robot.Constants;
 
@@ -92,4 +92,3 @@ public class UDPListener extends StormNetVoice implements Runnable{
         m_stopNow = true;
     }
 }
-

@@ -59,6 +59,21 @@ public class CTRSwerve extends DrivetrainBase {
         driveInternal.registerTelemetry(logger::telemeterize);
     }
 
+    // ==================== SmartDashboard Widget ====================
+
+    private static final String[] DASHBOARD_MODULE_NAMES =
+        {"Front Left", "Front Right", "Back Left", "Back Right"};
+
+    @Override
+    protected String[] getDashboardModuleNames() {
+        return DASHBOARD_MODULE_NAMES;
+    }
+
+    @Override
+    protected SwerveModuleState[] getDashboardModuleStates() {
+        return driveInternal.getState().ModuleStates;
+    }
+
     // ==================== Implementation Characteristics ====================
 
     @Override
@@ -110,6 +125,7 @@ public class CTRSwerve extends DrivetrainBase {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public void periodic() {
         super.periodic();  // Handles resetOrientation option check
         driveInternal.periodic();

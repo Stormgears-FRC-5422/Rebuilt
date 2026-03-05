@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.SimplePoseTelemetry;
 import frc.robot.sensors.imu.IMU;
@@ -73,15 +72,6 @@ public class BasicSwerve extends DrivetrainBase {
 
         currentPose = internalPoseEstimator.getEstimatedPosition();
 
-        SmartDashboard.putData("Swerve Drive", builder -> {
-            builder.setSmartDashboardType("SwerveDrive");
-            builder.addDoubleProperty("Robot Angle", () -> imu.getRotation().getDegrees(), null);
-            for (SwerveModuleBase m : modules) {
-                builder.addDoubleProperty(m.name + " Angle", () -> m.getSteerAngle().in(Degrees), null);
-                builder.addDoubleProperty(m.name + " Velocity", () -> m.getDriveVelocity().in(MetersPerSecond), null);
-            }
-        });
-
         // Start simulation thread if in simulation mode
         if (RobotBase.isSimulation()) {
             startSimThread();
@@ -120,6 +110,26 @@ public class BasicSwerve extends DrivetrainBase {
     @Override
     public PoseEstimator getPoseEstimator() {
         return poseEstimatorWrapper;
+    }
+
+    @Override
+    protected String[] getDashboardModuleNames() {
+        String[] names = new String[modules.length];
+        for (int i = 0; i < modules.length; i++) {
+            names[i] = modules[i].name;
+        }
+        return names;
+    }
+
+    @Override
+    protected SwerveModuleState[] getDashboardModuleStates() {
+        SwerveModuleState[] states = new SwerveModuleState[modules.length];
+        for (int i = 0; i < modules.length; i++) {
+            states[i] = new SwerveModuleState(
+                modules[i].getDriveVelocity().in(MetersPerSecond),
+                Rotation2d.fromDegrees(modules[i].getSteerAngle().in(Degrees)));
+        }
+        return states;
     }
 
     // ==================== Module Control ====================

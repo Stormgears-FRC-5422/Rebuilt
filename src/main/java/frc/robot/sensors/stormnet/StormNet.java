@@ -1,4 +1,4 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.sensors.stormnet;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +11,7 @@ public class StormNet {
 	private UDPListener m_listener;
 
 	// Sensors
+	@SuppressWarnings("unused")
 	private StormNetSensor m_testSensor;
 	private MatrixLidar m_lidar;
 

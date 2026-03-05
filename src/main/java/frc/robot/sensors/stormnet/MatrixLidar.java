@@ -1,4 +1,4 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.sensors.stormnet;
 
 import frc.robot.Constants;
 
@@ -27,7 +27,7 @@ public class MatrixLidar extends StormNetSensor {
 
 		// Measurements are in mm, we want cm
 		distance = (double) sensorDetails[0];
-		
+
 		return distance;
     }
 

@@ -9,6 +9,7 @@ import frc.robot.Constants;
  */
 public class ADXRS450IMU extends IMUBase {
     private final ADXRS450_Gyro gyro;
+    @SuppressWarnings("unused")
     private final boolean ownsHardware;
     private double yawOffset = 0.0;
     private double simAngleDegrees = 0.0;

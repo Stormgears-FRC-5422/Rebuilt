@@ -6,7 +6,6 @@ package frc.robot;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -48,6 +47,7 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
+import frc.robot.subsystems.misc.SensorSubsystem;
 
 public class RobotContainer {
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -64,9 +64,12 @@ public class RobotContainer {
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
     private Lights lights;
+    @SuppressWarnings("unused")
     private VisionSubsystem vision;
     private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
+    @SuppressWarnings("unused")
+    private SensorSubsystem sensorSubsystem;
     private Intake intake;
     private Climber climber;
     //elastic control
@@ -88,9 +91,7 @@ public class RobotContainer {
                 drivetrain = DrivetrainFactory.getInstance(Constants.Drive.driveType, Constants.Drive.driveSubtype);
             }
         } catch (IllegalDriveTypeException e) {
-            console("Error: Invalid drive type specified: " + e.getMessage());
-        } catch (RuntimeException e) {
-            console("Error initializing RobotContainer: " + e.getMessage());
+            throw new RuntimeException("Invalid drive type specified: " + e.getMessage(), e);
         }
 
         if (Toggles.useVision) {
@@ -120,6 +121,11 @@ public class RobotContainer {
             climber = new Climber();
         }
 
+        if (Toggles.useSensorSubsystem) {
+            console("Create sensor subsystem");
+            sensorSubsystem = new SensorSubsystem();
+        }
+
         if (Toggles.useShooter) {
             console("Create shooter");
             shooterHopper = new ShooterHopper(elasticMotorController);
@@ -139,10 +145,6 @@ public class RobotContainer {
         console("[DONE] RobotContainer");
     }
 
-    private static double slider(double x, double low, double high) {
-        return Math.max(low, Math.min(high, x));
-    }
-
     public void onJoysticksAvaiable() {
         console("Configuring Joystick and bindings");
         try {
@@ -157,12 +159,14 @@ public class RobotContainer {
 
     private void configureBindings() {
 
+        if (Toggles.useDrive) {
+            new Trigger(() -> elasticMotorController.alignNarrow.get())
+                .whileTrue(new AlignNarrow(drivetrain, joystick));
+        }
+
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
-                
-            new Trigger(() -> elasticMotorController.alignNarrow.get())
-                .whileTrue(new AlignNarrow(drivetrain, joystick));
 
             intake.setDefaultCommand(new IntakeManual(intake, joystick2));
 
@@ -255,7 +259,7 @@ public class RobotContainer {
 
         // Alert + rumble when game data is missing after 1s in teleop
         new Trigger(DriverStation::isTeleopEnabled)
-            .onTrue(Commands.runOnce(teleopElapsedTimer::restart));
+            .onTrue(Commands.runOnce(teleopElapsedTimer::restart).withName("Restart Teleop Timer"));
 
         new Trigger(DriverStation::isTeleopEnabled)
             .and(() -> !GameDataTracker.isGameDataReceived())

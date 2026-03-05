@@ -46,7 +46,6 @@ public class OptionsController extends DashboardTuner {
         return option;
     }
 
-    @SuppressWarnings({"unchecked"})
     private void createTunables() {
         if (initialized) {
             return;

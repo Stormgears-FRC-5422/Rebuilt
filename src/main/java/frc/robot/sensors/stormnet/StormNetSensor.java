@@ -1,4 +1,4 @@
-package frc.robot.subsystems.stormnet;
+package frc.robot.sensors.stormnet;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -161,7 +161,7 @@ public class StormNetSensor {
 		System.out.println(message);
 	}
 
-// low-level i/o routines	
+// low-level i/o routines
 
 	/**
 	 * A low-level routine that executes a transaction using the appropriate voice.
@@ -463,42 +463,4 @@ public class StormNetSensor {
 		return fetchCommand("\0".getBytes(), "FetchCounter", receiveBuffer);
 	}
 
-
-//    protected void doIt() {
-//
-//        byte b;
-//        int sleep = 5;
-//
-//        try {
-//            // setup
-//            m_clientSocket = new Socket("192.168.1.177", 5422);
-//            m_outToServer = new DataOutputStream(m_clientSocket.getOutputStream());
-//            m_backFromServer= new DataInputStream(m_clientSocket.getInputStream());
-//
-//            // some basic tests
-//            log("Ping test returned " + Byte.toString(ping()));
-//            TimeUnit.SECONDS.sleep(sleep);
-//            log("Fast test returned " + (fast() ? "true" : "false") );
-//            TimeUnit.SECONDS.sleep(sleep);
-//            log("Slow test returned " + (slow() ? "true" : "false") );
-//            TimeUnit.SECONDS.sleep(sleep);
-//            log("Blink test returned " + (blink(2000) ? "true" : "false") );
-//            TimeUnit.SECONDS.sleep(sleep);
-//
-//            short[] sensorValues = new short[4];  // 4 sensor values
-//            for (int i = 0; i < 2000; i++) {
-//                fetchShorts("L", "Lidar", sensorValues);
-//                log("Lidar test returned [ " +
-//                    sensorValues[0] + " ] [ " +
-//                    sensorValues[1] + " ] [ " +
-//                    sensorValues[2] + " ] [ " +
-//                    sensorValues[3] + " ]");
-//                TimeUnit.SECONDS.sleep(1);
-//            }
-//            m_clientSocket.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 }
