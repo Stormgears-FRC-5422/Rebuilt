@@ -23,6 +23,8 @@ public class DynamicRumble extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
+        skip = !intake.hasBeenHomed;
+        if (skip) return;
 
         minAngle = frc.robot.Constants.Intake.minRumbleAngleDeg;
         maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
@@ -43,6 +45,7 @@ public class DynamicRumble extends StormCommand {
             maxCycles++;
         }
 
+        intake.setMotionProfile(Intake.MotionProfile.AUTO);
         intake.setTargetPosition(maxAngle);
         intake.setState(IntakeState.PID_MOTION);
     }

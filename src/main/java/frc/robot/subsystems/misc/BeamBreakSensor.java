@@ -17,12 +17,14 @@ public class BeamBreakSensor extends StormSubsystem{
 
         m_robotState = RobotState.getInstance();
     }
+
     public boolean isHopperHalf(){
         return bottomBeamBreak.get();
     }
     public boolean isHopperFull(){
         return topBeamBreak.get();
     }
+
     @Override
     public void periodic() {
         super.periodic();

@@ -263,8 +263,10 @@ public class RobotContainer {
             .and(() -> teleopElapsedTimer.hasElapsed(1.0))
             .whileTrue(Commands.runEnd(
                 () -> {
-                    joystick.setRumble(1.0);
-                    joystick2.setRumble(1.0);
+                    if (Constants.ButtonBoard.rumbleOnAlert) {
+                        joystick.setRumble(1.0);
+                        joystick2.setRumble(1.0);
+                    }
                     autoWinnerNotSet.set(true);
                 },
                 () -> {

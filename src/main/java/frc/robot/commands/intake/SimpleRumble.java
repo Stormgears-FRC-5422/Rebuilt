@@ -21,10 +21,13 @@ public class SimpleRumble extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
+        skip = !intake.hasBeenHomed;
+        if (skip) return;
         minAngle = frc.robot.Constants.Intake.minRumbleAngleDeg;
         maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
         goingUp = true;
 
+        intake.setMotionProfile(Intake.MotionProfile.AUTO);
         intake.setTargetPosition(maxAngle);
         intake.setState(IntakeState.PID_MOTION);
     }

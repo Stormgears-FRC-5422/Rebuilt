@@ -12,10 +12,8 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> shootButton;
   public final Option<Double> shootSpeed;
   public final Option<Double> hopperSpeed;
-  public final Option<Double> intakeRollerSpeed;
   public final Option<Boolean> homeIntake;
   public final Option<Boolean> visionCmd;
-  public final Option<Double> intakeAngle;
   public final Option<Boolean> outtakeIntake;
   public final Option<Boolean> outtakeShooter;
   public final Option<Boolean> usePose;
@@ -44,15 +42,13 @@ public class ElasticMotorController extends OptionsController {
     intakeUp = createBooleanOption("INTAKE UP", false);
     tester = createBooleanOption("wtv", false);
     shootButton = createBooleanOption("shoot", false);
-    shootSpeed = createNumberOption("shooter speed diagnostic", 0.50);
-    intakeRollerSpeed = createNumberOption("intake speed diagnostic", 0.0);
+    shootSpeed = createNumberOption("shooter speed diagnostic", frc.robot.Constants.Shooter.testingTargetRPS / 100.0);
     hopperSpeed = createNumberOption("hopper speed diagnostic", 0.0);
     homeIntake = createBooleanOption("homeintake", false);
-    intakeAngle = createNumberOption("angle", 150.0);
     visionCmd = createBooleanOption("vision cmd", false);
     outtakeIntake = createBooleanOption("outtake intake", false);
     outtakeShooter = createBooleanOption("outtakeshooter", false);
-    usePose = createBooleanOption("usePose", true);
+    usePose = createBooleanOption("usePose", frc.robot.Constants.ButtonBoard.usePose);
     moveWhileShoot = createBooleanOption("move while shoot", false);
     enabled = createBooleanOption("Enabled", false);
     motor1   = createNumberOption("Motor 1 Output", 0.0);
