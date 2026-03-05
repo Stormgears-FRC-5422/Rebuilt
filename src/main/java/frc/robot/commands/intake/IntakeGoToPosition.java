@@ -24,6 +24,9 @@ public class IntakeGoToPosition extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
+        skip = !intake.hasBeenHomed;
+        if (skip) return;
+        intake.setMotionProfile(Intake.MotionProfile.AUTO);
         intake.setTargetPosition(degrees);
         intake.setState(IntakeState.PID_MOTION);
     }

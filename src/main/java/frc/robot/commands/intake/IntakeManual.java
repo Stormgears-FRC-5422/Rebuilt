@@ -1,5 +1,6 @@
 package frc.robot.commands.intake;
 
+import frc.robot.Constants;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakeState;
@@ -22,8 +23,11 @@ public class IntakeManual extends StormCommand {
     public void initialize() {
         super.initialize();
         if (skip) return;
-        intake.setTargetPosition(intake.getCurrentPosition());
-        intake.setState(IntakeState.HOLD);
+        intake.setMotionProfile(Intake.MotionProfile.MANUAL);
+        if (intake.hasBeenHomed) {
+            intake.setTargetPosition(intake.getCurrentPosition());
+            intake.setState(IntakeState.HOLD);
+        }
     }
 
     @Override
@@ -38,10 +42,10 @@ public class IntakeManual extends StormCommand {
             : Direction.HOLD;
 
         if (direction == Direction.UP) {
-            intake.setTargetPosition(frc.robot.Constants.Intake.topIntakeDegrees);
+            intake.setTargetPosition(Constants.Intake.topIntakeDegrees);
             intake.setState(IntakeState.PID_MOTION);
         } else if (direction == Direction.DOWN) {
-            intake.setTargetPosition(frc.robot.Constants.Intake.intakingAngle);
+            intake.setTargetPosition(Constants.Intake.intakingAngle);
             intake.setState(IntakeState.PID_MOTION);
         } else {
             intake.setTargetPosition(currentPosition);
@@ -57,7 +61,10 @@ public class IntakeManual extends StormCommand {
     @Override
     public void end(boolean interrupted) {
         if (!skip) {
-            intake.holdCurrentPosition();
+            intake.setMotionProfile(Intake.MotionProfile.AUTO);
+            if (intake.hasBeenHomed) {
+                intake.holdCurrentPosition();
+            }
         }
         super.end(interrupted);
     }

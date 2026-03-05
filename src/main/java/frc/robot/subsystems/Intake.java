@@ -8,6 +8,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -37,6 +38,11 @@ public class Intake extends StormSubsystem {
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
+    }
+
+    public enum MotionProfile {
+        AUTO,
+        MANUAL,
     }
 
     public enum IntakePosition {
@@ -342,6 +348,20 @@ public class Intake extends StormSubsystem {
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
         setState(IntakeState.HOLD);
+    }
+
+    public void setMotionProfile(MotionProfile profile) {
+        MotionMagicConfigs mm = new MotionMagicConfigs();
+        if (profile == MotionProfile.MANUAL) {
+            mm.MotionMagicCruiseVelocity = frc.robot.Constants.Intake.manualCruiseVelocity;
+            mm.MotionMagicAcceleration   = frc.robot.Constants.Intake.manualAcceleration;
+            mm.MotionMagicJerk           = frc.robot.Constants.Intake.manualJerk;
+        } else {
+            mm.MotionMagicCruiseVelocity = frc.robot.Constants.Intake.cruiseVelocity;
+            mm.MotionMagicAcceleration   = frc.robot.Constants.Intake.acceleration;
+            mm.MotionMagicJerk           = frc.robot.Constants.Intake.jerk;
+        }
+        updownIntakeMotor.getConfigurator().apply(mm);
     }
 
     public double getCurrentPosition() {
