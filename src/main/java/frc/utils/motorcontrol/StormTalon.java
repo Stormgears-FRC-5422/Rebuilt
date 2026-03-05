@@ -35,6 +35,11 @@ public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     }
 
     @Override
+    public double getMotorVelocity() {
+        return getVelocity().getValueAsDouble();
+    }
+
+    @Override
     public double getMotorVoltageOutput() {
         return getMotorVoltage().getValueAsDouble();
     }

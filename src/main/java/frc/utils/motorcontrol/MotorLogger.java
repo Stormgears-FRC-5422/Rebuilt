@@ -7,12 +7,14 @@ public interface MotorLogger<T extends MotorLogger<T>> {
     T withName(String name);
     double getMotorCurrent();
     double getMotorPosition();
+    double getMotorVelocity();
     double getMotorVoltageOutput();
 
     default void logMotorData() {
         String basePath = "Motors/" + getMotorName();
         Logger.recordOutput(basePath + "/Current", getMotorCurrent());
         Logger.recordOutput(basePath + "/Position", getMotorPosition());
+        Logger.recordOutput(basePath + "/Velocity", getMotorVelocity());
         Logger.recordOutput(basePath + "/Voltage", getMotorVoltageOutput());
     }
 }

@@ -30,6 +30,11 @@ public class StormSparkMax extends SparkMax implements MotorLogger<StormSparkMax
     }
 
     @Override
+    public double getMotorVelocity() {
+        return getEncoder().getVelocity();
+    }
+
+    @Override
     public double getMotorVoltageOutput() {
         return getAppliedOutput() * getBusVoltage();
     }

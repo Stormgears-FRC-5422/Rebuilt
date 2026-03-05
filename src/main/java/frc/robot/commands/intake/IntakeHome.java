@@ -8,7 +8,8 @@ public class IntakeHome extends StormCommand {
     // Set to true to allow re-homing even if already homed
     private static final boolean ALLOW_REHOME = false;
 
-    private boolean skip;
+    private final boolean skip;   // permanent: true if requirements couldn't be added
+    private boolean alreadyHomed; // per-run: reset each initialize()
     private final Intake intake;
 
     public IntakeHome(Intake intake) {
@@ -19,10 +20,11 @@ public class IntakeHome extends StormCommand {
     @Override
     public void initialize() {
         super.initialize();
+        alreadyHomed = false;
         if (skip) return;
 
-        skip = skip || (!ALLOW_REHOME && intake.hasBeenHomed);
-        if (!skip) {
+        alreadyHomed = !ALLOW_REHOME && intake.hasBeenHomed;
+        if (!alreadyHomed) {
             intake.setState(IntakeState.HOMING);
         } else {
             console("skipping intake home - already homed");
@@ -36,13 +38,13 @@ public class IntakeHome extends StormCommand {
 
     @Override
     public boolean isFinished() {
-        return skip || intake.isAtHome();
+        return skip || alreadyHomed || intake.isAtHome();
     }
 
     @Override
     public void end(boolean interrupted) {
         super.end(interrupted);
-        if (!skip) {
+        if (!skip && !alreadyHomed) {
             if (!interrupted) {
                 intake.declareHome();
                 intake.holdCurrentPosition();
