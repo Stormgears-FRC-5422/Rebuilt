@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import frc.utils.motorcontrol.StormSparkMax;
+import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -65,8 +67,8 @@ public class Intake extends StormSubsystem {
 
     // ===== Fields =====
 
-    public final TalonFX updownIntakeMotor;
-    private final SparkMax rollerIntakeMotor;
+    public final StormTalon updownIntakeMotor;
+    private final StormSparkMax rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
     private final TalonFXConfiguration config = new TalonFXConfiguration();
     private final PidConfig pid;
@@ -92,8 +94,8 @@ public class Intake extends StormSubsystem {
     // ===== Constructor =====
 
     public Intake() {
-        updownIntakeMotor = new TalonFX(frc.robot.Constants.Intake.updownIntakeID, new CANBus(""));
-        rollerIntakeMotor = new SparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless);
+        updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor");
+        rollerIntakeMotor = new StormSparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless).withName("rollerIntakeMotor");
 
         SparkMaxConfig rollerConfig = new SparkMaxConfig();
         rollerConfig.smartCurrentLimit(frc.robot.Constants.Intake.rollerCurrentLimitAmps);
@@ -154,6 +156,9 @@ public class Intake extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+
+        updownIntakeMotor.logMotorData();
+        rollerIntakeMotor.logMotorData();
 
         // Hot-tune PID if changed via dashboard
         if (pid.isDirty()) {
