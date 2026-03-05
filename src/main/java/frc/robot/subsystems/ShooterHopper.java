@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import java.util.Arrays;
 
+import frc.utils.motorcontrol.StormSparkMax;
+import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -42,9 +44,9 @@ public class ShooterHopper extends StormSubsystem {
         DIAGNOSTIC;
     }
 
-    public final TalonFX leaderMotor;
-    public final TalonFX followerMotor;
-    public final SparkMax hopperNeo;
+    public final StormTalon leaderMotor;
+    public final StormTalon followerMotor;
+    public final StormSparkMax hopperNeo;
 
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
@@ -72,7 +74,7 @@ public class ShooterHopper extends StormSubsystem {
             state = ShooterState.IDLE;
         }
 
-        hopperNeo = new SparkMax(Shooter.hopperMotorID, MotorType.kBrushless);
+        hopperNeo = new StormSparkMax(Shooter.hopperMotorID, MotorType.kBrushless).withName("hopperMotor");
 
         SparkMaxConfig hopperConfig = new SparkMaxConfig();
         hopperConfig
@@ -81,10 +83,10 @@ public class ShooterHopper extends StormSubsystem {
             .openLoopRampRate(Shooter.hopperRampRateOpen);
 
         hopperNeo.configure(hopperConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        
+
         // These are on the standard rio CAN, not the canivore
-        leaderMotor = new TalonFX(Shooter.leaderMotorID, new CANBus(""));
-        followerMotor = new TalonFX(Shooter.followerMotorID, new CANBus(""));
+        leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader");
+        followerMotor = new StormTalon(Shooter.followerMotorID, new CANBus("")).withName("shootFollower");
 
         followerMotor.setControl(
             new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
@@ -199,6 +201,10 @@ public class ShooterHopper extends StormSubsystem {
     @Override
     public void periodic() {
         super.periodic();
+
+        hopperNeo.logMotorData();
+        leaderMotor.logMotorData();
+        followerMotor.logMotorData();
 
         // Refresh cached signal (non-blocking — reads from local cache)
         BaseStatusSignal.refreshAll(rotorVelocitySignal);
