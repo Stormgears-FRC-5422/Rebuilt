@@ -227,6 +227,8 @@ public class RobotContainer {
                     new FunnelToAllianceZone(drivetrain, joystick2, shooterHopper)
                 )
             );
+
+            new Trigger(() -> joystick2.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         } else if (Toggles.useShooter && Toggles.useIntake) {
             new Trigger(() -> joystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
 
