@@ -44,12 +44,12 @@ public class ShooterHopper extends StormSubsystem {
 
     public final StormTalon leaderMotor;
     public final StormTalon followerMotor;
-    public final StormSparkMax hopperNeo;
+    public final StormSparkMax fuelInjector;
 
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
-    private double hopperSpeed = 0.0;
+    private double fuelInjectorSpeed = 0.0;
     private final ElasticMotorController elasticMotorController;
     private ShooterState state;
 
@@ -73,15 +73,15 @@ public class ShooterHopper extends StormSubsystem {
             state = ShooterState.IDLE;
         }
 
-        hopperNeo = new StormSparkMax(Shooter.hopperMotorID, MotorType.kBrushless).withName("hopperMotor");
+        fuelInjector = new StormSparkMax(Shooter.fuelInjectorMotorID, MotorType.kBrushless).withName("fuelInjector");
 
-        SparkMaxConfig hopperConfig = new SparkMaxConfig();
-        hopperConfig
+        SparkMaxConfig fuelInjectorConfig = new SparkMaxConfig();
+        fuelInjectorConfig
             .inverted(true)
-            .smartCurrentLimit(Shooter.hopperCurrentLimitAmps)
-            .openLoopRampRate(Shooter.hopperRampRateOpen);
+            .smartCurrentLimit(Shooter.fuelInjectorCurrentLimitAmps)
+            .openLoopRampRate(Shooter.fuelInjectorRampRateOpen);
 
-        hopperNeo.configure(hopperConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        fuelInjector.configure(fuelInjectorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
         // These are on the standard rio CAN, not the canivore
         leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader");
@@ -145,25 +145,25 @@ public class ShooterHopper extends StormSubsystem {
         switch (state) {
             case IDLE -> {
                 targetVelocityRPS = 0.0;
-                hopperSpeed = 0.0;
+                fuelInjectorSpeed = 0.0;
             }
             case SPEEDING_UP -> {
                 targetVelocityRPS =
                     useRealDist
                         ? getRPS()
                         : (elasticMotorController.shootSpeed.get() * 100);
-                hopperSpeed = 0.0;
+                fuelInjectorSpeed = 0.0;
             }
             case SHOOTING -> {
                 targetVelocityRPS =
                     useRealDist
                         ? getRPS()
                         : (elasticMotorController.shootSpeed.get() * 100);
-                hopperSpeed = Shooter.hopperSpeed;
+                fuelInjectorSpeed = Shooter.fuelInjectorSpeed;
             }
             case OUTTAKE -> {
                 targetVelocityRPS = -10.0;
-                hopperSpeed = -0.5;
+                fuelInjectorSpeed = -0.5;
             }
             case EJECT -> {
                 targetVelocityRPS = 5.0;
@@ -171,7 +171,7 @@ public class ShooterHopper extends StormSubsystem {
             case BAD -> {}
             case DIAGNOSTIC -> {
                 targetVelocityRPS = 0;
-                hopperSpeed = 0;
+                fuelInjectorSpeed = 0;
             }
         }
     }
@@ -201,7 +201,7 @@ public class ShooterHopper extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        hopperNeo.logMotorData();
+        fuelInjector.logMotorData();
         leaderMotor.logMotorData();
         followerMotor.logMotorData();
 
@@ -213,10 +213,10 @@ public class ShooterHopper extends StormSubsystem {
         shooterStateMachine();
         if (state == ShooterState.DIAGNOSTIC) {
             leaderMotor.setControl(velocityVoltage.withVelocity(100 * elasticMotorController.shootSpeed.get()));
-            hopperNeo.set(elasticMotorController.hopperSpeed.get());
+            fuelInjector.set(elasticMotorController.fuelInjectorSpeed.get());
         } else {
             leaderMotor.setControl(velocityVoltage.withVelocity(targetVelocityRPS));
-            hopperNeo.set(hopperSpeed);
+            fuelInjector.set(fuelInjectorSpeed);
         }
 
         if (pid.isDirty()) {

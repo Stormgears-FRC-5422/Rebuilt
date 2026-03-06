@@ -224,14 +224,14 @@
             }
           },
           {
-            "title": "hopper speed diagnostic",
+            "title": "fuel injector speed diagnostic",
             "x": 768.0,
             "y": 384.0,
             "width": 384.0,
             "height": 128.0,
             "type": "Number Slider",
             "properties": {
-              "topic": "/Elastic/Motor tester with elastic/hopper speed diagnostic",
+              "topic": "/Elastic/Motor tester with elastic/fuel injector speed diagnostic",
               "period": 0.06,
               "data_type": "double",
               "min_value": -1.0,

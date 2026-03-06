@@ -136,7 +136,7 @@ public class Robot extends LoggedRobot {
     public void disabledInit() {
         console("DisabledInit");
         state.setPeriod(StatePeriod.DISABLED);
-        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(200);
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(Constants.Limelights.throttleIdle);
     }
 
     @Override
@@ -180,7 +180,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void autonomousInit() {
-        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(Constants.Limelights.throttleActive);
         console("AutoInit");
         state.setPeriod(StatePeriod.AUTONOMOUS);
         if (robotContainer != null) {
@@ -203,7 +203,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void teleopInit() {
-        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(0);
+        NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(Constants.Limelights.throttleActive);
         console("TeleopInit");
         state.setPeriod(StatePeriod.TELEOP);
     }
