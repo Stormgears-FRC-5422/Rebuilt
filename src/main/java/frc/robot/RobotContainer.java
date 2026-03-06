@@ -169,7 +169,8 @@ public class RobotContainer {
                 .onTrue(new IntakeHome(intake));
 
             intake.setDefaultCommand(new IntakeManual(intake, joystick2));
-
+            new Trigger(() -> joystick.intakeMoved()).whileTrue(new IntakeManual(intake, joystick));
+            
             new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
             new Trigger(() -> joystick2.intakeHome())
