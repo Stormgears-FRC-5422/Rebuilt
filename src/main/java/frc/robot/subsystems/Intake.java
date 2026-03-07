@@ -224,6 +224,10 @@ public class Intake extends StormSubsystem {
         Logger.recordOutput("Intake/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
         Logger.recordOutput("Intake/StatorCurrent", statorCurrentSignal.getValueAsDouble());
         Logger.recordOutput("Intake/Voltage", motorVoltageSignal.getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopReference", updownIntakeMotor.getClosedLoopReference().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopError", updownIntakeMotor.getClosedLoopError().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopOutput", updownIntakeMotor.getClosedLoopOutput().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopReferenceSlope", updownIntakeMotor.getClosedLoopReferenceSlope().getValueAsDouble());
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
     }
 
