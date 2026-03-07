@@ -78,6 +78,9 @@ public class Intake extends StormSubsystem {
     private double currentPosition;
     private double updownVolts;
 
+    private int stallFrameCount = 0;
+    private static final int STALL_DEBOUNCE_FRAMES = 5;
+
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
     public double rollerOutput;
@@ -231,6 +234,7 @@ public class Intake extends StormSubsystem {
 
             case HOMING:
                 console("***** HOMING state *****", 1);
+                stallFrameCount = 0;
                 enableSoftLimits(false);
                 break;
 
@@ -293,7 +297,12 @@ public class Intake extends StormSubsystem {
 
     public boolean isAtHome() {
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
-            return statorCurrentSignal.getValueAsDouble() > frc.robot.Constants.Intake.stallCurrentLimit;
+            if (statorCurrentSignal.getValueAsDouble() > frc.robot.Constants.Intake.stallCurrentLimit) {
+                stallFrameCount++;
+            } else {
+                stallFrameCount = 0;
+            }
+            return stallFrameCount >= STALL_DEBOUNCE_FRAMES;
         } else {
             console("isAtHome current position: " + currentPosition);
             return true;
@@ -313,6 +322,7 @@ public class Intake extends StormSubsystem {
     public void declareHome() {
         hasBeenHomed = true;
         updownIntakeMotor.getConfigurator().setPosition(0.0);
+        currentPosition = 0.0;
         enableSoftLimits(true);
     }
 
