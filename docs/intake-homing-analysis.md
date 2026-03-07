@@ -10,36 +10,23 @@ After adding springs to the mechanical intake system, the homing sequence produc
 
 Two issues compound to produce the 2.5° error:
 
-### Issue 1: CAN Bus Timing Race in `declareHome()`
+### Issue 1: Stale Motor Control State During Home→Hold Transition
 
-**The code sequence in `declareHome()` + `holdCurrentPosition(0.0)`:**
+**The code sequence in `IntakeHome.end()` → `declareHome()` + `holdCurrentPosition(0.0)`:**
 ```java
-// declareHome() — Intake.java:324
-updownIntakeMotor.getConfigurator().setPosition(0.0);   // ← fire-and-forget, no timeout
-// ...
+// declareHome() — Intake.java
+updownIntakeMotor.getConfigurator().setPosition(0.0, 0.250);  // blocking — encoder IS zeroed
 // holdCurrentPosition(0.0) — called immediately after
 setAngleDegrees(0.0);  // → updownIntakeMotor.setControl(mmRequest.withPosition(0))
 ```
 
-**The problem:** `setPosition(0.0)` without a timeout parameter is **asynchronous** — it sends the CAN message and returns immediately without waiting for device acknowledgment. The subsequent `setControl(MotionMagic to 0°)` can arrive at the TalonFX **before** the position zero has been processed.
+**API semantics (corrected):**
+- `setPosition(0.0)` is **blocking by default** — the no-timeout overload internally calls `setPosition(newValue, 0.100)`, waiting up to 100ms for device acknowledgment. The encoder zero IS confirmed before returning.
+- `setControl(...)` is **non-blocking** — it submits a control request to the TalonFX and returns immediately. CTRE describes control requests as transmitted at an update frequency; `UpdateFreqHz = 0` makes them "synchronously one-shot" (send once now), not "block until device-side completion."
 
-When this happens, two things go wrong:
+**The problem:** The motor transitions directly from VoltageOut(-2.0V) (homing) to MotionMagic(0°) without clearing the TalonFX's internal control state. When MotionMagic activates on the TalonFX, it computes its first S-curve profile using whatever velocity/state the controller has internally. After being stalled at -2.0V against a hard stop and then having the position register jump from ~-17° to 0° via `setPosition`, the TalonFX's internal velocity estimator may interpret the position discontinuity as real motion, producing a phantom positive velocity. MotionMagic then generates a trajectory that initially drives in the **positive direction** (away from home) to follow this phantom velocity before correcting.
 
-1. **Wrong-direction kick:** The TalonFX computes the MotionMagic profile using the **pre-zero position** (~-17° raw), generating a trajectory from -17° to 0° — which is in the **positive direction** (away from home). The motor applies +0.77V in the first frame, actively pushing the arm away from home.
-
-2. **Corrupted encoder reference:** When `setPosition(0.0)` finally arrives at the TalonFX, the arm has already moved away from the hard stop. The TalonFX sets 0° = the arm's **current position** (not the hard stop). This means the hard stop ends up at roughly -0.5° to -1° on the encoder, and **every subsequent position command is offset** from reality. This is the more serious consequence — the entire position reference frame is wrong.
-
-**Supporting evidence:**
-
-1. **CTRE API design:** `setPosition()` accepts an optional timeout parameter (`setPosition(0.0, timeoutSeconds)`). Without it, the call is non-blocking. With a timeout, it blocks until the device confirms. ([CTRE API Overview](https://v6.docs.ctr-electronics.com/en/stable/docs/api-reference/api-usage/api-overview.html))
-
-2. **Community reports:** Multiple FRC teams on Chief Delphi reported `setPosition` not taking effect immediately — one solved it by adding a 1.0s timeout, another by spawning a thread with a 2.5s delay. ([Chief Delphi thread](https://www.chiefdelphi.com/t/setposition-not-working/463158))
-
-3. **Best practice already in codebase:** `ModuleIOTalonFX.java:118` uses the blocking pattern with retry:
-   ```java
-   tryUntilOk(5, () -> driveTalon.setPosition(0.0, 0.25));
-   ```
-   The Intake's `declareHome()` did not follow this pattern.
+**At 824.829:** The motor applies **+0.77V** — driving the arm **away** from home. This is consistent with MotionMagic starting from corrupted internal velocity state rather than from rest.
 
 ### Issue 2: Reverse Soft Limit at 1° Blocks Recovery
 
@@ -69,7 +56,7 @@ Motor is stalled with high current, applying ~-0.5V (reduced from -2.0V by stato
 824.869 | Encoder = 2.637° | Voltage = -0.41V                 <- finally reverses
 ```
 
-**At 824.829:** The motor applies **+0.77V** — driving the arm **away** from home. This is consistent with MotionMagic computing a profile from the pre-zero position (~-17°) to 0° in the positive direction, because `setPosition(0.0)` hasn't been processed by the TalonFX yet.
+**At 824.829:** The motor applies **+0.77V** — driving the arm **away** from home. This is consistent with MotionMagic computing a profile from stale internal state (phantom velocity from the position reset), because `setControl` is non-blocking and inherits whatever velocity/state the TalonFX had from the -2.0V homing drive.
 
 **At 824.869:** The motor reverses to -0.41V, but the arm has already reached 2.6°.
 
@@ -102,25 +89,25 @@ For context, these commits addressed related but different aspects:
 
 2. **`fb5e293`** — Explicit `holdCurrentPosition(0.0)` target, tightened tolerance to 0.5°, added `timeBeforeHome = 0.2` property (not yet wired up).
 
-3. **`1dbb694`** — Added `setAngleDegrees()` inside `holdCurrentPosition()` to immediately issue MotionMagic in the same frame. This was the right instinct — eliminate the one-frame gap — but the CAN timing race means the position zero still may not have arrived at the TalonFX when this command is processed.
+3. **`1dbb694`** — Added `setAngleDegrees()` inside `holdCurrentPosition()` to immediately issue MotionMagic in the same frame. This was the right instinct — eliminate the one-frame gap — but the stale control state means MotionMagic still starts from a corrupted velocity estimate.
 
 ---
 
 ## Fixes Applied
 
-### Fix 1: Add timeout to `setPosition()` in `declareHome()`
+### Fix 1: Add timeout to `setPosition()` in `declareHome()` (commit `5052ae7`)
 
 **File:** `src/main/java/frc/robot/subsystems/Intake.java`
 
 ```java
-// Before (fire-and-forget):
+// Before (100ms default timeout):
 updownIntakeMotor.getConfigurator().setPosition(0.0);
 
-// After (blocks until device confirms, up to 250ms):
+// After (explicit 250ms timeout for safety margin):
 updownIntakeMotor.getConfigurator().setPosition(0.0, 0.250);
 ```
 
-This ensures the encoder zero is confirmed on the TalonFX before any subsequent MotionMagic command can be issued.
+Note: the original call was already blocking by default (100ms), so this change increases the timeout margin but does not fix the root cause.
 
 ### Fix 2: Change reverse soft limit from 1° to 0°
 
@@ -145,6 +132,21 @@ Moved `enableSoftLimits(true)` out of `declareHome()` and into the state machine
 - **Entering HOLD / PID_MOTION / SIMPLE_MOTION** → `enableSoftLimits(true)` (added)
 
 This ensures soft limits are re-enabled whenever the intake transitions to any operational state, not just after homing. The `declareHome()` method no longer touches soft limits.
+
+### Fix 4: NeutralOut as default motor state (Mar 7)
+
+**File:** `Intake.java`
+
+**Root cause fix.** The motor now starts in `NeutralOut` and stays there until explicitly commanded. This ensures MotionMagic never inherits stale velocity/control state from a previous mode.
+
+Changes:
+- Added `IDLE` to `MotionProfile` enum and a `setIdle()` helper that applies `NeutralOut`
+- **Constructor:** calls `setIdle()` — motor starts in NeutralOut, not relying on `set(0)`
+- **UNKNOWN state:** calls `setIdle()` — explicit NeutralOut when state is unknown
+- **`declareHome()`:** calls `setIdle()` after `setPosition(0.0, 0.250)` — creates a clean break from the -2.0V homing drive before `holdCurrentPosition` transitions to MotionMagic
+- **`periodic()` default case:** calls `setIdle()` instead of `set(0)` for consistency
+
+The critical change is in `declareHome()`: after zeroing the encoder, the motor is explicitly set to NeutralOut. When `holdCurrentPosition(0.0)` then issues the MotionMagic command, the TalonFX transitions from NeutralOut (zero velocity, no active control) to MotionMagic — eliminating the phantom velocity that caused the wrong-direction kick.
 
 ---
 

@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -41,6 +42,7 @@ public class Intake extends StormSubsystem {
     }
 
     public enum MotionProfile {
+        IDLE,
         AUTO,
         MANUAL,
     }
@@ -68,6 +70,7 @@ public class Intake extends StormSubsystem {
     public final StormTalon updownIntakeMotor;
     private final StormSparkMax rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
+    private final NeutralOut neutralRequest = new NeutralOut();
     private final TalonFXConfiguration config = new TalonFXConfiguration();
     private final PidConfig pid;
 
@@ -150,6 +153,7 @@ public class Intake extends StormSubsystem {
         targetPosition = 0;
         updownVolts = 0;
 
+        setIdle();
         setState(IntakeState.UNKNOWN);
     }
 
@@ -209,7 +213,7 @@ public class Intake extends StormSubsystem {
                 break;
 
             default:
-                updownIntakeMotor.set(0);
+                setIdle();
         }
 
         // Logging (all values from cached signals — no additional CAN reads)
@@ -231,6 +235,7 @@ public class Intake extends StormSubsystem {
         switch (state) {
             case UNKNOWN:
                 console("***** UNKNOWN state *****", 1);
+                setIdle();
                 break;
 
             case HOMING:
@@ -261,6 +266,10 @@ public class Intake extends StormSubsystem {
     // Converts degrees to mechanism rotations for MotionMagic position command
     private void setAngleDegrees(double degrees) {
         updownIntakeMotor.setControl(mmRequest.withPosition(degrees / 360.0));
+    }
+
+    private void setIdle() {
+        updownIntakeMotor.setControl(neutralRequest);
     }
 
     private void home() {
@@ -326,6 +335,8 @@ public class Intake extends StormSubsystem {
     public void declareHome() {
         hasBeenHomed = true;
         updownIntakeMotor.getConfigurator().setPosition(0.0, 0.250);
+        updownIntakeMotor.set(0);
+        setIdle();
         currentPosition = 0.0;
         console("HOMED!!!!",1);
     }
@@ -373,6 +384,10 @@ public class Intake extends StormSubsystem {
     }
 
     public void setMotionProfile(MotionProfile profile) {
+        if (profile == MotionProfile.IDLE) {
+            setIdle();
+            return;
+        }
         MotionMagicConfigs mm = new MotionMagicConfigs();
         if (profile == MotionProfile.MANUAL) {
             mm.MotionMagicCruiseVelocity = frc.robot.Constants.Intake.manualCruiseVelocity;
