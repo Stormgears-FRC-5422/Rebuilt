@@ -356,7 +356,7 @@ public class AutoCommandFactory {
             Commands.race(
                 Commands.sequence(
                     new IntakeHome(intake),
-                    new WaitCommand(1.0),
+                    new WaitCommand(0.2),
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
                     new RunRoller(intake, true)
                 ),

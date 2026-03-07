@@ -39,6 +39,7 @@ public class Intake extends StormSubsystem {
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
+        IDLE
     }
 
     public enum MotionProfile {
@@ -241,6 +242,8 @@ public class Intake extends StormSubsystem {
                 console("***** UNKNOWN state *****", 1);
                 setIdle();
                 break;
+            case IDLE:
+                console("IDLE", 1);
 
             case HOMING:
                 console("***** HOMING state *****", 1);
@@ -338,10 +341,10 @@ public class Intake extends StormSubsystem {
 
     public void declareHome() {
         hasBeenHomed = true;
-        updownIntakeMotor.getConfigurator().setPosition(0.0, 0.250);
+        updownIntakeMotor.getConfigurator().setPosition(-0.00444, 0.250);
         updownIntakeMotor.set(0);
         setIdle();
-        currentPosition = 0.0;
+        currentPosition = -1.6;
         console("HOMED!!!!",1);
     }
 
