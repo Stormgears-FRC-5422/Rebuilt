@@ -360,11 +360,13 @@ public class Intake extends StormSubsystem {
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
         setState(IntakeState.HOLD);
+        setAngleDegrees(currentPosition);
     }
 
     public void holdCurrentPosition(double position) {
         setTargetPosition(position);
         setState(IntakeState.HOLD);
+        setAngleDegrees(position);
     }
 
     public void setMotionProfile(MotionProfile profile) {
