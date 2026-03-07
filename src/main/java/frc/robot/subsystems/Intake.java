@@ -79,7 +79,8 @@ public class Intake extends StormSubsystem {
     private double updownVolts;
 
     private int stallFrameCount = 0;
-    private static final int STALL_DEBOUNCE_FRAMES = 5;
+    private static final int STALL_DEBOUNCE_FRAMES =
+        (int) Math.ceil(frc.robot.Constants.Intake.timeBeforeHome / 0.020);
 
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
@@ -240,14 +241,17 @@ public class Intake extends StormSubsystem {
 
             case HOLD:
                 console("***** HOLD state *****", 1);
+                enableSoftLimits(true);
                 break;
 
             case PID_MOTION:
                 console("***** PID_MOTION state *****", 1);
+                enableSoftLimits(true);
                 break;
 
             case SIMPLE_MOTION:
                 console("***** SIMPLE_MOTION state *****", 1);
+                enableSoftLimits(true);
                 break;
         }
     }
@@ -321,10 +325,9 @@ public class Intake extends StormSubsystem {
 
     public void declareHome() {
         hasBeenHomed = true;
-        updownIntakeMotor.getConfigurator().setPosition(0.0);
+        updownIntakeMotor.getConfigurator().setPosition(0.0, 0.250);
         currentPosition = 0.0;
         console("HOMED!!!!",1);
-        enableSoftLimits(true);
     }
 
     public void setTargetPosition(IntakePosition position) {
