@@ -323,6 +323,7 @@ public class Intake extends StormSubsystem {
         hasBeenHomed = true;
         updownIntakeMotor.getConfigurator().setPosition(0.0);
         currentPosition = 0.0;
+        console("HOMED!!!!",1);
         enableSoftLimits(true);
     }
 
@@ -358,6 +359,11 @@ public class Intake extends StormSubsystem {
     }
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
+        setState(IntakeState.HOLD);
+    }
+
+    public void holdCurrentPosition(double position) {
+        setTargetPosition(position);
         setState(IntakeState.HOLD);
     }
 
