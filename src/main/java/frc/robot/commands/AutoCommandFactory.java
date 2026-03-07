@@ -356,11 +356,13 @@ public class AutoCommandFactory {
             Commands.race(
                 Commands.sequence(
                     new IntakeHome(intake),
-                    new WaitCommand(0.2),
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
                     new RunRoller(intake, true)
                 ),
-                choreoFactory.trajectoryCmd(firstTrajectory)
+                Commands.sequence(
+                    new WaitCommand(0.2),
+                    choreoFactory.trajectoryCmd(firstTrajectory)
+                )
             )
         );
         commands.add(stopDrive());
