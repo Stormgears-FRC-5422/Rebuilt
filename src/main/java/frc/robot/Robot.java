@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
+import frc.robot.util.GameDataTracker;
 import frc.utils.configfile.OptionsRegistry;
 
 public class Robot extends LoggedRobot {
@@ -204,6 +205,7 @@ public class Robot extends LoggedRobot {
     @Override
     public void teleopInit() {
         NetworkTableInstance.getDefault().getTable(Constants.Limelights.limelightFourID).getEntry("throttle_set").setNumber(Constants.Vision.throttleActive);
+        GameDataTracker.initialize();
         console("TeleopInit");
         state.setPeriod(StatePeriod.TELEOP);
     }

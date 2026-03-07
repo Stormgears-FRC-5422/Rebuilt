@@ -5,12 +5,11 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.util.GameDataTracker;
+import frc.robot.util.GameDataTracker.ShiftInfo;
 import frc.utils.pid.DashboardTuner;
 
 /**
  * Publishes game data state to Elastic dashboard under "Elastic/Co-Pilot Dashboard/".
- * Tiles: Match Time (number), Data Received (bool), We Won Auto (bool),
- *        Override Active (bool), Auto Winner (text).
  */
 public class GameDataDashboard extends DashboardTuner {
 
@@ -19,6 +18,9 @@ public class GameDataDashboard extends DashboardTuner {
     private final BooleanPublisher weWonAutoPub;
     private final BooleanPublisher overrideActivePub;
     private final StringPublisher autoWinnerPub;
+    private final BooleanPublisher ourShiftPub;
+    private final StringPublisher currentShiftPub;
+    private final DoublePublisher shiftRemainingPub;
 
     public GameDataDashboard() {
         super("Co-Pilot Dashboard");
@@ -27,6 +29,9 @@ public class GameDataDashboard extends DashboardTuner {
         weWonAutoPub      = table.getBooleanTopic("We Won Auto").publish();
         overrideActivePub = table.getBooleanTopic("Override Active").publish();
         autoWinnerPub     = table.getStringTopic("Auto Winner").publish();
+        ourShiftPub       = table.getBooleanTopic("Our Shift").publish();
+        currentShiftPub   = table.getStringTopic("Current Shift").publish();
+        shiftRemainingPub = table.getDoubleTopic("Shift Remaining").publish();
     }
 
     public void periodic() {
@@ -42,5 +47,10 @@ public class GameDataDashboard extends DashboardTuner {
             received ? (won ? "WE WON AUTO" : "WE LOST AUTO")
             : override ? (won ? "OVERRIDE: WON" : "OVERRIDE: LOST")
             : "NO DATA");
+
+        ShiftInfo shift = GameDataTracker.getShiftInfo();
+        ourShiftPub.set(shift.ourShift());
+        currentShiftPub.set(shift.currentShift().name());
+        shiftRemainingPub.set(shift.remainingTime());
     }
 }
