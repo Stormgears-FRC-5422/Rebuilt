@@ -1,5 +1,6 @@
 package frc.robot.commands.intake;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakeState;
 import frc.utils.StormCommand;
@@ -11,6 +12,7 @@ public class SimpleRumble extends StormCommand {
     private double minAngle;
     private double maxAngle;
     private boolean goingUp;
+    private edu.wpi.first.wpilibj.Timer timer = new Timer();
 
     public SimpleRumble(Intake intake) {
         this.intake = intake;
@@ -19,6 +21,8 @@ public class SimpleRumble extends StormCommand {
 
     @Override
     public void initialize() {
+        timer.reset();
+        timer.start();
         super.initialize();
         if (skip) return;
         skip = !intake.hasBeenHomed;
@@ -36,9 +40,10 @@ public class SimpleRumble extends StormCommand {
     public void execute() {
         super.execute();
         if (skip) return;
-        if (intake.isAtTarget()) {
+        if (intake.isAtTarget() || timer.hasElapsed(0.4)) {
             goingUp = !goingUp;
             intake.setTargetPosition(goingUp ? maxAngle : minAngle);
+            timer.restart();
         }
     }
 

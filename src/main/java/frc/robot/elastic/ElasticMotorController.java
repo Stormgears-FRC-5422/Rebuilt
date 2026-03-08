@@ -23,8 +23,9 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> hopperIsEmpty;
   public final Option<Boolean> alignNarrow;
   // public final Option<Double> motor2;
-  // public final Option<String> lightState; 
+  // public final Option<String> lightState;
   public final Option<Boolean> intakeGoToDegrees;
+  public final Option<Boolean> cruiseIntake;
 
   // Climber controls
   public final Option<Boolean> homeClimber;
@@ -35,6 +36,7 @@ public class ElasticMotorController extends OptionsController {
   public ElasticMotorController() {
     super("Motor tester with elastic");
 
+    cruiseIntake = createBooleanOption("INTAKE CRUISE (SAFE)", false);
     homeButton = createBooleanOption("HOME THE INTAKE", false);
     goToIdle = createBooleanOption("INTAKE IDLE", false);
     rumble = createBooleanOption("RUMBLE", false);

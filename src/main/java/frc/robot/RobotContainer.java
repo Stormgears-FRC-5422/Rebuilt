@@ -165,6 +165,11 @@ public class RobotContainer {
                 .whileTrue(new AlignNarrow(drivetrain, joystick));
         }
 
+        if (Toggles.useDrive) {
+            new Trigger(() -> elasticMotorController.cruiseIntake.get())
+                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
+        }
+
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));

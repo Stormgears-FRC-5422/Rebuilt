@@ -11,7 +11,7 @@ public class IntakeManual extends StormCommand {
     private final Intake intake;
     private final RebuiltJoystick joystick;
 
-    enum Direction { HOLD, UP, DOWN }
+    enum Direction {HOLD, UP, DOWN}
 
     private Direction previousDirection = Direction.HOLD;
 
@@ -29,9 +29,10 @@ public class IntakeManual extends StormCommand {
         intake.setMotionProfile(Intake.MotionProfile.MANUAL);
         if (intake.hasBeenHomed) {
             intake.setTargetPosition(intake.getCurrentPosition());
-            intake.setState(IntakeState.HOLD);
         }
+        intake.setState(IntakeState.HOLD);
     }
+
 
     @Override
     public void execute() {

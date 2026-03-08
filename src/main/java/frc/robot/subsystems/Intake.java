@@ -96,6 +96,7 @@ public class Intake extends StormSubsystem {
     private final StatusSignal<Current> statorCurrentSignal;
     private final StatusSignal<Voltage> motorVoltageSignal;
 
+
     // ===== Constructor =====
 
     @SuppressWarnings("resource")
@@ -182,9 +183,9 @@ public class Intake extends StormSubsystem {
 
         // Roller control
         rollerOutput = 0.0;
-        if (outtakeEnabled) {
+        if (outtakeEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
             rollerOutput = frc.robot.Constants.Intake.rollerOuttakeSpeed;
-        } else if (rollerEnabled) {
+        } else if (rollerEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
             rollerOutput = frc.robot.Constants.Intake.rollerIntakeSpeed;
         }
         rollerIntakeMotor.set(rollerOutput);
