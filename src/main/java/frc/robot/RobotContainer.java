@@ -166,7 +166,7 @@ public class RobotContainer {
         }
 
         if (Toggles.useDrive) {
-            new Trigger(() -> elasticMotorController.cruiseIntake.get())
+            new Trigger(() -> joystick2.safe())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
         }
 

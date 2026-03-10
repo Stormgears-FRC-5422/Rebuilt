@@ -79,4 +79,5 @@ public abstract class RebuiltJoystick {
 
     // --- Controller rumble ---
     public void setRumble(double strength) {}
+    public boolean safe() {return false;}
 }

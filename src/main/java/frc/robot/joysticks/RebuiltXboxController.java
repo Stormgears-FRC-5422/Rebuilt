@@ -31,6 +31,11 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean narrow() {
         return xboxController.getYButtonIsHeld();
     }
+
+    @Override
+    public boolean safe() {
+        return xboxController.getYButtonIsPressed();
+    }
     @Override
     public boolean autoShoot() {
         return xboxController.getAButtonIsHeld();

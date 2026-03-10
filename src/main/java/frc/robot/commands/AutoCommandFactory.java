@@ -361,7 +361,7 @@ public class AutoCommandFactory {
         );
         commands.add(stopDrive());
         commands.add(Commands.parallel(
-            new TimedShootCommand(shooterHopper, true, 8.0),
+            new TimedShootCommand(shooterHopper, true, 20.0),
             new FaceTowardHub(drivetrainBase),
             new DynamicRumble(intake).andThen(new DynamicRumble(intake))
         ));
