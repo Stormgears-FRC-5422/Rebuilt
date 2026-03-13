@@ -11,7 +11,7 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> tester;
   public final Option<Boolean> shootButton;
   public final Option<Double> shootSpeed;
-  public final Option<Double> hopperSpeed;
+  public final Option<Double> fuelInjectorSpeed;
   public final Option<Boolean> homeIntake;
   public final Option<Boolean> visionCmd;
   public final Option<Boolean> outtakeIntake;
@@ -23,8 +23,9 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> hopperIsEmpty;
   public final Option<Boolean> alignNarrow;
   // public final Option<Double> motor2;
-  // public final Option<String> lightState; 
+  // public final Option<String> lightState;
   public final Option<Boolean> intakeGoToDegrees;
+  public final Option<Boolean> cruiseIntake;
 
   // Climber controls
   public final Option<Boolean> homeClimber;
@@ -35,6 +36,7 @@ public class ElasticMotorController extends OptionsController {
   public ElasticMotorController() {
     super("Motor tester with elastic");
 
+    cruiseIntake = createBooleanOption("INTAKE CRUISE (SAFE)", false);
     homeButton = createBooleanOption("HOME THE INTAKE", false);
     goToIdle = createBooleanOption("INTAKE IDLE", false);
     rumble = createBooleanOption("RUMBLE", false);
@@ -43,7 +45,7 @@ public class ElasticMotorController extends OptionsController {
     tester = createBooleanOption("wtv", false);
     shootButton = createBooleanOption("shoot", false);
     shootSpeed = createNumberOption("shooter speed diagnostic", frc.robot.Constants.Shooter.testingTargetRPS / 100.0);
-    hopperSpeed = createNumberOption("hopper speed diagnostic", 0.0);
+    fuelInjectorSpeed = createNumberOption("fuel injector speed diagnostic", 0.0);
     homeIntake = createBooleanOption("homeintake", false);
     visionCmd = createBooleanOption("vision cmd", false);
     outtakeIntake = createBooleanOption("outtake intake", false);

@@ -65,6 +65,7 @@ public abstract class RebuiltJoystick {
     public boolean manualShoot(){return false;}
     public boolean intakeUp(){return false;}
     public boolean intakeDown(){return false;}
+    public boolean intakeMoved(){return false;}
     public boolean intakeHome(){return false;}
 
     public boolean climbHome()       { return false; }
@@ -78,4 +79,5 @@ public abstract class RebuiltJoystick {
 
     // --- Controller rumble ---
     public void setRumble(double strength) {}
+    public boolean safe() {return false;}
 }

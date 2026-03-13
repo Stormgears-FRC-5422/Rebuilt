@@ -11,7 +11,9 @@ public class IntakeManual extends StormCommand {
     private final Intake intake;
     private final RebuiltJoystick joystick;
 
-    enum Direction { HOLD, UP, DOWN }
+    enum Direction {HOLD, UP, DOWN}
+
+    private Direction previousDirection = Direction.HOLD;
 
     public IntakeManual(Intake intake, RebuiltJoystick joystick) {
         this.intake = intake;
@@ -22,34 +24,37 @@ public class IntakeManual extends StormCommand {
     @Override
     public void initialize() {
         super.initialize();
+        previousDirection = Direction.HOLD;
         if (skip) return;
         intake.setMotionProfile(Intake.MotionProfile.MANUAL);
         if (intake.hasBeenHomed) {
             intake.setTargetPosition(intake.getCurrentPosition());
-            intake.setState(IntakeState.HOLD);
         }
+        intake.setState(IntakeState.HOLD);
     }
+
 
     @Override
     public void execute() {
         super.execute();
         if (skip || !intake.hasBeenHomed) return;
 
-        double currentPosition = intake.getCurrentPosition();
-
         Direction direction = joystick.intakeUp() ? Direction.UP
             : joystick.intakeDown() ? Direction.DOWN
             : Direction.HOLD;
 
-        if (direction == Direction.UP) {
-            intake.setTargetPosition(Constants.Intake.topIntakeDegrees);
-            intake.setState(IntakeState.PID_MOTION);
-        } else if (direction == Direction.DOWN) {
-            intake.setTargetPosition(Constants.Intake.intakingAngle);
-            intake.setState(IntakeState.PID_MOTION);
-        } else {
-            intake.setTargetPosition(currentPosition);
-            intake.setState(IntakeState.HOLD);
+        if (direction != previousDirection) {
+            if (direction == Direction.UP) {
+                intake.setTargetPosition(Constants.Intake.topIntakeDegrees);
+                intake.setState(IntakeState.PID_MOTION);
+            } else if (direction == Direction.DOWN) {
+                intake.setTargetPosition(Constants.Intake.intakingAngle);
+                intake.setState(IntakeState.PID_MOTION);
+            } else {
+                intake.setTargetPosition(intake.getCurrentPosition());
+                intake.setState(IntakeState.HOLD);
+            }
+            previousDirection = direction;
         }
     }
 

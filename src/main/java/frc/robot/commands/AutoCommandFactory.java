@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.commands.intake.*;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -18,10 +19,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.Auto;
-import frc.robot.commands.intake.DynamicRumble;
-import frc.robot.commands.intake.IntakeGoToPosition;
-import frc.robot.commands.intake.IntakeHome;
-import frc.robot.commands.intake.RunRoller;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakePosition;
@@ -353,21 +350,20 @@ public class AutoCommandFactory {
 
         // First cycle
         commands.add(
+            new IntakeHome(intake)
+        );
+        commands.add(
             Commands.race(
-                Commands.sequence(
-                    new IntakeHome(intake),
-                    new WaitCommand(1.0),
-                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
-                    new RunRoller(intake, true)
-                ),
+                new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                new RunRoller(intake, true),
                 choreoFactory.trajectoryCmd(firstTrajectory)
             )
         );
         commands.add(stopDrive());
         commands.add(Commands.parallel(
-            new TimedShootCommand(shooterHopper, true, 8.0),
+            new TimedShootCommand(shooterHopper, true, 20.0),
             new FaceTowardHub(drivetrainBase),
-            new DynamicRumble(intake)
+            new DynamicRumble(intake).andThen(new DynamicRumble(intake))
         ));
 
         // Second cycle (if selected)

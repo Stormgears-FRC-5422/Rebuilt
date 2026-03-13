@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -38,9 +39,11 @@ public class Intake extends StormSubsystem {
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
+        IDLE
     }
 
     public enum MotionProfile {
+        IDLE,
         AUTO,
         MANUAL,
     }
@@ -68,6 +71,7 @@ public class Intake extends StormSubsystem {
     public final StormTalon updownIntakeMotor;
     private final StormSparkMax rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
+    private final NeutralOut neutralRequest = new NeutralOut();
     private final TalonFXConfiguration config = new TalonFXConfiguration();
     private final PidConfig pid;
 
@@ -78,6 +82,10 @@ public class Intake extends StormSubsystem {
     private double currentPosition;
     private double updownVolts;
 
+    private int stallFrameCount = 0;
+    private static final int STALL_DEBOUNCE_FRAMES =
+        (int) Math.ceil(frc.robot.Constants.Intake.timeBeforeHome / 0.020);
+
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
     public double rollerOutput;
@@ -87,6 +95,7 @@ public class Intake extends StormSubsystem {
     private final StatusSignal<Current> supplyCurrentSignal;
     private final StatusSignal<Current> statorCurrentSignal;
     private final StatusSignal<Voltage> motorVoltageSignal;
+
 
     // ===== Constructor =====
 
@@ -146,6 +155,7 @@ public class Intake extends StormSubsystem {
         targetPosition = 0;
         updownVolts = 0;
 
+        setIdle();
         setState(IntakeState.UNKNOWN);
     }
 
@@ -173,9 +183,9 @@ public class Intake extends StormSubsystem {
 
         // Roller control
         rollerOutput = 0.0;
-        if (outtakeEnabled) {
+        if (outtakeEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
             rollerOutput = frc.robot.Constants.Intake.rollerOuttakeSpeed;
-        } else if (rollerEnabled) {
+        } else if (rollerEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
             rollerOutput = frc.robot.Constants.Intake.rollerIntakeSpeed;
         }
         rollerIntakeMotor.set(rollerOutput);
@@ -205,7 +215,7 @@ public class Intake extends StormSubsystem {
                 break;
 
             default:
-                updownIntakeMotor.set(0);
+                setIdle();
         }
 
         // Logging (all values from cached signals — no additional CAN reads)
@@ -216,6 +226,10 @@ public class Intake extends StormSubsystem {
         Logger.recordOutput("Intake/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
         Logger.recordOutput("Intake/StatorCurrent", statorCurrentSignal.getValueAsDouble());
         Logger.recordOutput("Intake/Voltage", motorVoltageSignal.getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopReference", updownIntakeMotor.getClosedLoopReference().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopError", updownIntakeMotor.getClosedLoopError().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopOutput", updownIntakeMotor.getClosedLoopOutput().getValueAsDouble());
+        Logger.recordOutput("Intake/ClosedLoopReferenceSlope", updownIntakeMotor.getClosedLoopReferenceSlope().getValueAsDouble());
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
     }
 
@@ -227,23 +241,30 @@ public class Intake extends StormSubsystem {
         switch (state) {
             case UNKNOWN:
                 console("***** UNKNOWN state *****", 1);
+                setIdle();
                 break;
+            case IDLE:
+                console("IDLE", 1);
 
             case HOMING:
                 console("***** HOMING state *****", 1);
+                stallFrameCount = 0;
                 enableSoftLimits(false);
                 break;
 
             case HOLD:
                 console("***** HOLD state *****", 1);
+                enableSoftLimits(true);
                 break;
 
             case PID_MOTION:
                 console("***** PID_MOTION state *****", 1);
+                enableSoftLimits(true);
                 break;
 
             case SIMPLE_MOTION:
                 console("***** SIMPLE_MOTION state *****", 1);
+                enableSoftLimits(true);
                 break;
         }
     }
@@ -253,6 +274,10 @@ public class Intake extends StormSubsystem {
     // Converts degrees to mechanism rotations for MotionMagic position command
     private void setAngleDegrees(double degrees) {
         updownIntakeMotor.setControl(mmRequest.withPosition(degrees / 360.0));
+    }
+
+    private void setIdle() {
+        updownIntakeMotor.setControl(neutralRequest);
     }
 
     private void home() {
@@ -293,7 +318,12 @@ public class Intake extends StormSubsystem {
 
     public boolean isAtHome() {
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
-            return statorCurrentSignal.getValueAsDouble() > frc.robot.Constants.Intake.stallCurrentLimit;
+            if (statorCurrentSignal.getValueAsDouble() > frc.robot.Constants.Intake.stallCurrentLimit) {
+                stallFrameCount++;
+            } else {
+                stallFrameCount = 0;
+            }
+            return stallFrameCount >= STALL_DEBOUNCE_FRAMES;
         } else {
             console("isAtHome current position: " + currentPosition);
             return true;
@@ -312,8 +342,11 @@ public class Intake extends StormSubsystem {
 
     public void declareHome() {
         hasBeenHomed = true;
-        updownIntakeMotor.getConfigurator().setPosition(0.0);
-        enableSoftLimits(true);
+        updownIntakeMotor.getConfigurator().setPosition(-0.00444, 0.250);
+        updownIntakeMotor.set(0);
+        setIdle();
+        currentPosition = -1.6;
+        console("HOMED!!!!",1);
     }
 
     public void setTargetPosition(IntakePosition position) {
@@ -349,9 +382,20 @@ public class Intake extends StormSubsystem {
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
         setState(IntakeState.HOLD);
+        setAngleDegrees(currentPosition);
+    }
+
+    public void holdCurrentPosition(double position) {
+        setTargetPosition(position);
+        setState(IntakeState.HOLD);
+        setAngleDegrees(position);
     }
 
     public void setMotionProfile(MotionProfile profile) {
+        if (profile == MotionProfile.IDLE) {
+            setIdle();
+            return;
+        }
         MotionMagicConfigs mm = new MotionMagicConfigs();
         if (profile == MotionProfile.MANUAL) {
             mm.MotionMagicCruiseVelocity = frc.robot.Constants.Intake.manualCruiseVelocity;

@@ -31,6 +31,11 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean narrow() {
         return xboxController.getYButtonIsHeld();
     }
+
+    @Override
+    public boolean safe() {
+        return xboxController.getYButtonIsPressed();
+    }
     @Override
     public boolean autoShoot() {
         return xboxController.getAButtonIsHeld();
@@ -60,7 +65,7 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
     @Override
     public boolean shootToAlliance() {
-        return false;
+        return xboxController.getBButtonIsHeld();
     }
 
     @Override
@@ -76,6 +81,10 @@ public class RebuiltXboxController extends RebuiltJoystick {
     @Override
     public boolean intakeDown() {
         return xboxController.getLeftJoystickY() < -frc.robot.Constants.ButtonBoard.intakeStickThreshold;
+    }
+    @Override
+    public boolean intakeMoved() {
+        return Math.abs(xboxController.getLeftJoystickY()) > frc.robot.Constants.ButtonBoard.intakeStickThreshold;
     }
 
     @Override
