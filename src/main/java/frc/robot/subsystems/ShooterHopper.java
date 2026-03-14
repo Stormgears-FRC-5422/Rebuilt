@@ -2,13 +2,12 @@ package frc.robot.subsystems;
 
 import java.util.Arrays;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -23,7 +22,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.elastic.ElasticMotorController;
@@ -49,6 +47,7 @@ public class ShooterHopper extends StormSubsystem {
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private double targetVelocityRPS;
+    private final SlewRateLimiter velocityRamp = new SlewRateLimiter(Shooter.shootSpinUpRate);
     private double fuelInjectorSpeed = 0.0;
     private final ElasticMotorController elasticMotorController;
     private ShooterState state;
@@ -58,9 +57,6 @@ public class ShooterHopper extends StormSubsystem {
     private boolean useRealDist = false;
 
     private boolean toHub = true;
-
-    // Cached CAN status signal — refreshed in a single batch each cycle
-    private final StatusSignal<AngularVelocity> rotorVelocitySignal;
 
 
     @SuppressWarnings("resource")
@@ -121,8 +117,6 @@ public class ShooterHopper extends StormSubsystem {
         }
 
         // Cache status signal for batched CAN reads
-        rotorVelocitySignal = leaderMotor.getRotorVelocity();
-
         configMotor();
     }
 
@@ -201,12 +195,9 @@ public class ShooterHopper extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        fuelInjector.logMotorData();
-        leaderMotor.logMotorData();
-        followerMotor.logMotorData();
-
-        // Refresh cached signal (non-blocking — reads from local cache)
-        BaseStatusSignal.refreshAll(rotorVelocitySignal);
+        fuelInjector.periodic();
+        leaderMotor.periodic();
+        followerMotor.periodic();
 
         useRealDist = elasticMotorController.usePose.get();
 
@@ -215,7 +206,7 @@ public class ShooterHopper extends StormSubsystem {
             leaderMotor.setControl(velocityVoltage.withVelocity(100 * elasticMotorController.shootSpeed.get()));
             fuelInjector.set(elasticMotorController.fuelInjectorSpeed.get());
         } else {
-            leaderMotor.setControl(velocityVoltage.withVelocity(targetVelocityRPS));
+            leaderMotor.setControl(velocityVoltage.withVelocity(velocityRamp.calculate(targetVelocityRPS)));
             fuelInjector.set(fuelInjectorSpeed);
         }
 
@@ -224,7 +215,7 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
-        Logger.recordOutput("shooter rps", rotorVelocitySignal.getValueAsDouble());
+        Logger.recordOutput("shooter rps", leaderMotor.getMotorVelocity());
     }
 
     public void setUseRealDist(boolean useRealDist) {
@@ -272,7 +263,7 @@ public class ShooterHopper extends StormSubsystem {
         leaderMotor.getConfigurator().apply(out);
     }
     public double getCurrentVelocityRPS() {
-        return rotorVelocitySignal.getValueAsDouble();
+        return leaderMotor.getMotorVelocity();
     }
 
     public double getTargetVelocityRPS() {
@@ -282,7 +273,7 @@ public class ShooterHopper extends StormSubsystem {
     public boolean isReadyToFeed() {
         double target = Math.abs(targetVelocityRPS);
         if (target < 1.0) return false;
-        double actual = Math.abs(rotorVelocitySignal.getValueAsDouble());
+        double actual = Math.abs(leaderMotor.getMotorVelocity());
         return actual >= target * Shooter.percentTargetReady;
     }
 }

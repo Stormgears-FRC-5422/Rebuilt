@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 
-import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
@@ -18,10 +17,6 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.PersistMode;
-import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
@@ -69,7 +64,7 @@ public class Intake extends StormSubsystem {
     // ===== Fields =====
 
     public final StormTalon updownIntakeMotor;
-    private final StormSparkMax rollerIntakeMotor;
+    private final StormTalon rollerIntakeMotor;
     private final MotionMagicVoltage mmRequest;
     private final NeutralOut neutralRequest = new NeutralOut();
     private final TalonFXConfiguration config = new TalonFXConfiguration();
@@ -102,11 +97,16 @@ public class Intake extends StormSubsystem {
     @SuppressWarnings("resource")
     public Intake() {
         updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor");
-        rollerIntakeMotor = new StormSparkMax(frc.robot.Constants.Intake.rollerMaxID, MotorType.kBrushless).withName("rollerIntakeMotor");
+        rollerIntakeMotor = new StormTalon(frc.robot.Constants.Intake.rollerID, new CANBus("")).withName("rollerIntakeMotor");
 
-        SparkMaxConfig rollerConfig = new SparkMaxConfig();
-        rollerConfig.smartCurrentLimit(frc.robot.Constants.Intake.rollerCurrentLimitAmps);
-        rollerIntakeMotor.configure(rollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        CurrentLimitsConfigs rollerCurrentLimits = new CurrentLimitsConfigs();
+        rollerCurrentLimits.StatorCurrentLimit = frc.robot.Constants.Intake.rollerStatorCurrentLimit;
+        rollerCurrentLimits.StatorCurrentLimitEnable = true;
+        rollerCurrentLimits.SupplyCurrentLimit = frc.robot.Constants.Intake.rollerSupplyCurrentLimit;
+        rollerCurrentLimits.SupplyCurrentLimitEnable = true;
+        rollerIntakeMotor.getConfigurator().apply(rollerCurrentLimits);
+        rollerIntakeMotor.setNeutralMode(
+            frc.robot.Constants.Intake.rollerCoastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake);
 
         mmRequest = new MotionMagicVoltage(0.0);
 
@@ -165,8 +165,8 @@ public class Intake extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        updownIntakeMotor.logMotorData();
-        rollerIntakeMotor.logMotorData();
+        updownIntakeMotor.periodic();
+        rollerIntakeMotor.periodic();
 
         // Hot-tune PID if changed via dashboard
         if (pid.isDirty()) {

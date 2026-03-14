@@ -30,7 +30,7 @@ public class OptionsGenerator {
             if (prop.isOption()) {
                 String name = prop.getKey();
                 sb.append(String.format("        public final Option<%s> %s;\n",
-                        prop.getPropertyType().getJavaType(), name));
+                        prop.getPropertyType().getBoxedJavaType(), name));
             }
         }
 
@@ -61,8 +61,8 @@ public class OptionsGenerator {
                         "createStringOption";
                 };
 
-                sb.append(String.format("            %s = %s(\"%s\", %s);\n",
-                        name, createMethod, name, constRef));
+                sb.append(String.format("            %s = %s(\"%s (\" + %s + \")\", %s);\n",
+                        name, createMethod, name, constRef, constRef));
             }
         }
 

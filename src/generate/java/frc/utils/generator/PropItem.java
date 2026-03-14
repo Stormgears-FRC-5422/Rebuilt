@@ -3,18 +3,20 @@ package frc.utils.generator;
 public class PropItem {
 
     public enum PropertyType {
-        STRING("string", "String", "getString"),
-        INTEGER("int", "int", "getInt"),
-        NUMBER("number", "double", "getNumber"),
-        BOOLEAN("boolean", "Boolean", "getBoolean");
+        STRING("string",   "String",  "String",  "getString"),
+        INTEGER("int",     "int",     "Integer", "getInt"),
+        NUMBER("number",   "double",  "Double",  "getNumber"),
+        BOOLEAN("boolean", "Boolean", "Boolean", "getBoolean");
 
         private final String propertyTag;
         private final String javaType;
+        private final String boxedJavaType;
         private final String methodName;
 
-        PropertyType(String propertyTag, String javaType, String methodName) {
+        PropertyType(String propertyTag, String javaType, String boxedJavaType, String methodName) {
             this.propertyTag = propertyTag;
             this.javaType = javaType;
+            this.boxedJavaType = boxedJavaType;
             this.methodName = methodName;
         }
 
@@ -30,6 +32,10 @@ public class PropItem {
 
         public String getJavaType() {
             return javaType;
+        }
+
+        public String getBoxedJavaType() {
+            return boxedJavaType;
         }
 
         public String getMethodName() {
