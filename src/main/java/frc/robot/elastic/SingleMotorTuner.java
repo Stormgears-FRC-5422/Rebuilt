@@ -16,7 +16,7 @@ public class SingleMotorTuner extends DashboardTuner {
     public SingleMotorTuner(String name, PidConfig shootPIDConfig) {
         super(name);
         this.pidConfig = shootPIDConfig;
-        this.shooterPIDTuning = new PidTuningGroup(this, "PID", shootPIDConfig);
+        this.shooterPIDTuning = new PidTuningGroup(this, "", shootPIDConfig);
 
         // Create apply button at root level of the tuner
         var applyTopic = table.getBooleanTopic("Apply");

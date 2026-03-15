@@ -61,8 +61,8 @@ public class OptionsGenerator {
                         "createStringOption";
                 };
 
-                sb.append(String.format("            %s = %s(\"%s (\" + %s + \")\", %s);\n",
-                        name, createMethod, name, constRef, constRef));
+                sb.append(String.format("            %s = %s(\"%s\", %s);\n",
+                        name, createMethod, name, constRef));
             }
         }
 

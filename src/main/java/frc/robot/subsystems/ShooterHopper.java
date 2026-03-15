@@ -23,7 +23,8 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
-import frc.robot.elastic.ElasticMotorController;
+import frc.robot.Options.ButtonBoardOptions;
+import frc.robot.Options.ShooterOptions;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 
@@ -48,7 +49,8 @@ public class ShooterHopper extends StormSubsystem {
     private double targetVelocityRPS;
     private final SlewRateLimiter velocityRamp = new SlewRateLimiter(Shooter.shootSpinUpRate);
     private double fuelInjectorSpeed = 0.0;
-    private final ElasticMotorController elasticMotorController;
+    private final ButtonBoardOptions buttonBoardOptions = ButtonBoardOptions.create();
+    private final ShooterOptions shooterOptions = ShooterOptions.create();
     private ShooterState state;
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
@@ -59,9 +61,7 @@ public class ShooterHopper extends StormSubsystem {
 
 
     @SuppressWarnings("resource")
-    public ShooterHopper(ElasticMotorController elasticMotorController) {
-        this.elasticMotorController = elasticMotorController;
-
+    public ShooterHopper() {
         if (Shooter.useShooterHopperDiagnostic) {
             state = ShooterState.DIAGNOSTIC;
         } else {
@@ -141,18 +141,12 @@ public class ShooterHopper extends StormSubsystem {
                 fuelInjectorSpeed = 0.0;
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS =
-                    useRealDist
-                        ? getRPS()
-                        : (elasticMotorController.shootSpeed.get() * 100);
+                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
                 fuelInjectorSpeed = 0.0;
             }
             case SHOOTING -> {
-                targetVelocityRPS =
-                    useRealDist
-                        ? getRPS()
-                        : (elasticMotorController.shootSpeed.get() * 100);
-                fuelInjectorSpeed = Shooter.fuelInjectorSpeed;
+                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
+                fuelInjectorSpeed = shooterOptions.fuelInjectorSpeed.get();
             }
             case OUTTAKE -> {
                 targetVelocityRPS = -10.0;
@@ -198,12 +192,12 @@ public class ShooterHopper extends StormSubsystem {
         leaderMotor.periodic();
         followerMotor.periodic();
 
-        useRealDist = elasticMotorController.usePose.get();
+        useRealDist = buttonBoardOptions.usePose.get();
 
         shooterStateMachine();
         if (state == ShooterState.DIAGNOSTIC) {
-            leaderMotor.setControl(velocityVoltage.withVelocity(100 * elasticMotorController.shootSpeed.get()));
-            fuelInjector.set(elasticMotorController.fuelInjectorSpeed.get());
+            leaderMotor.setControl(velocityVoltage.withVelocity(shooterOptions.manualRPS.get()));
+            fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
         } else {
             leaderMotor.setControl(velocityVoltage.withVelocity(velocityRamp.calculate(targetVelocityRPS)));
             fuelInjector.set(fuelInjectorSpeed);

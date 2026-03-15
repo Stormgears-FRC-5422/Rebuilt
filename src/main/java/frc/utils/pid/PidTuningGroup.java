@@ -35,15 +35,16 @@ public final class PidTuningGroup {
     public PidTuningGroup(DashboardTuner tuner, String prefix, PidConfig config) {
         this.config = config;
 
-        var kpTopic = tuner.getTable().getDoubleTopic(prefix + "/kP");
-        var kiTopic = tuner.getTable().getDoubleTopic(prefix + "/kI");
-        var kdTopic = tuner.getTable().getDoubleTopic(prefix + "/kD");
-        var kATopic = tuner.getTable().getDoubleTopic(prefix + "/kA");
-        var kGTopic = tuner.getTable().getDoubleTopic(prefix + "/kG");
-        var kMinTopic = tuner.getTable().getDoubleTopic(prefix + "/kMin");
-        var kMaxTopic = tuner.getTable().getDoubleTopic(prefix + "/kMax");
-        var kVTopic = tuner.getTable().getDoubleTopic(prefix + "/kV");
-        var kSTopic = tuner.getTable().getDoubleTopic(prefix + "/kS");
+        String p = prefix.isEmpty() ? "" : prefix + "/";
+        var kpTopic = tuner.getTable().getDoubleTopic(p + "kP");
+        var kiTopic = tuner.getTable().getDoubleTopic(p + "kI");
+        var kdTopic = tuner.getTable().getDoubleTopic(p + "kD");
+        var kATopic = tuner.getTable().getDoubleTopic(p + "kA");
+        var kGTopic = tuner.getTable().getDoubleTopic(p + "kG");
+        var kMinTopic = tuner.getTable().getDoubleTopic(p + "kMin");
+        var kMaxTopic = tuner.getTable().getDoubleTopic(p + "kMax");
+        var kVTopic = tuner.getTable().getDoubleTopic(p + "kV");
+        var kSTopic = tuner.getTable().getDoubleTopic(p + "kS");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();

@@ -35,6 +35,7 @@ import frc.robot.commands.intake.IntakeHome;
 import frc.robot.commands.intake.RunRoller;
 import frc.robot.commands.intake.SimpleRumble;
 import frc.robot.commands.intake.IntakeManual;
+import frc.robot.Options.ShooterOptions;
 import frc.robot.elastic.ElasticMotorController;
 import frc.robot.elastic.SingleMotorTuner;
 import frc.robot.joysticks.IllegalJoystickTypeException;
@@ -113,7 +114,7 @@ public class RobotContainer {
             console("Create intake");
             intake = new Intake();
             if (Toggles.usePidTuner) {
-                intakeTuner = new SingleMotorTuner("Intake Tuner", intake.getPidConfig());
+                intakeTuner = new SingleMotorTuner("IntakeArmPID", intake.getPidConfig());
             }
         }
 
@@ -129,9 +130,9 @@ public class RobotContainer {
 
         if (Toggles.useShooter) {
             console("Create shooter");
-            shooterHopper = new ShooterHopper(elasticMotorController);
+            shooterHopper = new ShooterHopper();
             if (Toggles.usePidTuner) {
-                shooterTuner = new SingleMotorTuner("Shooter Tuner", shooterHopper.getPidConfig());
+                shooterTuner = new SingleMotorTuner("ShooterPID", shooterHopper.getPidConfig());
             }
         }
 
@@ -287,7 +288,7 @@ public class RobotContainer {
             drivetrain.setDefaultCommand(driveWithJoystick);
             // new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
-            new Trigger(() -> elasticMotorController.moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
+            new Trigger(() -> ShooterOptions.create().moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
 
 //            new Trigger(() -> joystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));

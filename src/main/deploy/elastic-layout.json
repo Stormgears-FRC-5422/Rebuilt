@@ -7,16 +7,47 @@
       "grid_layout": {
         "layouts": [
           {
-            "title": "PID",
+            "title": "ShooterPID",
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 640.0,
+            "height": 896.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
             },
             "children": [
+              {
+                "title": "Apply",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Elastic/ShooterPID/Apply",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "kA",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/ShooterPID/kA",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": true
+                }
+              },
               {
                 "title": "kD",
                 "x": 0.0,
@@ -25,10 +56,24 @@
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kD",
+                  "topic": "/Elastic/ShooterPID/kD",
                   "period": 0.06,
                   "data_type": "double",
-                  "show_submit_button": false
+                  "show_submit_button": true
+                }
+              },
+              {
+                "title": "kG",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/ShooterPID/kG",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": true
                 }
               },
               {
@@ -39,10 +84,10 @@
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kI",
+                  "topic": "/Elastic/ShooterPID/kI",
                   "period": 0.06,
                   "data_type": "double",
-                  "show_submit_button": false
+                  "show_submit_button": true
                 }
               },
               {
@@ -53,10 +98,10 @@
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kMax",
+                  "topic": "/Elastic/ShooterPID/kMax",
                   "period": 0.06,
                   "data_type": "double",
-                  "show_submit_button": false
+                  "show_submit_button": true
                 }
               },
               {
@@ -67,10 +112,10 @@
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kMin",
+                  "topic": "/Elastic/ShooterPID/kMin",
                   "period": 0.06,
                   "data_type": "double",
-                  "show_submit_button": false
+                  "show_submit_button": true
                 }
               },
               {
@@ -79,15 +124,12 @@
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Number Slider",
+                "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kP",
+                  "topic": "/Elastic/ShooterPID/kP",
                   "period": 0.06,
                   "data_type": "double",
-                  "min_value": -1.0,
-                  "max_value": 1.0,
-                  "divisions": 5,
-                  "update_continuously": false
+                  "show_submit_button": true
                 }
               },
               {
@@ -96,15 +138,12 @@
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Number Slider",
+                "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kS",
+                  "topic": "/Elastic/ShooterPID/kS",
                   "period": 0.06,
                   "data_type": "double",
-                  "min_value": -1.0,
-                  "max_value": 1.0,
-                  "divisions": 5,
-                  "update_continuously": false
+                  "show_submit_button": true
                 }
               },
               {
@@ -113,15 +152,12 @@
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
-                "type": "Number Slider",
+                "type": "Text Display",
                 "properties": {
-                  "topic": "/Elastic/Shooter Tuner/PID/kV",
+                  "topic": "/Elastic/ShooterPID/kV",
                   "period": 0.06,
                   "data_type": "double",
-                  "min_value": -1.0,
-                  "max_value": 1.0,
-                  "divisions": 5,
-                  "update_continuously": false
+                  "show_submit_button": true
                 }
               }
             ]
@@ -129,138 +165,9 @@
         ],
         "containers": [
           {
-            "title": "Motor 1 Output",
-            "x": 512.0,
-            "y": 0.0,
-            "width": 640.0,
-            "height": 128.0,
-            "type": "Number Slider",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/Motor 1 Output",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": -1.0,
-              "max_value": 1.0,
-              "divisions": 5,
-              "update_continuously": false
-            }
-          },
-          {
-            "title": "Enabled",
-            "x": 512.0,
-            "y": 128.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/Enabled",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "Apply",
-            "x": 640.0,
-            "y": 128.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Shooter Tuner/Apply",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "HOME THE INTAKE",
-            "x": 512.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/HOME THE INTAKE",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "INTAKE DOWN",
-            "x": 640.0,
-            "y": 384.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/INTAKE DOWN",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "INTAKE IDLE",
-            "x": 512.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/INTAKE IDLE",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "RUMBLE",
-            "x": 640.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/RUMBLE",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "fuel injector speed diagnostic",
-            "x": 768.0,
-            "y": 384.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Number Slider",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/fuel injector speed diagnostic",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": -1.0,
-              "max_value": 1.0,
-              "divisions": 5,
-              "update_continuously": false
-            }
-          },
-          {
-            "title": "intake speed diagnostic",
-            "x": 768.0,
-            "y": 512.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Number Slider",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/intake speed diagnostic",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": -1.0,
-              "max_value": 1.0,
-              "divisions": 5,
-              "update_continuously": false
-            }
-          },
-          {
             "title": "shoot",
             "x": 640.0,
-            "y": 256.0,
+            "y": 128.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Toggle Switch",
@@ -268,23 +175,6 @@
               "topic": "/Elastic/Motor tester with elastic/shoot",
               "period": 0.06,
               "data_type": "boolean"
-            }
-          },
-          {
-            "title": "shooter speed diagnostic",
-            "x": 768.0,
-            "y": 128.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Number Slider",
-            "properties": {
-              "topic": "/Elastic/Motor tester with elastic/shooter speed diagnostic",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": -1.0,
-              "max_value": 1.0,
-              "divisions": 5,
-              "update_continuously": false
             }
           },
           {
@@ -365,14 +255,99 @@
           {
             "title": "usePose",
             "x": 512.0,
-            "y": 256.0,
+            "y": 128.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Toggle Switch",
             "properties": {
-              "topic": "/Elastic/Motor tester with elastic/usePose",
+              "topic": "/Elastic/ButtonBoard Options/usePose",
               "period": 0.06,
               "data_type": "boolean"
+            }
+          },
+          {
+            "title": "rollerIntakeSpeed",
+            "x": 512.0,
+            "y": 512.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "Number Bar",
+            "properties": {
+              "topic": "/Elastic/Intake Options/rollerIntakeSpeed",
+              "period": 0.06,
+              "data_type": "double",
+              "min_value": 0.0,
+              "max_value": 1.0,
+              "divisions": 5,
+              "inverted": false,
+              "orientation": "horizontal"
+            }
+          },
+          {
+            "title": "rollerOuttakeSpeed",
+            "x": 896.0,
+            "y": 512.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "Number Bar",
+            "properties": {
+              "topic": "/Elastic/Intake Options/rollerOuttakeSpeed",
+              "period": 0.06,
+              "data_type": "double",
+              "min_value": 0.0,
+              "max_value": 1.0,
+              "divisions": 5,
+              "inverted": false,
+              "orientation": "horizontal"
+            }
+          },
+          {
+            "title": "manualRPS",
+            "x": 768.0,
+            "y": 128.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Number Bar",
+            "properties": {
+              "topic": "/Elastic/Shooter Options/manualRPS",
+              "period": 0.06,
+              "data_type": "double",
+              "min_value": 0.0,
+              "max_value": 100.0,
+              "divisions": 5,
+              "inverted": false,
+              "orientation": "horizontal"
+            }
+          },
+          {
+            "title": "moveWhileShoot",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Shooter Options/moveWhileShoot",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "fuelInjectorSpeed",
+            "x": 768.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Number Bar",
+            "properties": {
+              "topic": "/Elastic/Shooter Options/fuelInjectorSpeed",
+              "period": 0.06,
+              "data_type": "double",
+              "min_value": 0.0,
+              "max_value": 1.0,
+              "divisions": 5,
+              "inverted": false,
+              "orientation": "horizontal"
             }
           }
         ]

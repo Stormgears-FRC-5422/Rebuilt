@@ -13,6 +13,7 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import frc.robot.Options.IntakeOptions;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 
@@ -61,6 +62,7 @@ public class Intake extends StormSubsystem {
     private final NeutralOut neutralRequest = new NeutralOut();
     private final TalonFXConfiguration config = new TalonFXConfiguration();
     private final PidConfig pid;
+    private final IntakeOptions intakeOptions = IntakeOptions.create();
 
     public IntakeState state = IntakeState.UNKNOWN;
     public boolean hasBeenHomed = false;
@@ -162,9 +164,9 @@ public class Intake extends StormSubsystem {
         // Roller control
         rollerOutput = 0.0;
         if (outtakeEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
-            rollerOutput = frc.robot.Constants.Intake.rollerOuttakeSpeed;
+            rollerOutput = intakeOptions.rollerOuttakeSpeed.get();
         } else if (rollerEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
-            rollerOutput = frc.robot.Constants.Intake.rollerIntakeSpeed;
+            rollerOutput = -intakeOptions.rollerIntakeSpeed.get();
         }
         rollerIntakeMotor.set(rollerOutput);
 
