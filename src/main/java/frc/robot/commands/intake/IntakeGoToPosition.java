@@ -43,6 +43,9 @@ public class IntakeGoToPosition extends StormCommand {
 
     @Override
     public void end(boolean interrupted) {
+        if (!skip) {
+            intake.holdCurrentPosition();
+        }
         super.end(interrupted);
     }
 }
