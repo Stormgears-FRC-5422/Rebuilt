@@ -114,7 +114,11 @@ public class AkitDrive extends DrivetrainBase {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        runVelocity(m_chassisSpeeds);
+        if (isChassisSpeedsZero()) {
+            stopWithX();
+        } else {
+            runVelocity(m_chassisSpeeds);
+        }
         for (var module : modules) {
             module.periodic();
         }
