@@ -197,6 +197,7 @@ public class VisionSubsystem extends StormSubsystem {
             Logger.recordOutput("Vision/Closest/HasTarget", false);
             Logger.recordOutput("Vision/Closest/Accepted", false);
             Logger.recordOutput("Vision/Closest/TagCount", 0);
+            Logger.recordOutput("Vision/Closest/Pose", new edu.wpi.first.math.geometry.Pose2d());
             Logger.recordOutput("Vision/Closest/AvgTagDist", 0.0);
             Logger.recordOutput("Vision/Closest/ClosestTagDist", 0.0);
             return;
