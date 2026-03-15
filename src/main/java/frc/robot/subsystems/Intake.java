@@ -217,6 +217,7 @@ public class Intake extends StormSubsystem {
                 break;
             case IDLE:
                 console("IDLE", 1);
+                break;
 
             case HOMING:
                 console("***** HOMING state *****", 1);
