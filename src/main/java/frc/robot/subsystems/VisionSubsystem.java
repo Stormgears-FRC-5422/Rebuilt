@@ -43,6 +43,7 @@ public class VisionSubsystem extends StormSubsystem {
     ){
 //        this.poseEstimator = poseEstimator;
         this.limelightIDs = limelightIDs;
+        this.maxTagsSeen = new int[limelightIDs.length];
         if(drivetrain !=null){
             this.drivetrain = drivetrain;
             this.drivetrainPoseEstimator = drivetrain.getPoseEstimator();
@@ -125,29 +126,44 @@ public class VisionSubsystem extends StormSubsystem {
         }
     }
 
+    private final int[] maxTagsSeen;
+
     public void logLLs(){
-        for(String limelightID: limelightIDs){
-            // Creating a string that allows each different limelight to have their own start string for logging
+        for (int llIdx = 0; llIdx < limelightIDs.length; llIdx++) {
+            String limelightID = limelightIDs[llIdx];
             String start = "Vision/" + limelightID + "/";
 
-            // Logging all the values from the PoseEstimate
             PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightID);
             if (estimate == null || estimate.tagCount == 0) {
                 Logger.recordOutput(start + "HasTarget", false);
+                Logger.recordOutput(start + "TagCount", 0);
+                Logger.recordOutput(start + "AvgTagDist", 0.0);
+                Logger.recordOutput(start + "ClosestTagDist", 0.0);
+                for (int i = 0; i < maxTagsSeen[llIdx]; i++) {
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_ID", 0);
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", 0.0);
+                }
                 continue;
             }
+
+            if (estimate.rawFiducials.length > maxTagsSeen[llIdx]) {
+                maxTagsSeen[llIdx] = estimate.rawFiducials.length;
+            }
+
             Logger.recordOutput(start + "HasTarget", true);
             Logger.recordOutput(start + "TagCount", estimate.tagCount);
             Logger.recordOutput(start + "Pose", estimate.pose);
             Logger.recordOutput(start + "AvgTagDist", estimate.avgTagDist);
             Logger.recordOutput(start + "ClosestTagDist", getDistFromTag(limelightID));
 
-            // Logging the locations of all the April Tags with their dist, id
-            for (int i = 0; i < estimate.rawFiducials.length; i++) {
-                LimelightHelpers.RawFiducial fid = estimate.rawFiducials[i];
-                if (fid == null) continue;
-                Logger.recordOutput(start + "Tags/Tag" + i + "_ID", fid.id);
-                Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", fid.distToRobot);
+            for (int i = 0; i < maxTagsSeen[llIdx]; i++) {
+                if (i < estimate.rawFiducials.length && estimate.rawFiducials[i] != null) {
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_ID", estimate.rawFiducials[i].id);
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", estimate.rawFiducials[i].distToRobot);
+                } else {
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_ID", 0);
+                    Logger.recordOutput(start + "Tags/Tag" + i + "_DistMeters", 0.0);
+                }
             }
         }
     }
@@ -178,22 +194,26 @@ public class VisionSubsystem extends StormSubsystem {
         // Reject bad measurements
         if (estimate == null || estimate.tagCount == 0) {
             Logger.recordOutput("Vision/HasTarget", false);
+            Logger.recordOutput("Vision/Closest/HasTarget", false);
+            Logger.recordOutput("Vision/Closest/Accepted", false);
+            Logger.recordOutput("Vision/Closest/TagCount", 0);
+            Logger.recordOutput("Vision/Closest/AvgTagDist", 0.0);
+            Logger.recordOutput("Vision/Closest/ClosestTagDist", 0.0);
             return;
         }
 
         // Reject tags that are too far away (unreliable at distance)
         double closestTagDist = getDistFromTag(limelightID);
-        if (closestTagDist > MAX_TAG_DISTANCE_METERS) {
-            Logger.recordOutput("Vision/Closest/HasTarget", false);
-            Logger.recordOutput("Vision/Closest/RejectedDist", closestTagDist);
-            return;
-        }
+        boolean accepted = closestTagDist <= MAX_TAG_DISTANCE_METERS;
 
         Logger.recordOutput("Vision/Closest/HasTarget", true);
+        Logger.recordOutput("Vision/Closest/Accepted", accepted);
         Logger.recordOutput("Vision/Closest/TagCount", estimate.tagCount);
         Logger.recordOutput("Vision/Closest/Pose", estimate.pose);
         Logger.recordOutput("Vision/Closest/AvgTagDist", estimate.avgTagDist);
         Logger.recordOutput("Vision/Closest/ClosestTagDist", closestTagDist);
+
+        if (!accepted) return;
 
 
         if(hasDrive){
