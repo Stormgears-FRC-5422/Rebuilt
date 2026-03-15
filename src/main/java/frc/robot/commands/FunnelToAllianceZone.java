@@ -14,6 +14,7 @@ import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Constants.Shooter;
 import frc.robot.FieldConstants;
+import frc.robot.RebuiltField;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
@@ -61,18 +62,13 @@ public class FunnelToAllianceZone extends StormCommand {
     public void initialize() {
         super.initialize();
 
-        if(RobotState.getInstance().isAllianceRed())
-            targetPose =
-                (RobotState.getInstance().getDriverStation()<3)
-                    ? FieldConstants.leftRed()
-                    : FieldConstants.rightRed()
-                ;
+        double robotY = drivetrain.getPose().getY();
+        double fieldCenter = RebuiltField.FIELD_WIDTH / 2.0;
+
+        if (RobotState.getInstance().isAllianceRed())
+            targetPose = (robotY < fieldCenter) ? FieldConstants.leftRed() : FieldConstants.rightRed();
         else
-            targetPose =
-                (RobotState.getInstance().getDriverStation()<3)
-                    ? FieldConstants.leftBlue()
-                    : FieldConstants.rightBlue()
-                ;
+            targetPose = (robotY > fieldCenter) ? FieldConstants.leftBlue() : FieldConstants.rightBlue();
         drivetrain.setDriveSpeedScale(Drive.driveSpeedScale);
         xScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
         yScaleLimiter = new SlewRateLimiter(Drive.linearRateLimiter);
