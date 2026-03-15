@@ -4,6 +4,7 @@ import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -279,7 +280,8 @@ public class Intake extends StormSubsystem {
         slot0.kG = pid.kG;
         slot0.kS = pid.kS;
         slot0.GravityType = GravityTypeValue.Arm_Cosine;
-        updownIntakeMotor.getConfigurator().apply(slot0);
+        StatusCode code = updownIntakeMotor.getConfigurator().apply(slot0);
+        if (!code.isOK()) console("configMotor FAILED [slot0]: " + code, 1);
     }
 
     // ===== Position Queries =====

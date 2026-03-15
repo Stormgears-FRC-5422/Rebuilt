@@ -7,6 +7,7 @@ import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -115,8 +116,10 @@ public class ShooterHopper extends StormSubsystem {
             funnelSpeedMap.put(funnelDistances[i], funnelSpeeds[i]);
         }
 
-        // Cache status signal for batched CAN reads
+        // Apply gains immediately, then mark dirty so they're re-applied on the first
+        // periodic() when CAN is reliably up (constructor call may silently fail).
         configMotor();
+        pid.setDirty();
     }
 
     public void setTargetVelocity(double givenTarget) {
@@ -234,7 +237,7 @@ public class ShooterHopper extends StormSubsystem {
         slot0.kD = pid.kD;
         slot0.kS = pid.kS;
         slot0.kV = pid.kV;
-        leaderMotor.getConfigurator().apply(slot0);
+        checkApply(leaderMotor.getConfigurator().apply(slot0), "leader slot0");
 
         MotorOutputConfigs out = new MotorOutputConfigs();
         out.PeakForwardDutyCycle = pid.kMax;
@@ -248,12 +251,18 @@ public class ShooterHopper extends StormSubsystem {
         currentLimits.StatorCurrentLimit = Shooter.statorCurrentLimit;
         currentLimits.StatorCurrentLimitEnable = true;
 
-        leaderMotor.getConfigurator().apply(currentLimits);
-        followerMotor.getConfigurator().apply(currentLimits);
+        checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
+        checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
 
-        followerMotor.getConfigurator().apply(followerOut);
-        leaderMotor.getConfigurator().apply(out);
+        checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
+        checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");
     }
+    private void checkApply(StatusCode code, String context) {
+        if (!code.isOK()) {
+            console("configMotor FAILED [" + context + "]: " + code, 1);
+        }
+    }
+
     public double getCurrentVelocityRPS() {
         return leaderMotor.getMotorVelocity();
     }

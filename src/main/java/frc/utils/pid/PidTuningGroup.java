@@ -91,13 +91,30 @@ public final class PidTuningGroup {
     }
 
     public void updateConfig(PidConfig config) {
-        config.withKP(kpSub.get())
-                .withKI(kiSub.get())
-                .withKD(kdSub.get())
-                .withKA(kASub.get())
-                .withKG(kGSub.get())
-                .withKMinMax(kMinSub.get(), kMaxSub.get())
-                .withKV(kVSub.get())
-                .withKS(kSSub.get());
+        double kP   = kpSub.get();
+        double kI   = kiSub.get();
+        double kD   = kdSub.get();
+        double kA   = kASub.get();
+        double kG   = kGSub.get();
+        double kMin = kMinSub.get();
+        double kMax = kMaxSub.get();
+        double kV   = kVSub.get();
+        double kS   = kSSub.get();
+
+        // Echo any Elastic-changed values back through the server publisher.
+        // Without this, the server subscriber sees its own stale initial value
+        // rather than the value the user set in the Elastic slider.
+        if (kP   != config.kP)  kpPub.set(kP);
+        if (kI   != config.kI)  kiPub.set(kI);
+        if (kD   != config.kD)  kdPub.set(kD);
+        if (kA   != config.kA)  kAPub.set(kA);
+        if (kG   != config.kG)  kGPub.set(kG);
+        if (kMin != config.kMin) kMinPub.set(kMin);
+        if (kMax != config.kMax) kMaxPub.set(kMax);
+        if (kV   != config.kV)  kVPub.set(kV);
+        if (kS   != config.kS)  kSPub.set(kS);
+
+        config.withKP(kP).withKI(kI).withKD(kD).withKA(kA).withKG(kG)
+              .withKMinMax(kMin, kMax).withKV(kV).withKS(kS);
     }
 }
