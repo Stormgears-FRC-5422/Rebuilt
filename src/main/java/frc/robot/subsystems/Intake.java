@@ -1,13 +1,9 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -17,10 +13,6 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import frc.utils.StormSubsystem;
 import frc.utils.pid.PidConfig;
 
@@ -85,18 +77,12 @@ public class Intake extends StormSubsystem {
     private boolean outtakeEnabled = false;
     public double rollerOutput;
 
-    // Cached CAN status signals — refreshed in a single batch each cycle
-    private final StatusSignal<Angle> positionSignal;
-    private final StatusSignal<Current> supplyCurrentSignal;
-    private final StatusSignal<Current> statorCurrentSignal;
-    private final StatusSignal<Voltage> motorVoltageSignal;
-
 
     // ===== Constructor =====
 
     @SuppressWarnings("resource")
     public Intake() {
-        updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor");
+        updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor").withClosedLoopLogging();
         rollerIntakeMotor = new StormTalon(frc.robot.Constants.Intake.rollerID, new CANBus("")).withName("rollerIntakeMotor");
 
         CurrentLimitsConfigs rollerCurrentLimits = new CurrentLimitsConfigs();
@@ -146,12 +132,6 @@ public class Intake extends StormSubsystem {
         currentLimits.StatorCurrentLimitEnable = true;
         updownIntakeMotor.getConfigurator().apply(currentLimits);
 
-        // Cache status signals for batched CAN reads
-        positionSignal = updownIntakeMotor.getPosition();
-        supplyCurrentSignal = updownIntakeMotor.getSupplyCurrent();
-        statorCurrentSignal = updownIntakeMotor.getStatorCurrent();
-        motorVoltageSignal = updownIntakeMotor.getMotorVoltage();
-
         targetPosition = 0;
         updownVolts = 0;
 
@@ -165,6 +145,7 @@ public class Intake extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
+        // Refreshes signals and logs Motors/upDownIntakeMotor/* and Motors/rollerIntakeMotor/*
         updownIntakeMotor.periodic();
         rollerIntakeMotor.periodic();
 
@@ -175,11 +156,8 @@ public class Intake extends StormSubsystem {
             console(String.valueOf(pid), 1);
         }
 
-        // Refresh all cached signals (non-blocking — reads from local cache)
-        BaseStatusSignal.refreshAll(positionSignal, supplyCurrentSignal, statorCurrentSignal, motorVoltageSignal);
-
-        // Read sensors from refreshed cached signals
-        currentPosition = positionSignal.getValue().in(Degrees);
+        // Read position from cached signal (refreshed by updownIntakeMotor.periodic() above)
+        currentPosition = updownIntakeMotor.getMotorPosition() * 360.0;
 
         // Roller control
         rollerOutput = 0.0;
@@ -218,18 +196,10 @@ public class Intake extends StormSubsystem {
                 setIdle();
         }
 
-        // Logging (all values from cached signals — no additional CAN reads)
+        // Subsystem-level logging (motor signals are under Motors/upDownIntakeMotor/*)
         Logger.recordOutput("Intake/State", state.toString());
         Logger.recordOutput("Intake/EncoderDegrees", currentPosition);
-        Logger.recordOutput("Intake/RawRotations", positionSignal.getValueAsDouble());
         Logger.recordOutput("Intake/TargetPosition", targetPosition);
-        Logger.recordOutput("Intake/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
-        Logger.recordOutput("Intake/StatorCurrent", statorCurrentSignal.getValueAsDouble());
-        Logger.recordOutput("Intake/Voltage", motorVoltageSignal.getValueAsDouble());
-        Logger.recordOutput("Intake/ClosedLoopReference", updownIntakeMotor.getClosedLoopReference().getValueAsDouble());
-        Logger.recordOutput("Intake/ClosedLoopError", updownIntakeMotor.getClosedLoopError().getValueAsDouble());
-        Logger.recordOutput("Intake/ClosedLoopOutput", updownIntakeMotor.getClosedLoopOutput().getValueAsDouble());
-        Logger.recordOutput("Intake/ClosedLoopReferenceSlope", updownIntakeMotor.getClosedLoopReferenceSlope().getValueAsDouble());
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
     }
 
@@ -313,12 +283,12 @@ public class Intake extends StormSubsystem {
     // ===== Position Queries =====
 
     public double getAngleDegrees() {
-        return positionSignal.getValue().in(Degrees);
+        return updownIntakeMotor.getMotorPosition() * 360.0;
     }
 
     public boolean isAtHome() {
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
-            if (statorCurrentSignal.getValueAsDouble() > frc.robot.Constants.Intake.stallCurrentLimit) {
+            if (updownIntakeMotor.getMotorCurrent() > frc.robot.Constants.Intake.stallCurrentLimit) {
                 stallFrameCount++;
             } else {
                 stallFrameCount = 0;
@@ -379,6 +349,7 @@ public class Intake extends StormSubsystem {
 
         updownIntakeMotor.getConfigurator().apply(config.SoftwareLimitSwitch);
     }
+
     public void holdCurrentPosition() {
         setTargetPosition(currentPosition);
         setState(IntakeState.HOLD);

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
-import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -80,7 +79,7 @@ public class ShooterHopper extends StormSubsystem {
         fuelInjector.configure(fuelInjectorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
         // These are on the standard rio CAN, not the canivore
-        leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader");
+        leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader").withClosedLoopLogging();
         followerMotor = new StormTalon(Shooter.followerMotorID, new CANBus("")).withName("shootFollower");
 
         followerMotor.setControl(
@@ -215,7 +214,6 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
-        Logger.recordOutput("shooter rps", leaderMotor.getMotorVelocity());
     }
 
     public void setUseRealDist(boolean useRealDist) {
