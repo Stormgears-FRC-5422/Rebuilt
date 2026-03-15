@@ -7,6 +7,7 @@ import frc.utils.StormCommand;
 
 public class DynamicRumble extends StormCommand {
     private boolean skip;
+    private boolean done;
     private final Intake intake;
 
     private double minAngle;
@@ -35,6 +36,7 @@ public class DynamicRumble extends StormCommand {
         maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
         goingUp = true;
         counter = 0;
+        done = false;
 
         double testMinAngle = minAngle;
         double safeFloor = frc.robot.Constants.Intake.topIntakeLimit;
@@ -63,6 +65,7 @@ public class DynamicRumble extends StormCommand {
 
         if (intake.isAtTarget() || timer.hasElapsed(0.75)) {
             if (goingUp && counter >= maxCycles) {
+                done = true;
                 return;
             }
 
@@ -84,9 +87,9 @@ public class DynamicRumble extends StormCommand {
     @Override
     public boolean isFinished() {
         return skip
+            || done
             || !intake.hasBeenHomed
-            || intake.state != IntakeState.PID_MOTION
-            || (goingUp && intake.isAtTarget() && counter >= maxCycles);
+            || intake.state != IntakeState.PID_MOTION;
     }
 
     @Override
