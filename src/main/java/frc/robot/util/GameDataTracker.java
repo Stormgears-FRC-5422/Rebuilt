@@ -39,9 +39,9 @@ public class GameDataTracker {
     private static final double[] shiftEndTimes   = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
 
     // Schedule when our alliance won auto (acts first after SHIFT1)
-    private static final boolean[] wonSchedule  = {true, true, false, true, false, true};
+    private static final boolean[] wonSchedule  = {true, false, true, false, true, true};
     // Schedule when our alliance lost auto
-    private static final boolean[] lostSchedule = {true, false, true, false, true, true};
+    private static final boolean[] lostSchedule = {true, true, false, true, false, true};
 
     private static final double timeResetThreshold = 3.0;
     private static final double autoEndTime = 20.0;
