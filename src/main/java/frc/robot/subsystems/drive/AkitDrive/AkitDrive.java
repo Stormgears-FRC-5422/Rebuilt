@@ -33,6 +33,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import frc.robot.Constants;
+import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
@@ -60,6 +62,7 @@ public class AkitDrive extends DrivetrainBase {
     private final Alert gyroDisconnectedAlert =
         new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
 
+    Options.DriveOptions driveOptions = Options.DriveOptions.create();
     private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
     private Rotation2d rawGyroRotation = Rotation2d.kZero;
     private SwerveModulePosition[] lastModulePositions = // For delta tracking
@@ -116,7 +119,7 @@ public class AkitDrive extends DrivetrainBase {
         Logger.processInputs("Drive/Gyro", gyroInputs);
         boolean xLockActive = isChassisSpeedsZero();
         Logger.recordOutput("Drive/XLockActive", xLockActive);
-        if (xLockActive) {
+        if (xLockActive && driveOptions.useXLock.get()) {
             stopWithX();
         } else {
             runVelocity(m_chassisSpeeds);
