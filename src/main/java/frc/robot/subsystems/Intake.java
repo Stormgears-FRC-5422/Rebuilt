@@ -199,10 +199,9 @@ public class Intake extends StormSubsystem {
                 setIdle();
         }
 
-        // Subsystem-level logging (motor signals are under Motors/upDownIntakeMotor/*)
+        // Subsystem-level logging (position & target are under Motors/upDownIntakeMotor/*)
         Logger.recordOutput("Intake/State", state.toString());
-        Logger.recordOutput("Intake/EncoderDegrees", currentPosition);
-        Logger.recordOutput("Intake/TargetPosition", targetPosition);
+        Logger.recordOutput("Intake/HasBeenHomed", hasBeenHomed);
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
     }
 

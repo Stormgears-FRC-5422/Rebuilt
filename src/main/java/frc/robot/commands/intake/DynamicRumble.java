@@ -1,6 +1,7 @@
 package frc.robot.commands.intake;
 
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakeState;
 import frc.utils.StormCommand;
@@ -10,12 +11,19 @@ public class DynamicRumble extends StormCommand {
     private boolean done;
     private final Intake intake;
 
+    private final double minRumbleAngle = Constants.Intake.minRumbleAngleDeg;
+    private final double maxAngle = Constants.Intake.maxRumbleAngleDeg;
+    private final double safeFloor = Constants.Intake.topIntakeLimit;
+    private final double normalStep = Constants.Intake.dynamicRumbleIncrementDegrees;
+    private final double bigStep = Constants.Intake.dynamicRumbleBigStep;
+    private final int bigStepCycles = Constants.Intake.dynamicRumbleBigStepCycles;
+    private final double timeout = Constants.Intake.dynamicRumbleTimeout;
+
     private double minAngle;
-    private double maxAngle;
     private boolean goingUp;
     private int counter;
     private int maxCycles;
-    private edu.wpi.first.wpilibj.Timer timer = new Timer();
+    private final Timer timer = new Timer();
 
     public DynamicRumble(Intake intake) {
         this.intake = intake;
@@ -32,19 +40,15 @@ public class DynamicRumble extends StormCommand {
         skip = !intake.hasBeenHomed;
         if (skip) return;
 
-        minAngle = frc.robot.Constants.Intake.minRumbleAngleDeg;
-        maxAngle = frc.robot.Constants.Intake.maxRumbleAngleDeg;
+        minAngle = minRumbleAngle;
         goingUp = true;
         counter = 0;
         done = false;
 
         double testMinAngle = minAngle;
-        double safeFloor = frc.robot.Constants.Intake.topIntakeLimit;
-        double normalStep = frc.robot.Constants.Intake.dynamicRumbleIncrementDegrees;
-
         maxCycles = 0;
         while (true) {
-            double step = (maxCycles < 3) ? 25.0 : normalStep;
+            double step = (maxCycles < bigStepCycles) ? bigStep : normalStep;
             if (testMinAngle - step <= safeFloor) {
                 break;
             }
@@ -63,17 +67,17 @@ public class DynamicRumble extends StormCommand {
 
         if (skip) return;
 
-        if (intake.isAtTarget() || timer.hasElapsed(0.75)) {
+        if (intake.isAtTarget() || timer.hasElapsed(timeout)) {
             if (goingUp && counter >= maxCycles) {
                 done = true;
                 return;
             }
 
             if (goingUp) {
-                if (counter < 3) {
-                    minAngle -= 25.0;
+                if (counter < bigStepCycles) {
+                    minAngle -= bigStep;
                 } else {
-                    minAngle -= frc.robot.Constants.Intake.dynamicRumbleIncrementDegrees;
+                    minAngle -= normalStep;
                 }
                 counter++;
             }

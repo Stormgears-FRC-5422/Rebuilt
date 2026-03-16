@@ -174,7 +174,8 @@ public class RobotContainer {
 
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
-                .onTrue(new IntakeHome(intake));
+                .whileTrue(new IntakeHome(intake)
+                    .finallyDo(() -> elasticMotorController.homeIntake.setValue(false)));
 
             intake.setDefaultCommand(new IntakeManual(intake, secondJoystick));
             new Trigger(() -> secondJoystick.intakeMoved())
@@ -248,8 +249,9 @@ public class RobotContainer {
         }
 
         if (shooterHopper != null) {
-            Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
-            shootTrigger.whileTrue(new ShootCommand(shooterHopper, true));
+            new Trigger(() -> elasticMotorController.shootButton.get())
+                .whileTrue(new ShootCommand(shooterHopper, true)
+                    .finallyDo(() -> elasticMotorController.shootButton.setValue(false)));
 
             // SysId characterization toggles (dashboard options)
             ShooterOptions sysIdOpts = ShooterOptions.create();
