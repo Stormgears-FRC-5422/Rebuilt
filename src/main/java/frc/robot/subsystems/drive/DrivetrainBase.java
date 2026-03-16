@@ -326,6 +326,13 @@ public abstract class DrivetrainBase extends StormSubsystem {
         ));
     }
 
+    protected boolean isChassisSpeedsZero() {
+        return Drive.useXLock
+            && Math.abs(m_chassisSpeeds.vxMetersPerSecond) < Drive.xLockVelocity
+            && Math.abs(m_chassisSpeeds.vyMetersPerSecond) < Drive.xLockVelocity
+            && Math.abs(m_chassisSpeeds.omegaRadiansPerSecond) < Drive.xLockVelocity;
+    }
+
     // ==================== Periodic ====================
 
     @Override
