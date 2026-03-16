@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
@@ -60,8 +61,8 @@ public class RobotContainer {
     // **********
     // Control
     // **********
-    RebuiltJoystick joystick;
-    RebuiltJoystick joystick2;
+    RebuiltJoystick firstJoystick;
+    RebuiltJoystick secondJoystick;
     @SuppressWarnings("unused")
     private DrivetrainBase drivetrain;
     @SuppressWarnings("unused")
@@ -150,8 +151,8 @@ public class RobotContainer {
     public void onJoysticksAvaiable() {
         console("Configuring Joystick and bindings");
         try {
-            joystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
-            joystick2 = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
+            firstJoystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
+            secondJoystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
@@ -163,11 +164,11 @@ public class RobotContainer {
 
         if (Toggles.useDrive) {
             new Trigger(() -> elasticMotorController.alignNarrow.get())
-                .whileTrue(new AlignNarrow(drivetrain, joystick));
+                .whileTrue(new AlignNarrow(drivetrain, firstJoystick));
         }
 
         if (Toggles.useDrive) {
-            new Trigger(() -> joystick2.safe())
+            new Trigger(() -> secondJoystick.safe())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
         }
 
@@ -175,24 +176,24 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .onTrue(new IntakeHome(intake));
 
-            intake.setDefaultCommand(new IntakeManual(intake, joystick2));
-            new Trigger(() -> joystick2.intakeMoved())
+            intake.setDefaultCommand(new IntakeManual(intake, secondJoystick));
+            new Trigger(() -> secondJoystick.intakeMoved())
                 .onTrue(Commands.runOnce(() -> intake.getCurrentCommand().cancel())
                     .onlyIf(() -> intake.getCurrentCommand() != intake.getDefaultCommand()));
 
-            new Trigger(() -> joystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+            new Trigger(() -> firstJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
 
-            new Trigger(() -> joystick2.intakeHome())
+            new Trigger(() -> secondJoystick.intakeHome())
                 .onTrue(new IntakeHome(intake));
 
-            new Trigger(() -> joystick.enableRumble()).onTrue(Commands.either(
+            new Trigger(() -> firstJoystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
                 new SimpleRumble(intake),
                 () -> Constants.Intake.useDynamicRumble));
 
-            new Trigger(() -> joystick.intakeTogglePressed())
+            new Trigger(() -> firstJoystick.intakeTogglePressed())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
-            new Trigger(() -> joystick2.intakeTogglePressed())
+            new Trigger(() -> secondJoystick.intakeTogglePressed())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
 
         }
@@ -209,52 +210,63 @@ public class RobotContainer {
                 Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
                                   () -> climber.setManualDirection(null), climber));
 
-            new Trigger(() -> joystick2.climbHome()).onTrue(new ClimberHome(climber));
-            new Trigger(() -> joystick2.climbSequence()).onTrue(new ClimberSequence(climber));
-            new Trigger(() -> joystick2.climbManualUp()).whileTrue(
+            new Trigger(() -> secondJoystick.climbHome()).onTrue(new ClimberHome(climber));
+            new Trigger(() -> secondJoystick.climbSequence()).onTrue(new ClimberSequence(climber));
+            new Trigger(() -> secondJoystick.climbManualUp()).whileTrue(
                 Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.FORWARD),
                                   () -> climber.setManualDirection(null), climber));
-            new Trigger(() -> joystick2.climbManualDown()).whileTrue(
+            new Trigger(() -> secondJoystick.climbManualDown()).whileTrue(
                 Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
                                   () -> climber.setManualDirection(null), climber));
         }
 
         if (Toggles.useDrive && Toggles.useShooter && Toggles.useIntake) {
-            new Trigger(() -> joystick.autoShoot()).whileTrue(
+            new Trigger(() -> firstJoystick.autoShoot()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, true),
-                    new MoveWhileShoot(drivetrain, joystick, shooterHopper)
+                    new MoveWhileShoot(drivetrain, firstJoystick, shooterHopper)
                 )
             );
 
-            new Trigger(() -> joystick2.shootToAlliance()).whileTrue(
+            new Trigger(() -> secondJoystick.shootToAlliance()).whileTrue(
                 new ParallelCommandGroup(
                     new ShootCommand(shooterHopper, false),
-                    new FunnelToAllianceZone(drivetrain, joystick2, shooterHopper)
+                    new FunnelToAllianceZone(drivetrain, secondJoystick, shooterHopper)
                 )
             );
 
-            new Trigger(() -> joystick2.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         } else if (Toggles.useShooter && Toggles.useIntake) {
-            new Trigger(() -> joystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+            new Trigger(() -> firstJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
 
-            new Trigger(() -> joystick2.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         }
 
         if(Toggles.useShooter && Toggles.useIntake){
-            new Trigger(() -> joystick.manualShoot()).whileTrue(
+            new Trigger(() -> firstJoystick.manualShoot()).whileTrue(
                new ShootCommand(shooterHopper, true));
         }
 
         if (shooterHopper != null) {
             Trigger shootTrigger = new Trigger(() -> elasticMotorController.shootButton.get());
-            shootTrigger.onTrue(new ShootCommand(shooterHopper, true));
+            shootTrigger.whileTrue(new ShootCommand(shooterHopper, true));
+
+            // SysId characterization toggles (dashboard options)
+            ShooterOptions sysIdOpts = ShooterOptions.create();
+            new Trigger(() -> sysIdOpts.sysIdQuasistaticFwd.get())
+                .whileTrue(shooterHopper.sysIdQuasistatic(SysIdRoutine.Direction.kForward, sysIdOpts.sysIdQuasistaticFwd));
+            new Trigger(() -> sysIdOpts.sysIdQuasistaticRev.get())
+                .whileTrue(shooterHopper.sysIdQuasistatic(SysIdRoutine.Direction.kReverse, sysIdOpts.sysIdQuasistaticRev));
+            new Trigger(() -> sysIdOpts.sysIdDynamicFwd.get())
+                .whileTrue(shooterHopper.sysIdDynamic(SysIdRoutine.Direction.kForward, sysIdOpts.sysIdDynamicFwd));
+            new Trigger(() -> sysIdOpts.sysIdDynamicRev.get())
+                .whileTrue(shooterHopper.sysIdDynamic(SysIdRoutine.Direction.kReverse, sysIdOpts.sysIdDynamicRev));
         }
         // --- Game data overrides ---
         GameDataTracker.setAllianceWinOverride(
             () -> {
-                if (joystick2.lostAutoOverride()) return Optional.of(false);
-                if (joystick2.wonAutoOverride())  return Optional.of(true);
+                if (secondJoystick.lostAutoOverride()) return Optional.of(false);
+                if (secondJoystick.wonAutoOverride())  return Optional.of(true);
                 return Optional.empty();
             });
 
@@ -269,28 +281,28 @@ public class RobotContainer {
             .whileTrue(Commands.runEnd(
                 () -> {
                     if (Constants.ButtonBoard.rumbleOnAlert) {
-                        joystick.setRumble(1.0);
-                        joystick2.setRumble(1.0);
+                        firstJoystick.setRumble(1.0);
+                        secondJoystick.setRumble(1.0);
                     }
                     autoWinnerNotSet.set(true);
                 },
                 () -> {
-                    joystick.setRumble(0.0);
-                    joystick2.setRumble(0.0);
+                    firstJoystick.setRumble(0.0);
+                    secondJoystick.setRumble(0.0);
                     autoWinnerNotSet.set(false);
                 }));
 
         console("[Init] configureBindings");
 
         if (Toggles.useDrive) {
-            JoyStickDrive driveWithJoystick = new JoyStickDrive(drivetrain, joystick);
+            JoyStickDrive driveWithFirstJoystick = new JoyStickDrive(drivetrain, firstJoystick);
 
-            drivetrain.setDefaultCommand(driveWithJoystick);
-            // new Trigger(() -> joystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
-            new Trigger(() -> joystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
-            new Trigger(() -> ShooterOptions.create().moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, joystick, shooterHopper));
+            drivetrain.setDefaultCommand(driveWithFirstJoystick);
+            // new Trigger(() -> firstJoystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
+            new Trigger(() -> firstJoystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
+            new Trigger(() -> ShooterOptions.create().moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, firstJoystick, shooterHopper));
 
-//            new Trigger(() -> joystick.wheelRadiusCharacterization())
+//            new Trigger(() -> firstJoystick.wheelRadiusCharacterization())
 //                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
 
         }

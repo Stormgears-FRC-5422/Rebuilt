@@ -10,6 +10,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 
+import frc.robot.Constants;
 import org.littletonrobotics.junction.Logger;
 
 public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
@@ -57,6 +58,11 @@ public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     /** Enable closed-loop signal logging for this motor (refreshed and logged each cycle). */
     public StormTalon withClosedLoopLogging() {
         this.logClosedLoop = true;
+        double hz = Constants.Motor.closedLoopUpdateHz;
+        closedLoopReferenceSignal.setUpdateFrequency(hz);
+        closedLoopErrorSignal.setUpdateFrequency(hz);
+        closedLoopOutputSignal.setUpdateFrequency(hz);
+        closedLoopReferenceSlopeSignal.setUpdateFrequency(hz);
         return this;
     }
 

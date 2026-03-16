@@ -1,8 +1,9 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.*;
+
 import java.util.Arrays;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
 
@@ -12,7 +13,11 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -22,23 +27,26 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.Options.ButtonBoardOptions;
 import frc.robot.Options.ShooterOptions;
 import frc.utils.StormSubsystem;
+import frc.utils.configfile.Option;
 import frc.utils.pid.PidConfig;
+import org.littletonrobotics.junction.Logger;
 
 
 public class ShooterHopper extends StormSubsystem {
     public enum ShooterState {
-        IDLE, //default state
-        SPEEDING_UP, // time that it takes to reach the speed, may eventually be on a 1 second timer
-        SHOOTING, // hopper rollers should be running, probably also run the intake to get any balls that it's touching
-        OUTTAKE, // sends the ball back to the hopper
-        EJECT, //outtakes slowly out of the robot
-        BAD,
-        DIAGNOSTIC;
+        IDLE,
+        SPEEDING_UP,
+        SHOOTING,
+        DIAGNOSTIC,
+        CHARACTERIZING;
     }
 
     public final StormTalon leaderMotor;
@@ -47,9 +55,13 @@ public class ShooterHopper extends StormSubsystem {
 
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
+    private final VelocityTorqueCurrentFOC velocityTorqueFOC = new VelocityTorqueCurrentFOC(0).withSlot(0);
+    private final boolean useTorqueFOC = Shooter.useTorqueFOC;
+    private final NeutralOut neutralOut = new NeutralOut();
+    private final VoltageOut sysIdVoltage = new VoltageOut(0);
+    private final TorqueCurrentFOC sysIdTorque = new TorqueCurrentFOC(0);
+    private final SysIdRoutine sysIdRoutine;
     private double targetVelocityRPS;
-    private final SlewRateLimiter velocityRamp = new SlewRateLimiter(Shooter.shootSpinUpRate);
-    private double fuelInjectorSpeed = 0.0;
     private final ButtonBoardOptions buttonBoardOptions = ButtonBoardOptions.create();
     private final ShooterOptions shooterOptions = ShooterOptions.create();
     private ShooterState state;
@@ -90,13 +102,14 @@ public class ShooterHopper extends StormSubsystem {
         leaderMotor.setNeutralMode(neutralMode);
         followerMotor.setNeutralMode(neutralMode);
 
-        // Initialize PID configs
+        // Initialize PID configs — pick gains based on control mode toggle
         pid = new PidConfig()
-                .withKP(Shooter.shootKP)
-                .withKI(Shooter.shootKI)
-                .withKD(Shooter.shootKD)
-                .withKV(Shooter.shootKV)
-                .withKS(Shooter.shootKS)
+                .withKP(useTorqueFOC ? Shooter.shootKP_foc : Shooter.shootKP)
+                .withKI(useTorqueFOC ? Shooter.shootKI_foc : Shooter.shootKI)
+                .withKD(useTorqueFOC ? Shooter.shootKD_foc : Shooter.shootKD)
+                .withKV(useTorqueFOC ? Shooter.shootKV_foc : Shooter.shootKV)
+                .withKS(useTorqueFOC ? Shooter.shootKS_foc : Shooter.shootKS)
+                .withKA(useTorqueFOC ? Shooter.shootKA_foc : Shooter.shootKA)
                 .withKMinMax(Shooter.shootKMin, Shooter.shootKMax);
 
         // Parse shoot distance/speed lookup from properties into interpolating map
@@ -116,16 +129,30 @@ public class ShooterHopper extends StormSubsystem {
             funnelSpeedMap.put(funnelDistances[i], funnelSpeeds[i]);
         }
 
+        // SysId characterization routine — mode-aware (voltage or torque-current)
+        sysIdRoutine = new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null, null, null,
+                (sysIdState) -> Logger.recordOutput("Shooter/SysIdState", sysIdState.toString())),
+            new SysIdRoutine.Mechanism(
+                output -> {
+                    double value = output.in(Volts); // "volts" but actually amps when useTorqueFOC
+                    leaderMotor.setControl(useTorqueFOC
+                        ? sysIdTorque.withOutput(value)
+                        : sysIdVoltage.withOutput(value));
+                },
+                log -> {
+                    log.motor("shooter")
+                        .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
+                        .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
+                },
+                this));
+
         // Apply gains immediately, then mark dirty so they're re-applied on the first
         // periodic() when CAN is reliably up (constructor call may silently fail).
         configMotor();
         pid.setDirty();
-    }
-
-    public void setTargetVelocity(double givenTarget) {
-        if (state == ShooterState.SPEEDING_UP || state == ShooterState.SHOOTING) {
-            targetVelocityRPS = givenTarget;
-        }
     }
 
     public void stopShooter() {
@@ -134,36 +161,8 @@ public class ShooterHopper extends StormSubsystem {
 
     public void setState(ShooterState newState) {
         if (state == newState) return;
+        console("setState: " + state + " -> " + newState, 1);
         state = newState;
-    }
-
-    public void shooterStateMachine() {
-        switch (state) {
-            case IDLE -> {
-                targetVelocityRPS = 0.0;
-                fuelInjectorSpeed = 0.0;
-            }
-            case SPEEDING_UP -> {
-                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
-                fuelInjectorSpeed = 0.0;
-            }
-            case SHOOTING -> {
-                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
-                fuelInjectorSpeed = shooterOptions.fuelInjectorSpeed.get();
-            }
-            case OUTTAKE -> {
-                targetVelocityRPS = -10.0;
-                fuelInjectorSpeed = -0.5;
-            }
-            case EJECT -> {
-                targetVelocityRPS = 5.0;
-            }
-            case BAD -> {}
-            case DIAGNOSTIC -> {
-                targetVelocityRPS = 0;
-                fuelInjectorSpeed = 0;
-            }
-        }
     }
 
     public double getRPS(){
@@ -197,13 +196,29 @@ public class ShooterHopper extends StormSubsystem {
 
         useRealDist = buttonBoardOptions.usePose.get();
 
-        shooterStateMachine();
-        if (state == ShooterState.DIAGNOSTIC) {
-            leaderMotor.setControl(velocityVoltage.withVelocity(shooterOptions.manualRPS.get()));
-            fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
-        } else {
-            leaderMotor.setControl(velocityVoltage.withVelocity(velocityRamp.calculate(targetVelocityRPS)));
-            fuelInjector.set(fuelInjectorSpeed);
+        switch (state) {
+            case IDLE -> {
+                leaderMotor.setControl(neutralOut);
+                fuelInjector.set(0);
+            }
+            case SPEEDING_UP -> {
+                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
+                leaderMotor.setControl(useTorqueFOC
+                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : velocityVoltage.withVelocity(targetVelocityRPS));
+                fuelInjector.set(0);
+            }
+            case SHOOTING, DIAGNOSTIC -> {
+                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
+                leaderMotor.setControl(useTorqueFOC
+                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : velocityVoltage.withVelocity(targetVelocityRPS));
+                fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
+            }
+            case CHARACTERIZING -> {
+                // SysIdRoutine controls the motor directly — just keep fuelInjector off
+                fuelInjector.set(0);
+            }
         }
 
         if (pid.isDirty()) {
@@ -222,22 +237,16 @@ public class ShooterHopper extends StormSubsystem {
     }
 
     void configMotor() {
+        boolean ok = true;
         Slot0Configs slot0 = new Slot0Configs();
-
-        // From phoenix 6 examples
-        // Voltage-based velocity requires a velocity feed forward to account for the back-emf of the motor */
-        // configs.Slot0.kS = 0.1; // To account for friction, add 0.1 V of static feedforward
-        // configs.Slot0.kV = 0.12; // Kraken X60 is a 500 kV motor, 500 rpm per V = 8.333 rps per V, 1/8.33 = 0.12 volts / rotation per second
-        // configs.Slot0.kP = 0.11; // An error of 1 rotation per second results in 0.11 V output
-        // configs.Slot0.kI = 0; // No output for integrated error
-        // configs.Slot0.kD = 0; // No output for error derivative
 
         slot0.kP = pid.kP;
         slot0.kI = pid.kI;
         slot0.kD = pid.kD;
         slot0.kS = pid.kS;
         slot0.kV = pid.kV;
-        checkApply(leaderMotor.getConfigurator().apply(slot0), "leader slot0");
+        slot0.kA = pid.kA;
+        ok &= checkApply(leaderMotor.getConfigurator().apply(slot0), "leader slot0");
 
         MotorOutputConfigs out = new MotorOutputConfigs();
         out.PeakForwardDutyCycle = pid.kMax;
@@ -251,24 +260,26 @@ public class ShooterHopper extends StormSubsystem {
         currentLimits.StatorCurrentLimit = Shooter.statorCurrentLimit;
         currentLimits.StatorCurrentLimitEnable = true;
 
-        checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
-        checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
+        ok &= checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
+        ok &= checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
 
-        checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
-        checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");
+        ok &= checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
+        ok &= checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");
+
+        if (ok) {
+            console("configMotor applied successfully: " + pid, 1);
+        }
     }
-    private void checkApply(StatusCode code, String context) {
+    private boolean checkApply(StatusCode code, String context) {
         if (!code.isOK()) {
             console("configMotor FAILED [" + context + "]: " + code, 1);
+            return false;
         }
+        return true;
     }
 
     public double getCurrentVelocityRPS() {
         return leaderMotor.getMotorVelocity();
-    }
-
-    public double getTargetVelocityRPS() {
-        return targetVelocityRPS;
     }
 
     public boolean isReadyToFeed() {
@@ -276,5 +287,17 @@ public class ShooterHopper extends StormSubsystem {
         if (target < 1.0) return false;
         double actual = Math.abs(leaderMotor.getMotorVelocity());
         return actual >= target * Shooter.percentTargetReady;
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction, Option<Boolean> toggle) {
+        return Commands.runOnce(() -> setState(ShooterState.CHARACTERIZING))
+            .andThen(sysIdRoutine.quasistatic(direction))
+            .finallyDo(() -> { setState(ShooterState.IDLE); toggle.setValue(false); });
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction, Option<Boolean> toggle) {
+        return Commands.runOnce(() -> setState(ShooterState.CHARACTERIZING))
+            .andThen(sysIdRoutine.dynamic(direction))
+            .finallyDo(() -> { setState(ShooterState.IDLE); toggle.setValue(false); });
     }
 }
