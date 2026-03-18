@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.subsystems.OdometrySample;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.SimplePoseTelemetry;
 import frc.robot.sensors.imu.IMU;
@@ -91,12 +92,14 @@ public class BasicSwerve extends DrivetrainBase {
             driveWithoutRotation();
         }
 
-        // Update pose estimator with current gyro reading and module positions
-        currentPose = internalPoseEstimator.update(
+        // Queue odometry for EstimationManager to process
+        addOdometrySample(new OdometrySample(
+            edu.wpi.first.wpilibj.Timer.getFPGATimestamp(),
             imu.getRotation(),
             moduleGroup.getModulePositions()
-        );
+        ));
 
+        currentPose = poseEstimatorWrapper.getPose();
         robotTelemetry.telemeterize(currentPose);
     }
 

@@ -59,6 +59,11 @@ public class WPILibPoseEstimator implements PoseEstimator {
         estimator.addVisionMeasurement(visionPose, timestampSeconds, stdDevs);
     }
 
+    @Override
+    public void updateOdometry(double timestampSeconds, Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
+        estimator.updateWithTime(timestampSeconds, gyroAngle, modulePositions);
+    }
+
     /**
      * Get the underlying SwerveDrivePoseEstimator for direct access if needed.
      * Use this for operations not covered by the interface (e.g., update()).

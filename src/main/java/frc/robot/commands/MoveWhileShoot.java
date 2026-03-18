@@ -142,7 +142,7 @@ public class MoveWhileShoot extends StormCommand {
     private void updateGoalAngle() {
         Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE)
             ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
-        Pose2d current = drivetrain.getPoseEstimator().getPose();
+        Pose2d current = RobotState.getInstance().getPose();
 
         // Get field-relative velocity for compensation
         ChassisSpeeds fieldVel = drivetrain.getMeasuredFieldSpeeds();

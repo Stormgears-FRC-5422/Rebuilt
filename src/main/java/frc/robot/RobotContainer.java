@@ -46,6 +46,7 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ShooterHopper;
+import frc.robot.subsystems.EstimationManager;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -69,6 +70,7 @@ public class RobotContainer {
     private Lights lights;
     @SuppressWarnings("unused")
     private VisionSubsystem vision;
+    private EstimationManager estimationManager;
     private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
     @SuppressWarnings("unused")
@@ -109,6 +111,10 @@ public class RobotContainer {
 
             }
             vision = new VisionSubsystem(drivetrain, limelights.toArray(new String[0]));
+        }
+
+        if (Toggles.useDrive) {
+            estimationManager = new EstimationManager(drivetrain, vision);
         }
 
         if (Toggles.useIntake) {
