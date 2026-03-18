@@ -225,10 +225,6 @@ public class RobotContainer {
             new Trigger(() -> firstJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         }
 
-        if (secondJoystick != null) {
-            configureSecondJoystickBindings();
-        }
-
         if(Toggles.useShooter && Toggles.useIntake){
             new Trigger(() -> firstJoystick.manualShoot()).whileTrue(
                new ShootCommand(shooterHopper, true));
