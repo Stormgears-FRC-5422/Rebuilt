@@ -155,6 +155,11 @@ public class Robot extends LoggedRobot {
         if (!state.getJoystickReady() && isJoyStickConnected() && robotContainer != null) {
             robotContainer.onJoysticksAvaiable();
         }
+
+        // Periodically retry connecting second joystick
+        if (state.getJoystickReady() && robotContainer != null && iteration % 25 == 0) {
+            robotContainer.tryConnectSecondJoystick();
+        }
     }
 
     @Override

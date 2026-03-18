@@ -152,12 +152,29 @@ public class RobotContainer {
         console("Configuring Joystick and bindings");
         try {
             firstJoystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick, Constants.ButtonBoard.driveJoystickPort);
-            secondJoystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
+            if (!tryConnectSecondJoystick()) {
+                console("Second joystick not connected on port " + Constants.ButtonBoard.driveJoystickPort2);
+            }
             configureBindings();
             robotState.setJoystickReady(true);
         } catch (IllegalJoystickTypeException e) {
             console("disabledPeriodic: Error configuring Joystick and button board" + e.getMessage());
         }
+    }
+
+    /** Attempts to connect the second joystick if not already connected. Returns true if connected. */
+    public boolean tryConnectSecondJoystick() {
+        if (secondJoystick != null) return true;
+        if (DriverStation.isJoystickConnected(Constants.ButtonBoard.driveJoystickPort2)) {
+            try {
+                secondJoystick = RebuiltJoystickFactory.getInstance(Constants.ButtonBoard.driveJoystick2, Constants.ButtonBoard.driveJoystickPort2);
+                configureSecondJoystickBindings();
+                return true;
+            } catch (IllegalJoystickTypeException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private void configureBindings() {
@@ -167,25 +184,12 @@ public class RobotContainer {
                 .whileTrue(new AlignNarrow(drivetrain, firstJoystick));
         }
 
-        if (Toggles.useDrive) {
-            new Trigger(() -> secondJoystick.safe())
-                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
-        }
-
         if (Toggles.useIntake) {
             new Trigger(() -> elasticMotorController.homeIntake.get())
                 .whileTrue(new IntakeHome(intake)
                     .finallyDo(() -> elasticMotorController.homeIntake.setValue(false)));
 
-            intake.setDefaultCommand(new IntakeManual(intake, secondJoystick));
-            new Trigger(() -> secondJoystick.intakeMoved())
-                .onTrue(Commands.runOnce(() -> intake.getCurrentCommand().cancel())
-                    .onlyIf(() -> intake.getCurrentCommand() != intake.getDefaultCommand()));
-
             new Trigger(() -> firstJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
-
-            new Trigger(() -> secondJoystick.intakeHome())
-                .onTrue(new IntakeHome(intake));
 
             new Trigger(() -> firstJoystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
@@ -193,8 +197,6 @@ public class RobotContainer {
                 () -> Constants.Intake.useDynamicRumble));
 
             new Trigger(() -> firstJoystick.intakeTogglePressed())
-                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
-            new Trigger(() -> secondJoystick.intakeTogglePressed())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
 
         }
@@ -210,15 +212,6 @@ public class RobotContainer {
             new Trigger(() -> elasticMotorController.climberManualDown.get()).whileTrue(
                 Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
                                   () -> climber.setManualDirection(null), climber));
-
-            new Trigger(() -> secondJoystick.climbHome()).onTrue(new ClimberHome(climber));
-            new Trigger(() -> secondJoystick.climbSequence()).onTrue(new ClimberSequence(climber));
-            new Trigger(() -> secondJoystick.climbManualUp()).whileTrue(
-                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.FORWARD),
-                                  () -> climber.setManualDirection(null), climber));
-            new Trigger(() -> secondJoystick.climbManualDown()).whileTrue(
-                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
-                                  () -> climber.setManualDirection(null), climber));
         }
 
         if (Toggles.useDrive && Toggles.useShooter && Toggles.useIntake) {
@@ -228,19 +221,12 @@ public class RobotContainer {
                     new MoveWhileShoot(drivetrain, firstJoystick, shooterHopper)
                 )
             );
-
-            new Trigger(() -> secondJoystick.shootToAlliance()).whileTrue(
-                new ParallelCommandGroup(
-                    new ShootCommand(shooterHopper, false),
-                    new FunnelToAllianceZone(drivetrain, secondJoystick, shooterHopper)
-                )
-            );
-
-            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         } else if (Toggles.useShooter && Toggles.useIntake) {
             new Trigger(() -> firstJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+        }
 
-            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+        if (secondJoystick != null) {
+            configureSecondJoystickBindings();
         }
 
         if(Toggles.useShooter && Toggles.useIntake){
@@ -267,6 +253,7 @@ public class RobotContainer {
         // --- Game data overrides ---
         GameDataTracker.setAllianceWinOverride(
             () -> {
+                if (secondJoystick == null) return Optional.empty();
                 if (secondJoystick.lostAutoOverride()) return Optional.of(false);
                 if (secondJoystick.wonAutoOverride())  return Optional.of(true);
                 return Optional.empty();
@@ -284,13 +271,13 @@ public class RobotContainer {
                 () -> {
                     if (Constants.ButtonBoard.rumbleOnAlert) {
                         firstJoystick.setRumble(1.0);
-                        secondJoystick.setRumble(1.0);
+                        if (secondJoystick != null) secondJoystick.setRumble(1.0);
                     }
                     autoWinnerNotSet.set(true);
                 },
                 () -> {
                     firstJoystick.setRumble(0.0);
-                    secondJoystick.setRumble(0.0);
+                    if (secondJoystick != null) secondJoystick.setRumble(0.0);
                     autoWinnerNotSet.set(false);
                 }));
 
@@ -309,6 +296,52 @@ public class RobotContainer {
 
         }
 
+    }
+
+    private void configureSecondJoystickBindings() {
+        console("Configuring second joystick bindings");
+
+        if (Toggles.useDrive) {
+            new Trigger(() -> secondJoystick.safe())
+                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
+        }
+
+        if (Toggles.useIntake) {
+            intake.setDefaultCommand(new IntakeManual(intake, secondJoystick));
+            new Trigger(() -> secondJoystick.intakeMoved())
+                .onTrue(Commands.runOnce(() -> intake.getCurrentCommand().cancel())
+                    .onlyIf(() -> intake.getCurrentCommand() != intake.getDefaultCommand()));
+
+            new Trigger(() -> secondJoystick.intakeHome())
+                .onTrue(new IntakeHome(intake));
+
+            new Trigger(() -> secondJoystick.intakeTogglePressed())
+                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
+        }
+
+        if (Toggles.useClimber) {
+            new Trigger(() -> secondJoystick.climbHome()).onTrue(new ClimberHome(climber));
+            new Trigger(() -> secondJoystick.climbSequence()).onTrue(new ClimberSequence(climber));
+            new Trigger(() -> secondJoystick.climbManualUp()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.FORWARD),
+                                  () -> climber.setManualDirection(null), climber));
+            new Trigger(() -> secondJoystick.climbManualDown()).whileTrue(
+                Commands.startEnd(() -> climber.setManualDirection(Climber.Direction.BACKWARD),
+                                  () -> climber.setManualDirection(null), climber));
+        }
+
+        if (Toggles.useDrive && Toggles.useShooter && Toggles.useIntake) {
+            new Trigger(() -> secondJoystick.shootToAlliance()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootCommand(shooterHopper, false),
+                    new FunnelToAllianceZone(drivetrain, secondJoystick, shooterHopper)
+                )
+            );
+
+            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+        } else if (Toggles.useShooter && Toggles.useIntake) {
+            new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+        }
     }
 
     public void periodic() {
