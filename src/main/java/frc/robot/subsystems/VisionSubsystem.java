@@ -18,6 +18,7 @@ import org.littletonrobotics.junction.Logger;
 public class VisionSubsystem extends StormSubsystem {
 
     String[] limelightIDs;
+    private final java.util.ArrayList<String> activeLLs = new java.util.ArrayList<>();
 
     /** Drivetrain reference — used for gyro heading and pose estimator */
     private DrivetrainBase drivetrain;
@@ -94,6 +95,7 @@ public class VisionSubsystem extends StormSubsystem {
 
         return new Transform2d(xDist, yDist, new Rotation2d(planarAngle));
     }
+
 
     /** Returns true if any limelight sees at least one tag. */
     public boolean seesAnyTag() {
@@ -194,6 +196,7 @@ public class VisionSubsystem extends StormSubsystem {
         // Snapshot pose before any vision corrections this cycle
         Pose2d poseBefore = (hasDrive) ? drivetrainPoseEstimator.getPose() : new Pose2d();
 
+        activeLLs.clear();
         int acceptedCount = 0;
 
         for (String ll : limelightIDs) {
@@ -220,6 +223,7 @@ public class VisionSubsystem extends StormSubsystem {
             if (!accepted) continue;
 
             acceptedCount++;
+            activeLLs.add(ll);
 
             if (hasDrive && Constants.Vision.mergeVision) {
                 drivetrainPoseEstimator.addVisionMeasurement(
@@ -231,6 +235,7 @@ public class VisionSubsystem extends StormSubsystem {
         }
 
         Logger.recordOutput("Vision/AcceptedCount", acceptedCount);
+        Logger.recordOutput("Vision/ActiveLLs", activeLLs.toArray(new String[0]));
 
         if (hasDrive && Constants.Vision.mergeVision && acceptedCount > 0) {
             Pose2d poseAfter = drivetrainPoseEstimator.getPose();
