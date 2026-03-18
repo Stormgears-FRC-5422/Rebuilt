@@ -273,9 +273,11 @@ public class RobotContainer {
                     .finallyDo(() -> elasticMotorController.diagIntakeUpDown.setValue(false)));
         }
 
-        new Trigger(() -> elasticMotorController.systemCheck.get())
-            .whileTrue(new SystemCheck(shooterHopper, intake)
-                .finallyDo(() -> elasticMotorController.systemCheck.setValue(false)));
+        if (shooterHopper != null && intake != null) {
+            new Trigger(() -> elasticMotorController.systemCheck.get())
+                .whileTrue(new SystemCheck(shooterHopper, intake)
+                    .finallyDo(() -> elasticMotorController.systemCheck.setValue(false)));
+        }
 
         // --- Game data overrides ---
         GameDataTracker.setAllianceWinOverride(
