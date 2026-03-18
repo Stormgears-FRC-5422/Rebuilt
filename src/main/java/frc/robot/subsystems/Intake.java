@@ -85,7 +85,7 @@ public class Intake extends StormSubsystem {
 
     @SuppressWarnings("resource")
     public Intake() {
-        updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor").withClosedLoopLogging();
+        updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor").withLoggingScale(360.0).withClosedLoopLogging();
         rollerIntakeMotor = new StormTalon(frc.robot.Constants.Intake.rollerID, new CANBus("")).withName("rollerIntakeMotor");
 
         CurrentLimitsConfigs rollerCurrentLimits = new CurrentLimitsConfigs();

@@ -4,6 +4,7 @@ import com.revrobotics.spark.SparkMax;
 
 public class StormSparkMax extends SparkMax implements MotorLogger<StormSparkMax> {
     private String name;
+    private double loggingScale = 1.0;
 
     public StormSparkMax(int deviceId, MotorType motorType) {
         super(deviceId, motorType);
@@ -17,6 +18,17 @@ public class StormSparkMax extends SparkMax implements MotorLogger<StormSparkMax
     public StormSparkMax withName(String name) {
         this.name = name;
         return this;
+    }
+
+    /** Scale factor applied to position/velocity in log output only. Does not affect getMotorPosition()/getMotorVelocity(). */
+    public StormSparkMax withLoggingScale(double scale) {
+        this.loggingScale = scale;
+        return this;
+    }
+
+    @Override
+    public double getLoggingScale() {
+        return loggingScale;
     }
 
     @Override

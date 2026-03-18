@@ -16,6 +16,7 @@ import org.littletonrobotics.junction.Logger;
 public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     private String name;
     private boolean logClosedLoop = false;
+    private double loggingScale = 1.0;
 
     // Cached status signals — refreshed in a single CAN batch read each cycle
     private final StatusSignal<AngularVelocity> velocitySignal;
@@ -53,6 +54,17 @@ public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     public StormTalon withName(String name) {
         this.name = name;
         return this;
+    }
+
+    /** Scale factor applied to position/velocity in log output only. Does not affect getMotorPosition()/getMotorVelocity(). */
+    public StormTalon withLoggingScale(double scale) {
+        this.loggingScale = scale;
+        return this;
+    }
+
+    @Override
+    public double getLoggingScale() {
+        return loggingScale;
     }
 
     /** Enable closed-loop signal logging for this motor (refreshed and logged each cycle). */
@@ -102,16 +114,17 @@ public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
     @Override
     public void periodic() {
         refreshSignals();
+        double scale = getLoggingScale();
         String basePath = "Motors/" + getMotorName();
         Logger.recordOutput(basePath + "/StatorCurrent", getMotorCurrent());
-        Logger.recordOutput(basePath + "/Position", getMotorPosition());
-        Logger.recordOutput(basePath + "/Velocity", getMotorVelocity());
+        Logger.recordOutput(basePath + "/Position", getMotorPosition() * scale);
+        Logger.recordOutput(basePath + "/Velocity", getMotorVelocity() * scale);
         Logger.recordOutput(basePath + "/Voltage", getMotorVoltageOutput());
         if (logClosedLoop) {
-            Logger.recordOutput(basePath + "/ClosedLoopReference", closedLoopReferenceSignal.getValueAsDouble());
-            Logger.recordOutput(basePath + "/ClosedLoopError", closedLoopErrorSignal.getValueAsDouble());
+            Logger.recordOutput(basePath + "/ClosedLoopReference", closedLoopReferenceSignal.getValueAsDouble() * scale);
+            Logger.recordOutput(basePath + "/ClosedLoopError", closedLoopErrorSignal.getValueAsDouble() * scale);
             Logger.recordOutput(basePath + "/ClosedLoopOutput", closedLoopOutputSignal.getValueAsDouble());
-            Logger.recordOutput(basePath + "/ClosedLoopReferenceSlope", closedLoopReferenceSlopeSignal.getValueAsDouble());
+            Logger.recordOutput(basePath + "/ClosedLoopReferenceSlope", closedLoopReferenceSlopeSignal.getValueAsDouble() * scale);
         }
     }
 }
