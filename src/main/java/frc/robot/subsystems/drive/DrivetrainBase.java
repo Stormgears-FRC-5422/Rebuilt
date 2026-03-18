@@ -24,7 +24,10 @@ import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.NullIMU;
 import frc.robot.sensors.pose.NullPoseEstimator;
 import frc.robot.sensors.pose.PoseEstimator;
+import frc.robot.subsystems.OdometrySample;
 import frc.utils.StormSubsystem;
+
+import java.util.ArrayList;
 
 /**
  * Abstract base class for all drivetrain implementations.
@@ -52,6 +55,27 @@ public abstract class DrivetrainBase extends StormSubsystem {
 
     @AutoLogOutput
     protected ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+
+    /** Odometry samples collected during periodic(), consumed by EstimationManager */
+    private ArrayList<OdometrySample> pendingOdometrySamples = new ArrayList<>();
+
+    /**
+     * Store an odometry sample for EstimationManager to process.
+     * Called by drive implementations instead of updating the estimator directly.
+     */
+    protected void addOdometrySample(OdometrySample sample) {
+        pendingOdometrySamples.add(sample);
+    }
+
+    /**
+     * Returns all pending odometry samples and clears the list.
+     * Called by EstimationManager each cycle.
+     */
+    public ArrayList<OdometrySample> getAndClearOdometrySamples() {
+        ArrayList<OdometrySample> samples = pendingOdometrySamples;
+        pendingOdometrySamples = new ArrayList<>();
+        return samples;
+    }
 
     /** Collision manager for simulation (null on real robot or if disabled) */
     private frc.robot.simulation.collision.CollisionManager collisionManager;

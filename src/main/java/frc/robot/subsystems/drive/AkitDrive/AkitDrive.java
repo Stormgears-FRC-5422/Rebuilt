@@ -7,15 +7,7 @@
 
 package frc.robot.subsystems.drive.AkitDrive;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
+import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
@@ -37,12 +29,19 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.FieldConstants;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import frc.robot.Constants;
 import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;
-import frc.robot.subsystems.drive.DrivetrainBase;
+import frc.robot.subsystems.OdometrySample;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
+import frc.robot.subsystems.drive.DrivetrainBase;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 public class AkitDrive extends DrivetrainBase {
     // TunerConstants doesn't include these constants, so they are declared locally
@@ -76,9 +75,11 @@ public class AkitDrive extends DrivetrainBase {
         };
     private SwerveDrivePoseEstimator poseEstimator =
         new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+    private final WPILibPoseEstimator poseEstimatorWrapper;
 
     public AkitDrive() {
         this.gyroIO = new GyroIOPigeon2();
+        poseEstimatorWrapper = new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
         modules[0] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontLeft),
             0, RebuiltTorqueFOC.FrontLeft);
         modules[1] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontRight),
@@ -119,7 +120,7 @@ public class AkitDrive extends DrivetrainBase {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        if (driveOptions.useXLock.get() && isChassisSpeedsZero() && isShooting()) {
+        if (driveOptions.useXLock.get() && isChassisSpeedsZero()) {
             stopWithX();
             Logger.recordOutput("Drive/XLockActive", true);
         } else {
@@ -172,8 +173,8 @@ public class AkitDrive extends DrivetrainBase {
                 rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
             }
 
-            // Apply update
-            poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+            // Queue for EstimationManager to process
+            addOdometrySample(new OdometrySample(sampleTimestamps[i], rawGyroRotation, modulePositions));
         }
 
         // Update gyro alert
@@ -376,6 +377,6 @@ public class AkitDrive extends DrivetrainBase {
 
     @Override
     public PoseEstimator getPoseEstimator() {
-        return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+        return poseEstimatorWrapper;
     }
 }
