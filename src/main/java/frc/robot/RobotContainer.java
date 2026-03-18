@@ -28,6 +28,11 @@ import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.diagnostic.HopperDiagnostic;
+import frc.robot.commands.diagnostic.IntakePositionDiagnostic;
+import frc.robot.commands.diagnostic.IntakeRollerDiagnostic;
+import frc.robot.commands.diagnostic.ShooterDiagnostic;
+import frc.robot.commands.diagnostic.SystemCheck;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
 import frc.robot.commands.intake.DynamicRumble;
@@ -264,6 +269,32 @@ public class RobotContainer {
             new Trigger(() -> sysIdOpts.sysIdDynamicRev.get())
                 .whileTrue(shooterHopper.sysIdDynamic(SysIdRoutine.Direction.kReverse, sysIdOpts.sysIdDynamicRev));
         }
+
+        // --- Diagnostic triggers ---
+        if (shooterHopper != null) {
+            new Trigger(() -> elasticMotorController.diagShooter.get())
+                .whileTrue(new ShooterDiagnostic(shooterHopper)
+                    .finallyDo(() -> elasticMotorController.diagShooter.setValue(false)));
+
+            new Trigger(() -> elasticMotorController.diagHopper.get())
+                .whileTrue(new HopperDiagnostic(shooterHopper)
+                    .finallyDo(() -> elasticMotorController.diagHopper.setValue(false)));
+        }
+
+        if (intake != null) {
+            new Trigger(() -> elasticMotorController.diagIntakeRoller.get())
+                .whileTrue(new IntakeRollerDiagnostic(intake)
+                    .finallyDo(() -> elasticMotorController.diagIntakeRoller.setValue(false)));
+
+            new Trigger(() -> elasticMotorController.diagIntakeUpDown.get())
+                .whileTrue(new IntakePositionDiagnostic(intake)
+                    .finallyDo(() -> elasticMotorController.diagIntakeUpDown.setValue(false)));
+        }
+
+        new Trigger(() -> elasticMotorController.systemCheck.get())
+            .whileTrue(new SystemCheck(shooterHopper, intake)
+                .finallyDo(() -> elasticMotorController.systemCheck.setValue(false)));
+
         // --- Game data overrides ---
         GameDataTracker.setAllianceWinOverride(
             () -> {
