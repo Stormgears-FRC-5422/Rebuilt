@@ -114,7 +114,7 @@
             "y": 512.0,
             "width": 384.0,
             "height": 128.0,
-            "type": "Number Bar",
+            "type": "Number Slider",
             "properties": {
               "topic": "/Elastic/Intake Options/rollerIntakeSpeed",
               "period": 0.06,
@@ -122,8 +122,7 @@
               "min_value": 0.0,
               "max_value": 1.0,
               "divisions": 5,
-              "inverted": false,
-              "orientation": "horizontal"
+              "update_continuously": false
             }
           },
           {
@@ -132,7 +131,7 @@
             "y": 512.0,
             "width": 384.0,
             "height": 128.0,
-            "type": "Number Bar",
+            "type": "Number Slider",
             "properties": {
               "topic": "/Elastic/Intake Options/rollerOuttakeSpeed",
               "period": 0.06,
@@ -140,8 +139,7 @@
               "min_value": 0.0,
               "max_value": 1.0,
               "divisions": 5,
-              "inverted": false,
-              "orientation": "horizontal"
+              "update_continuously": false
             }
           },
           {
@@ -189,6 +187,79 @@
               "max_value": 1.0,
               "divisions": 5,
               "update_continuously": false
+            }
+          },
+          {
+            "title": "Homed?",
+            "x": 256.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Intake/HasBeenHomed",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "home intake",
+            "x": 256.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/homeintake",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "Intake Angle",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Motors/upDownIntakeMotor/Position",
+              "period": 0.06,
+              "data_type": "double"
+            }
+          },
+          {
+            "title": "XLockActive",
+            "x": 128.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drive/XLockActive",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "X Locking",
+            "x": 128.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drive/XLockActive",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
             }
           }
         ]
