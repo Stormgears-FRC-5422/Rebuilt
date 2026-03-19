@@ -7,7 +7,15 @@
 
 package frc.robot.subsystems.drive.AkitDrive;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
@@ -29,18 +37,11 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import frc.robot.Constants;
 import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;
-import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 import frc.robot.subsystems.drive.DrivetrainBase;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 
 public class AkitDrive extends DrivetrainBase {
     // TunerConstants doesn't include these constants, so they are declared locally
@@ -117,7 +118,7 @@ public class AkitDrive extends DrivetrainBase {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        if (driveOptions.useXLock.get() && isChassisSpeedsZero()) {
+        if (driveOptions.useXLock.get() && isChassisSpeedsZero() && isInAllianceZones()) {
             stopWithX();
             Logger.recordOutput("Drive/XLockActive", true);
         } else {
@@ -375,5 +376,9 @@ public class AkitDrive extends DrivetrainBase {
     @Override
     public PoseEstimator getPoseEstimator() {
         return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+    }
+    private boolean isInAllianceZones() {
+        double poseX = getPose().getX();
+        return poseX < 4.4 || poseX > 12.1;
     }
 }
