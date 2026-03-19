@@ -30,13 +30,7 @@ public class SystemCheck extends SequentialCommandGroup {
         List<Command> diagCommands = new ArrayList<>();
 
         if (shooterHopper != null) {
-            diagCommands.add(new ShooterDiagnostic(shooterHopper));
-            diagCommands.add(
-                Commands.sequence(
-                    Commands.waitSeconds(1.0),
-                    new HopperDiagnostic(shooterHopper)
-                )
-            );
+            diagCommands.add(new ShooterDiagnostic(shooterHopper, () -> true, () -> true));
         }
 
         if (intake != null) {

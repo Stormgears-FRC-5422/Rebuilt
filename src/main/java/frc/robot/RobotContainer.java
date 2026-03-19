@@ -28,7 +28,6 @@ import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
-import frc.robot.commands.diagnostic.HopperDiagnostic;
 import frc.robot.commands.diagnostic.IntakePositionDiagnostic;
 import frc.robot.commands.diagnostic.IntakeRollerDiagnostic;
 import frc.robot.commands.diagnostic.ShooterDiagnostic;
@@ -254,13 +253,14 @@ public class RobotContainer {
 
         // --- Diagnostic triggers ---
         if (shooterHopper != null) {
-            new Trigger(() -> elasticMotorController.diagShooter.get())
-                .whileTrue(new ShooterDiagnostic(shooterHopper)
-                    .finallyDo(() -> elasticMotorController.diagShooter.setValue(false)));
-
-            new Trigger(() -> elasticMotorController.diagHopper.get())
-                .whileTrue(new HopperDiagnostic(shooterHopper)
-                    .finallyDo(() -> elasticMotorController.diagHopper.setValue(false)));
+            new Trigger(() -> elasticMotorController.diagShooter.get() || elasticMotorController.diagHopper.get())
+                .whileTrue(new ShooterDiagnostic(shooterHopper,
+                        elasticMotorController.diagShooter::get,
+                        elasticMotorController.diagHopper::get)
+                    .finallyDo(() -> {
+                        elasticMotorController.diagShooter.setValue(false);
+                        elasticMotorController.diagHopper.setValue(false);
+                    }));
         }
 
         if (intake != null) {
