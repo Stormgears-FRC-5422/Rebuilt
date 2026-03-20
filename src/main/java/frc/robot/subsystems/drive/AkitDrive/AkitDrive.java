@@ -37,6 +37,7 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.FieldConstants;
 import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;
@@ -118,7 +119,7 @@ public class AkitDrive extends DrivetrainBase {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        if (driveOptions.useXLock.get() && isChassisSpeedsZero() && isInAllianceZones()) {
+        if (driveOptions.useXLock.get() && isChassisSpeedsZero() && FieldConstants.isInAllianceZones(getPose())) {
             stopWithX();
             Logger.recordOutput("Drive/XLockActive", true);
         } else {
@@ -376,9 +377,5 @@ public class AkitDrive extends DrivetrainBase {
     @Override
     public PoseEstimator getPoseEstimator() {
         return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
-    }
-    private boolean isInAllianceZones() {
-        double poseX = getPose().getX();
-        return poseX < 4.4 || poseX > 12.1;
     }
 }

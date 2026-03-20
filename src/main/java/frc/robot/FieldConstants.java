@@ -22,9 +22,17 @@ public class FieldConstants {
     public static final Pose2d leftRed = new Pose2d(RebuiltField.FIELD_LENGTH - CORNER_OFFSET, CORNER_OFFSET, new Rotation2d());
     public static final Pose2d rightRed = new Pose2d(RebuiltField.FIELD_LENGTH - CORNER_OFFSET, RebuiltField.FIELD_WIDTH - CORNER_OFFSET, new Rotation2d());
 
+    public static final double AllianceZoneDepthMeters = 4.4;
+    public static final double BLUE_ALLIANCE_ZONE_MAX_X = AllianceZoneDepthMeters;
+    public static final double RED_ALLIANCE_ZONE_MIN_X = RebuiltField.FIELD_LENGTH - AllianceZoneDepthMeters;
 
+    public static boolean isInAllianceZones(Pose2d pose) {
+        return isInAllianceZones(pose.getX());
+    }
 
-
+    public static boolean isInAllianceZones(double xMeters) {
+        return xMeters <= BLUE_ALLIANCE_ZONE_MAX_X || xMeters >= RED_ALLIANCE_ZONE_MIN_X;
+    }
 
     /**
      * Method should NOT be used directly in commands
