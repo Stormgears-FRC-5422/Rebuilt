@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 /**
  * Wraps WPILib's SwerveDrivePoseEstimator for use with the PoseEstimator interface.
- * This is a thin wrapper - the update cycle is managed by the drive subsystem.
+ * This is a thin wrapper — EstimationManager owns the update cycle.
  */
 public class WPILibPoseEstimator implements PoseEstimator {
     private final SwerveDrivePoseEstimator estimator;
