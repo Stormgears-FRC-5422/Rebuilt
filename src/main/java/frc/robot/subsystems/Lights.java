@@ -45,7 +45,7 @@ public class Lights extends StormSubsystem {
 
     private boolean inActiveFirst;
 
-    private enum hubStates{
+    private enum hubStates {
         AUTO,
         ACTIVE_SHIFT,
         TRANSITION_PERIOD,
@@ -97,7 +97,10 @@ public class Lights extends StormSubsystem {
         // }
 
         setTransitionPeriod(switchingShiftSoon()); //check if inbetween transition period(set rainbow) otherwise set as hub state
-
+        checkShift(); //check if we are in active first or not
+        
+        setShift(inActiveFirst); //set shift pattern based on if we are in active first or not
+        setBatteryPulse(); //check battery state and set pulse accordingly
     
         // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
@@ -208,16 +211,19 @@ public class Lights extends StormSubsystem {
                         inActiveFirst = true;
                     } 
                     else inActiveFirst = false;
+                    break;
                 case 'R' :
                     //Red case code
                     if(team.equals("RED")){
                         inActiveFirst = true;
                     }
                     else inActiveFirst = false;
+                    break;
                 default :
                     break;
             }
-        } else {
+        } 
+        else {
         //Code for no data received yet
         }
     }
@@ -232,31 +238,42 @@ public class Lights extends StormSubsystem {
     }
     //AUTO - 20sec, 10(transition), 25, 25, 25, 25, 30(end game)
 
-    public void setShift(boolean hubState){
+    public void setShift(boolean inActiveFirst){
+
+        int matchTime = (int) DriverStation.getMatchTime();
+        setSolid(RED_COLOR);
         if(inActiveFirst){
-            for(int i = 4; i>=0; i-=2){
-                int transitionTime = 130 - (i*25);
-                if(DriverStation.getMatchTime() < transitionTime && DriverStation.getMatchTime() > transitionTime -7){
-                    setRainbow(true);
-                }
+            if(matchTime<130 && matchTime > 105){
+                setSolid(RED_COLOR);
+            }
+            else if(matchTime<105 && matchTime > 80){
+                setSolid(GREEN_COLOR);
+            }
+            else if(matchTime<80 && matchTime > 55){
+                setSolid(RED_COLOR);
+            }
+            else if(matchTime<55 && matchTime > 30){
+                setSolid(GREEN_COLOR);
             }
         }
-        if(hubState){
-            setSolid(GREEN_COLOR);
-        }
         else{
-            setSolid(RED_COLOR);
+            if(matchTime<130 && matchTime > 105){
+                setSolid(GREEN_COLOR);
+            }
+            else if(matchTime<105 && matchTime > 80){
+                setSolid(RED_COLOR);
+            }
+            else if(matchTime<80 && matchTime > 55){
+                setSolid(GREEN_COLOR);
+            }
+            else if(matchTime<55 && matchTime > 30){
+                setSolid(RED_COLOR);
+            }
         }
     }
     public void setTransitionPeriod(boolean transition){
-        if(transition){
-            setRainbow(transition);
-        }
-        else{
-            checkShift();
-            setShift(inActiveFirst);
-        }
-
+            if(transition){
+                setRainbow(pulse);
+            }
     }
-
 }
