@@ -3,6 +3,8 @@ package frc.robot.subsystems.drive;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import java.util.function.BooleanSupplier;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 
 import choreo.trajectory.SwerveSample;
@@ -324,6 +326,16 @@ public abstract class DrivetrainBase extends StormSubsystem {
             currentPose.getTranslation(),
             targetRotation
         ));
+    }
+
+    private BooleanSupplier isShootingSupplier = () -> false;
+
+    public void setShootingSupplier(BooleanSupplier supplier) {
+        isShootingSupplier = supplier;
+    }
+
+    protected boolean isShooting() {
+        return isShootingSupplier.getAsBoolean();
     }
 
     protected boolean isChassisSpeedsZero() {
