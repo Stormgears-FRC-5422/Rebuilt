@@ -55,6 +55,7 @@ public abstract class DrivetrainBase extends StormSubsystem {
     private frc.robot.simulation.collision.CollisionManager collisionManager;
 
     private boolean m_dashboardRegistered = false;
+    private final SimplePoseTelemetry robotTelemetry = new SimplePoseTelemetry("robotPose");
 
     public DrivetrainBase() {
         state = RobotState.getInstance();
@@ -358,8 +359,6 @@ public abstract class DrivetrainBase extends StormSubsystem {
             });
         }
 
-        state.setPose(getPoseEstimator().getPose());
-
         // Check resetOrientation option (centralized here)
         if (options.resetOrientation.get()) {
             resetOrientation();
@@ -380,6 +379,11 @@ public abstract class DrivetrainBase extends StormSubsystem {
         if (collisionManager != null) {
             collisionManager.updateAndConstrain(getPose(), this::setPose);
         }
+
+        // Update global state and telemetry after all pose corrections
+        Pose2d currentPose = getPoseEstimator().getPose();
+        state.setPose(currentPose);
+        robotTelemetry.telemeterize(currentPose);
     }
 
     // ==================== PID / etc Characterization ====================
