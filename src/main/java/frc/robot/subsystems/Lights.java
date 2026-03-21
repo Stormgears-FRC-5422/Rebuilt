@@ -1,5 +1,7 @@
+
 package frc.robot.subsystems;
 
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.util.Color;
 import frc.robot.Constants;
@@ -7,122 +9,254 @@ import frc.robot.RobotState;
 import frc.robot.RobotState.HopperState;
 import frc.utils.StormSubsystem;
 import frc.robot.subsystems.misc.BatteryMonitor;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.lang.reflect.InaccessibleObjectException;
+import java.util.Optional;
+
 public class Lights extends StormSubsystem {
 
+    private RobotState.HopperState hopperState;
+
+    // Alliance variables
     private final RobotState m_robotState;
 
-    private final AddressableLED addressableLED;
-    private final AddressableLEDBuffer addressableLEDBuffer;
+
+    Color RED_COLOR = Color.kRed;
+    Color BLUE_COLOR = Color.kBlue;
+    Color YELLOW_COLOR = Color.kYellow;
+    Color GREEN_COLOR = Color.kGreen;
+    Color ORANGE_COLOR = new Color(255, 32, 0);
+    Color PINK_COLOR = new Color(225,105,180);
+    Color PURPLE_COLOR = Color.kPurple;
+
+    private AddressableLED addressableLED;
+    private AddressableLEDBuffer addressableLEDBuffer;
     private AddressableLEDBufferView m_bottom;
     private AddressableLEDBufferView m_top;
 
     private boolean pulse = false;
-    private final double pulsePeriod = 5.0;
+    private double pulsePeriod = 5.0;
 
-    // Pre-built patterns — created once, reused every loop to avoid GC pressure
-    private final LEDPattern rainbowForward;
-    private final LEDPattern rainbowReversed;
-    private final LEDPattern patternRed    = LEDPattern.solid(Color.kRed);
-    private final LEDPattern patternGreen  = LEDPattern.solid(Color.kGreen);
-    private final LEDPattern patternBlue   = LEDPattern.solid(Color.kBlue);
-    private final LEDPattern patternOrange = LEDPattern.solid(new Color(255, 32, 0));
-    private final LEDPattern patternPurple = LEDPattern.solid(Color.kPurple);
+    private int lEDLength = Constants.Lights.ledLength;
+    private int halfLEDLength = Constants.Lights.ledLength/2;
 
-    // Pre-built breathe variants — avoids creating wrapper objects on every loop tick
-    private final LEDPattern rainbowForwardBreathe;
-    private final LEDPattern rainbowReversedBreathe;
-    private final LEDPattern patternRedBreathe;
-    private final LEDPattern patternGreenBreathe;
-    private final LEDPattern patternBlueBreathe;
-    private final LEDPattern patternOrangeBreathe;
-    private final LEDPattern patternPurpleBreathe;
+    private boolean inActiveFirst;
 
+    private enum hubStates{
+        AUTO,
+        ACTIVE_SHIFT,
+        TRANSITION_PERIOD,
+        INACTIVE_SHIFT,
+        UNKNOWN,
+    }
+
+    hubStates curHubStates = hubStates.UNKNOWN;
+    // private String alliance = DriverStation.getAlliance().toString();
+    private Optional<DriverStation.Alliance> alliance;
+    private String team;
+    
     public Lights() {
         addressableLED = new AddressableLED(Constants.Lights.port);
         addressableLEDBuffer = new AddressableLEDBuffer(Constants.Lights.ledLength);
+        m_bottom = addressableLEDBuffer.createView(0,halfLEDLength-1);
+        m_top = addressableLEDBuffer.createView(halfLEDLength, lEDLength-1);
+
 
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
         setViews();
-
-        LEDPattern rainbow = LEDPattern.rainbow(255, 128)
-            .scrollAtAbsoluteSpeed(MetersPerSecond.of(0.45), Meters.of(1.0 / 120.0));
-        rainbowForward  = rainbow;
-        rainbowReversed = rainbow.reversed();
-
-        var breathePeriod = Seconds.of(pulsePeriod);
-        rainbowForwardBreathe  = rainbowForward.breathe(breathePeriod);
-        rainbowReversedBreathe = rainbowReversed.breathe(breathePeriod);
-        patternRedBreathe      = patternRed.breathe(breathePeriod);
-        patternGreenBreathe    = patternGreen.breathe(breathePeriod);
-        patternBlueBreathe     = patternBlue.breathe(breathePeriod);
-        patternOrangeBreathe   = patternOrange.breathe(breathePeriod);
-        patternPurpleBreathe   = patternPurple.breathe(breathePeriod);
-
         m_robotState = RobotState.getInstance();
+
+        //get alliance from driver station
+        alliance = DriverStation.getAlliance();
+        if (alliance.isPresent()) {
+            if (alliance.get().equals(DriverStation.Alliance.Red)) {
+                team = "RED";
+            }
+            if (alliance.get().equals(DriverStation.Alliance.Blue)) {
+                team = "BLUE";
+            }
+        }
+        else {
+            team = "MISSING"; // Default value if alliance is not detected
+        }
     }
 
     @Override
     public void periodic() {
         super.periodic();
+        
+        hopperState = m_robotState.getHopperState();
 
-        setBatteryPulse();
+        // if(checkLightState(hopperState)){ // If the hopper state has changed
+        //     setLightState(hopperState);
+        //     switchLightState();
+        // }
 
-        if (DriverStation.isDisabled()) {
-            setRainbow(true);
-        } else {
-            switchLightState(m_robotState.getHopperState());
-        }
+        setTransitionPeriod(switchingShiftSoon()); //check if inbetween transition period(set rainbow) otherwise set as hub state
 
+    
+        // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
         addressableLED.start();
     }
 
-    // Selects base or pre-built breathe variant — zero allocation
-    private <T extends LEDReader & LEDWriter> void patternApplyTo(
-            LEDPattern base, LEDPattern breatheVer, T view) {
-        (pulse ? breatheVer : base).applyTo(view);
-    }
+    // Wrapper function to allow pulse effect to be applied to any pattern. Call this function rather
+    // than calling pattern.applyTo()
+    private <T extends LEDReader & LEDWriter> void patternApplyTo(LEDPattern basePattern, T view) {
+        LEDPattern finalPattern = basePattern;
 
-    public void setAllianceColor() {
-        switch (m_robotState.getAlliance()) {
-            case RED     -> patternApplyTo(patternRed,    patternRedBreathe,    addressableLEDBuffer);
-            case BLUE    -> patternApplyTo(patternBlue,   patternBlueBreathe,   addressableLEDBuffer);
-            case MISSING -> patternApplyTo(patternPurple, patternPurpleBreathe, addressableLEDBuffer);
+        if (pulse) {
+            finalPattern = basePattern.breathe(Seconds.of(pulsePeriod));
+        }
+
+        finalPattern.applyTo(view);
+    }
+    public void setAllianceColor(){
+        if(m_robotState.getAlliance() == RobotState.StateAlliance.RED){
+            setSolid(RED_COLOR);
+        }
+        else if(m_robotState.getAlliance() == RobotState.StateAlliance.BLUE){
+            setSolid(BLUE_COLOR);
+        }
+        else if(m_robotState.getAlliance() == RobotState.StateAlliance.MISSING){
+            setSolid(PURPLE_COLOR);
         }
     }
 
-    public void setBatteryPulse() {
-        pulse = m_robotState.getBatteryState() != BatteryMonitor.BatteryState.GOOD;
+    public void setBatteryPulse(){
+        if(m_robotState.getBatteryState() == BatteryMonitor.BatteryState.GOOD){
+            pulse = false;
+        }
+        else if(m_robotState.getBatteryState() == BatteryMonitor.BatteryState.WARN){
+            pulse = true;
+        }
+        else if(m_robotState.getBatteryState() == BatteryMonitor.BatteryState.BAD){
+            pulse = true;
+
+        }
     }
 
     public void setRainbow(boolean forward) {
-        LEDPattern base    = forward ? rainbowForward        : rainbowReversed;
-        LEDPattern breathe = forward ? rainbowForwardBreathe : rainbowReversedBreathe;
-        patternApplyTo(base, breathe, m_bottom);
-        patternApplyTo(base, breathe, m_top);
+        LEDPattern rainbow = LEDPattern.rainbow(255, 128);
+        Distance kLedSpacing = Meters.of(1 / 120.0);
+        LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.45), kLedSpacing);
+        if (!forward)
+            scrollingRainbow = scrollingRainbow.reversed();
+
+        patternApplyTo(scrollingRainbow, m_bottom);
+        patternApplyTo(scrollingRainbow, m_top);
     }
 
     public void setSolid(Color color) {
-        LEDPattern.solid(color).applyTo(addressableLEDBuffer);
+        LEDPattern pattern = LEDPattern.solid(color);
+        patternApplyTo(pattern, addressableLEDBuffer);
     }
 
     public void setViews() {
+        // Split led buffer into left and right views, so we can apply a different pattern to each strip
         // Right view is reversed because LED strips are wired in series
         m_bottom = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
-        m_top    = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
+        m_top = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
     }
 
-    private void switchLightState(HopperState state) {
-        switch (state) {
-            case IDLE, UNKNOWN -> setAllianceColor();
-            case HOPPER_EMPTY  -> patternApplyTo(patternRed,    patternRedBreathe,    addressableLEDBuffer);
-            case HOPPER_HALF   -> { patternApplyTo(patternRed, patternRedBreathe, m_top); patternApplyTo(patternGreen, patternGreenBreathe, m_bottom); }
-            case HOPPER_FULL   -> patternApplyTo(patternGreen,  patternGreenBreathe,  addressableLEDBuffer);
-            case HOPPER_LOW    -> patternApplyTo(patternOrange, patternOrangeBreathe, addressableLEDBuffer);
+    public void setLightState(HopperState newState){
+        hopperState = newState;
+    }
+    public HopperState getLightState(){
+        return hopperState;
+    }
+    public boolean checkLightState(HopperState newState){
+        if(hopperState != newState){
+            return true;
+        }
+        return false;
+    }
+    public void switchLightState(){
+
+        LEDPattern red = LEDPattern.solid(Color.kRed);
+        LEDPattern green = LEDPattern.solid(Color.kGreen);
+
+        switch(hopperState){
+            case IDLE:
+                setAllianceColor();
+                break;
+            case HOPPER_EMPTY:
+                setSolid(RED_COLOR);
+                break;
+            case HOPPER_HALF:
+                red.applyTo(m_top);
+                green.applyTo(m_bottom);
+                break;
+            case HOPPER_FULL:
+                setSolid(GREEN_COLOR);
+                break;
         }
     }
+    public void checkShift(){
+        String gameData;
+        gameData = DriverStation.getGameSpecificMessage();
+        if(gameData.length() > 0)
+        {
+            switch (gameData.charAt(0)) {
+                case 'B' :
+                    //Blue case code
+                    if(team.equals("BLUE")){
+                        inActiveFirst = true;
+                    } 
+                    else inActiveFirst = false;
+                case 'R' :
+                    //Red case code
+                    if(team.equals("RED")){
+                        inActiveFirst = true;
+                    }
+                    else inActiveFirst = false;
+                default :
+                    break;
+            }
+        } else {
+        //Code for no data received yet
+        }
+    }
+    public boolean switchingShiftSoon(){
+        for(int i = 4; i >=0; i--){
+            int transitionTime = 130 - (i*25);
+            if(DriverStation.getMatchTime() < transitionTime && DriverStation.getMatchTime() > transitionTime -7){
+                return true;
+            }
+        }
+        return false;
+    }
+    //AUTO - 20sec, 10(transition), 25, 25, 25, 25, 30(end game)
+
+    public void setShift(boolean hubState){
+        if(inActiveFirst){
+            for(int i = 4; i>=0; i-=2){
+                int transitionTime = 130 - (i*25);
+                if(DriverStation.getMatchTime() < transitionTime && DriverStation.getMatchTime() > transitionTime -7){
+                    setRainbow(true);
+                }
+            }
+        }
+        if(hubState){
+            setSolid(GREEN_COLOR);
+        }
+        else{
+            setSolid(RED_COLOR);
+        }
+    }
+    public void setTransitionPeriod(boolean transition){
+        if(transition){
+            setRainbow(transition);
+        }
+        else{
+            checkShift();
+            setShift(inActiveFirst);
+        }
+
+    }
+
 }
