@@ -79,7 +79,7 @@ public class AkitDrive extends DrivetrainBase {
 
     public AkitDrive() {
         this.gyroIO = new GyroIOPigeon2();
-        poseEstimatorWrapper = new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+        poseEstimatorWrapper = new WPILibPoseEstimator(poseEstimator, () -> rawGyroRotation, this::getModulePositions);
         modules[0] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontLeft),
             0, RebuiltTorqueFOC.FrontLeft);
         modules[1] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontRight),
