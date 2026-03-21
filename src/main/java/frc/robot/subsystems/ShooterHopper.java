@@ -132,7 +132,9 @@ public class ShooterHopper extends StormSubsystem {
         // SysId characterization routine — mode-aware (voltage or torque-current)
         sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(
-                null, null, null,
+                useTorqueFOC ? Amps.of(20).per(Second) : null,
+                useTorqueFOC ? Amps.of(50) : null,
+                null,
                 (sysIdState) -> Logger.recordOutput("Shooter/SysIdState", sysIdState.toString())),
             new SysIdRoutine.Mechanism(
                 output -> {
