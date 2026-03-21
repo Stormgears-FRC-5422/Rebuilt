@@ -12,20 +12,12 @@ public final class PidTuningGroup {
     private final DoublePublisher kpPub;
     private final DoublePublisher kiPub;
     private final DoublePublisher kdPub;
-    private final DoublePublisher kAPub;
-    private final DoublePublisher kGPub;
-    private final DoublePublisher kMinPub;
-    private final DoublePublisher kMaxPub;
     private final DoublePublisher kVPub;
     private final DoublePublisher kSPub;
 
     private final DoubleSubscriber kpSub;
     private final DoubleSubscriber kiSub;
     private final DoubleSubscriber kdSub;
-    private final DoubleSubscriber kASub;
-    private final DoubleSubscriber kGSub;
-    private final DoubleSubscriber kMinSub;
-    private final DoubleSubscriber kMaxSub;
     private final DoubleSubscriber kVSub;
     private final DoubleSubscriber kSSub;
 
@@ -39,30 +31,18 @@ public final class PidTuningGroup {
         var kpTopic = tuner.getTable().getDoubleTopic(p + "kP");
         var kiTopic = tuner.getTable().getDoubleTopic(p + "kI");
         var kdTopic = tuner.getTable().getDoubleTopic(p + "kD");
-        var kATopic = tuner.getTable().getDoubleTopic(p + "kA");
-        var kGTopic = tuner.getTable().getDoubleTopic(p + "kG");
-        var kMinTopic = tuner.getTable().getDoubleTopic(p + "kMin");
-        var kMaxTopic = tuner.getTable().getDoubleTopic(p + "kMax");
         var kVTopic = tuner.getTable().getDoubleTopic(p + "kV");
         var kSTopic = tuner.getTable().getDoubleTopic(p + "kS");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();
         kdPub = kdTopic.publish();
-        kAPub = kATopic.publish();
-        kGPub = kGTopic.publish();
-        kMinPub = kMinTopic.publish();
-        kMaxPub = kMaxTopic.publish();
         kVPub = kVTopic.publish();
         kSPub = kSTopic.publish();
 
         kpSub = kpTopic.subscribe(config.kP);
         kiSub = kiTopic.subscribe(config.kI);
         kdSub = kdTopic.subscribe(config.kD);
-        kASub = kATopic.subscribe(config.kA);
-        kGSub = kGTopic.subscribe(config.kG);
-        kMinSub = kMinTopic.subscribe(config.kMin);
-        kMaxSub = kMaxTopic.subscribe(config.kMax);
         kVSub = kVTopic.subscribe(config.kV);
         kSSub = kSTopic.subscribe(config.kS);
 
@@ -82,39 +62,26 @@ public final class PidTuningGroup {
         kpPub.set(config.kP);
         kiPub.set(config.kI);
         kdPub.set(config.kD);
-        kAPub.set(config.kA);
-        kGPub.set(config.kG);
-        kMinPub.set(config.kMin);
-        kMaxPub.set(config.kMax);
         kVPub.set(config.kV);
         kSPub.set(config.kS);
     }
 
     public void updateConfig(PidConfig config) {
-        double kP   = kpSub.get();
-        double kI   = kiSub.get();
-        double kD   = kdSub.get();
-        double kA   = kASub.get();
-        double kG   = kGSub.get();
-        double kMin = kMinSub.get();
-        double kMax = kMaxSub.get();
-        double kV   = kVSub.get();
-        double kS   = kSSub.get();
+        double kP = kpSub.get();
+        double kI = kiSub.get();
+        double kD = kdSub.get();
+        double kV = kVSub.get();
+        double kS = kSSub.get();
 
         // Echo any Elastic-changed values back through the server publisher.
         // Without this, the server subscriber sees its own stale initial value
         // rather than the value the user set in the Elastic slider.
-        if (kP   != config.kP)  kpPub.set(kP);
-        if (kI   != config.kI)  kiPub.set(kI);
-        if (kD   != config.kD)  kdPub.set(kD);
-        if (kA   != config.kA)  kAPub.set(kA);
-        if (kG   != config.kG)  kGPub.set(kG);
-        if (kMin != config.kMin) kMinPub.set(kMin);
-        if (kMax != config.kMax) kMaxPub.set(kMax);
-        if (kV   != config.kV)  kVPub.set(kV);
-        if (kS   != config.kS)  kSPub.set(kS);
+        if (kP != config.kP) kpPub.set(kP);
+        if (kI != config.kI) kiPub.set(kI);
+        if (kD != config.kD) kdPub.set(kD);
+        if (kV != config.kV) kVPub.set(kV);
+        if (kS != config.kS) kSPub.set(kS);
 
-        config.withKP(kP).withKI(kI).withKD(kD).withKA(kA).withKG(kG)
-              .withKMinMax(kMin, kMax).withKV(kV).withKS(kS);
+        config.withKP(kP).withKI(kI).withKD(kD).withKV(kV).withKS(kS);
     }
 }
