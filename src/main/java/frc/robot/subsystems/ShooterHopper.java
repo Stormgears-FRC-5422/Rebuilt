@@ -145,14 +145,11 @@ public class ShooterHopper extends StormSubsystem {
                         : sysIdVoltage.withOutput(value));
                 },
                 log -> {
-                    var entry = log.motor("shooter");
-                    if (useTorqueFOC) {
-                        entry.current(Amps.of(leaderMotor.getMotorCurrent()));
-                    } else {
-                        entry.voltage(Volts.of(leaderMotor.getMotorVoltageOutput()));
-                    }
-                    entry.angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
-                         .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
+                    log.motor("shooter")
+                        .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .current(Amps.of(leaderMotor.getMotorCurrent()))
+                        .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
+                        .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
                 },
                 this));
 
@@ -270,11 +267,12 @@ public class ShooterHopper extends StormSubsystem {
         ok &= checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
         ok &= checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
 
-        TorqueCurrentConfigs torqueCurrentConfigs = new TorqueCurrentConfigs();
-        torqueCurrentConfigs.PeakForwardTorqueCurrent = Shooter.statorCurrentLimit;
-        torqueCurrentConfigs.PeakReverseTorqueCurrent = -Shooter.peakReverseTorqueAmps;
-        ok &= checkApply(leaderMotor.getConfigurator().apply(torqueCurrentConfigs), "leader torqueCurrent");
-        ok &= checkApply(followerMotor.getConfigurator().apply(torqueCurrentConfigs), "follower torqueCurrent");
+        if (useTorqueFOC) {
+            TorqueCurrentConfigs torqueLimits = new TorqueCurrentConfigs();
+            torqueLimits.PeakForwardTorqueCurrent = Shooter.statorCurrentLimit;
+            torqueLimits.PeakReverseTorqueCurrent = -15;
+            ok &= checkApply(leaderMotor.getConfigurator().apply(torqueLimits), "leader torqueLimits");
+        }
 
         ok &= checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
         ok &= checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");
