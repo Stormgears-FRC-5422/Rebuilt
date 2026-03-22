@@ -89,8 +89,10 @@ public void periodic() {
     // }
 
     setBatteryPulse();
-
     switchShift();
+    
+
+
 
     // Write the data to the LED strip
     addressableLED.setData(addressableLEDBuffer);
@@ -136,7 +138,7 @@ public void setBatteryPulse(){
 public void setRainbow(boolean forward) {
     LEDPattern rainbow = LEDPattern.rainbow(255, 128);
     Distance kLedSpacing = Meters.of(1 / 120.0);
-    LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.45), kLedSpacing);
+    LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.2), kLedSpacing);
     if (!forward)
         scrollingRainbow = scrollingRainbow.reversed();
 
