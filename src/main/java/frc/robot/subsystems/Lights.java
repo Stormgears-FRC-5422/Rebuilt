@@ -9,6 +9,9 @@ import frc.robot.RobotState;
 import frc.robot.RobotState.HopperState;
 import frc.utils.StormSubsystem;
 import frc.robot.subsystems.misc.BatteryMonitor;
+import frc.robot.util.GameDataTracker;
+import frc.robot.util.GameDataTracker.ShiftInfo;
+
 
 import static edu.wpi.first.units.Units.*;
 
@@ -84,16 +87,10 @@ public void periodic() {
     //     setLightState(hopperState);
     //     switchLightState();
     // }
-    updateAlliance();
-    checkShift(); // determine inactive first
+
     setBatteryPulse();
 
-    if (switchingShiftSoon()) {
-        setRainbow(true);
-    } 
-    else {
-        setShift(inActiveFirst);
-    }
+    switchShift();
 
     // Write the data to the LED strip
     addressableLED.setData(addressableLEDBuffer);
@@ -289,4 +286,33 @@ public void updateAlliance(){
         team = "MISSING"; // Default value if alliance is not detected
     }
 }
+public void switchShift(){
+
+    ShiftInfo info = GameDataTracker.getShiftInfo();
+
+    switch(info.currentShift()){ 
+        case AUTO:
+            setAllianceColor();
+            break;
+        case DISABLED:
+            setSolid(ORANGE_COLOR);
+            break;
+        case ENDGAME:
+            setRainbow(true);
+            break;
+        default:
+            if(info.ourShift()){
+                setSolid(GREEN_COLOR);
+            }
+            else{
+                setSolid(RED_COLOR);
+            }
+            if (info.remainingTime() < 7.0) {
+                setSolid(YELLOW_COLOR);
+            }
+            break; 
+        }
+    }
+    
 }
+
