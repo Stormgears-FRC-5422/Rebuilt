@@ -1,6 +1,7 @@
 package frc.robot.subsystems.misc;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.RobotState;
 import frc.robot.RobotState.HopperState;
@@ -54,16 +55,16 @@ public class SensorSubsystem extends StormSubsystem {
 
         // Full fusion: lidar (continuous) + beam break (binary)
         double distance = stormNet.getLidarDistance();
-        Logger.recordOutput("SensorSubsystem/LidarDistance", distance);
-
-        // Lidar: lower distance = fuller hopper. Negative means bad data.
+        // double distance = 1.0;
+        // use elastic and see
+        // Logger.recordOutput("SensorSubsystem/LidarDistance", 1.0);        // Lidar: lower distance = fuller hopper. Negative means bad data.
         HopperState lidarState = HopperState.UNKNOWN;
         if (distance >= 0) {
-            if (distance < Constants.SensorSubsystem.lidarDepthFull) {
+            if (distance <= Constants.SensorSubsystem.lidarDepthFull) {
                 lidarState = HopperState.HOPPER_FULL;
-            } else if (distance < Constants.SensorSubsystem.lidarDepthHalf) {
+            } else if (distance <= Constants.SensorSubsystem.lidarDepthHalf) {
                 lidarState = HopperState.HOPPER_HALF;
-            } else if (distance < Constants.SensorSubsystem.lidarDepthLow) {
+            } else if (distance <= Constants.SensorSubsystem.lidarDepthLow) {
                 lidarState = HopperState.HOPPER_LOW;
             } else {
                 lidarState = HopperState.HOPPER_EMPTY;

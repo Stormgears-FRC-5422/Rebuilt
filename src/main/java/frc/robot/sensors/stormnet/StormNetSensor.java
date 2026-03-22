@@ -68,10 +68,6 @@ public class StormNetSensor {
 			// some basic tests - should really aggregate results to indicate success or failure overall.
 			log("Ping test returned " + ping());
 			TimeUnit.SECONDS.sleep(sleep);
-			log("Fast test returned " + (fast() ? "true" : "false"));
-			TimeUnit.SECONDS.sleep(sleep);
-			log("Slow test returned " + (slow() ? "true" : "false"));
-			TimeUnit.SECONDS.sleep(sleep);
 			log("Blink test returned " + (blink(2000) ? "true" : "false"));
 			TimeUnit.SECONDS.sleep(sleep);
 			getTimer(); // initialize

@@ -21,15 +21,22 @@ public class StormNet {
 	private StormNet() {
 		// This MUST match what is coming from the StormNet board itself
 		m_commandMap = new HashMap<String, Integer>();
-		m_commandMap.put("P", 0); // ping
-		m_commandMap.put("F", 1); // fast
-		m_commandMap.put("S", 5); // slow
-		m_commandMap.put("B", 9); // blink
-		m_commandMap.put("M", 13); // lidar
-		m_commandMap.put(":", 17); // timer
-		m_commandSize = 29; // count of bytes from above
+		// m_commandMap.put("P", 0); // ping
+		// m_commandMap.put("F", 1); // fast
+		// m_commandMap.put("S", 5); // slow
+		// m_commandMap.put("B", 9); // blink
+		// m_commandMap.put("M", 13); // lidar
+		// m_commandMap.put(":", 17); // timer
+		// m_commandSize = 29; // count of bytes from above
 
-        // TODO Logging
+		m_commandMap.put("P", 0); // ping
+		m_commandMap.put("B", 1); // blink
+		m_commandMap.put(":", 5); // timer
+		m_commandMap.put("M", 17); // lidar
+		m_commandSize = 21; // count of bytes from above
+
+
+		// TODO Logging
 
 	}
 
@@ -80,6 +87,7 @@ public class StormNet {
 	}
 
 	public double getLidarDistance() {
+		// need to add support for 2nd lidar
 		return m_lidar.getAverageDistanceMM(); // in mm
 	}
 
