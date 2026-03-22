@@ -12,6 +12,7 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -146,6 +147,7 @@ public class ShooterHopper extends StormSubsystem {
                 log -> {
                     log.motor("shooter")
                         .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .current(Amps.of(leaderMotor.getMotorCurrent()))
                         .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
                         .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
                 },
@@ -264,6 +266,13 @@ public class ShooterHopper extends StormSubsystem {
 
         ok &= checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
         ok &= checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
+
+        if (useTorqueFOC) {
+            TorqueCurrentConfigs torqueLimits = new TorqueCurrentConfigs();
+            torqueLimits.PeakForwardTorqueCurrent = Shooter.statorCurrentLimit;
+            torqueLimits.PeakReverseTorqueCurrent = -15;
+            ok &= checkApply(leaderMotor.getConfigurator().apply(torqueLimits), "leader torqueLimits");
+        }
 
         ok &= checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
         ok &= checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");
