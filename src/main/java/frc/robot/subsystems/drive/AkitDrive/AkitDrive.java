@@ -37,7 +37,7 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.FieldConstants;
+import frc.robot.game.FieldConstants;
 import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;

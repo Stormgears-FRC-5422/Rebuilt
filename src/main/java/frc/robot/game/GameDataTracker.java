@@ -1,4 +1,4 @@
-package frc.robot.util;
+package frc.robot.game;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;

@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.game.FieldConstants;
 import frc.robot.subsystems.misc.BatteryMonitor.BatteryState;
 
 public class RobotState {
