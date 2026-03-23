@@ -163,6 +163,10 @@ public class ShooterHopper extends StormSubsystem {
         setState(ShooterState.IDLE);
     }
 
+    public boolean isShooting() {
+        return state == ShooterState.SPEEDING_UP || state == ShooterState.SHOOTING;
+    }
+
     public void setState(ShooterState newState) {
         if (state == newState) return;
         console("setState: " + state + " -> " + newState, 1);
