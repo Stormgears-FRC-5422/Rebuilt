@@ -28,6 +28,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -73,6 +74,12 @@ public class ShooterHopper extends StormSubsystem {
 
     private boolean toHub = true;
 
+    // Hopper-empty detection state
+    private int     shotCount            = 0;
+    private boolean dipActive            = false;
+    private boolean hopperEmptyArmed     = false;
+    private final Timer hopperEmptyTimer = new Timer();
+    private final Timer armedDelayTimer  = new Timer();
 
     @SuppressWarnings("resource")
     public ShooterHopper() {
@@ -169,6 +176,13 @@ public class ShooterHopper extends StormSubsystem {
 
     public void setState(ShooterState newState) {
         if (state == newState) return;
+        if (newState == ShooterState.SPEEDING_UP || newState == ShooterState.IDLE) {
+            shotCount        = 0;
+            dipActive        = false;
+            hopperEmptyArmed = false;
+            hopperEmptyTimer.reset(); hopperEmptyTimer.stop();
+            armedDelayTimer.reset();  armedDelayTimer.stop();
+        }
         console("setState: " + state + " -> " + newState, 1);
         state = newState;
     }
@@ -222,6 +236,32 @@ public class ShooterHopper extends StormSubsystem {
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
+
+                // Hopper-empty detection (SHOOTING only — not DIAGNOSTIC)
+                if (state == ShooterState.SHOOTING) {
+                    double wc          = Math.PI * Shooter.shooterWheelDiameterMeters;
+                    double setpointMPS = targetVelocityRPS       * wc;
+                    double actualMPS   = getCurrentVelocityRPS() * wc;
+
+                    if (!hopperEmptyArmed && !armedDelayTimer.isRunning()) {
+                        armedDelayTimer.reset();  armedDelayTimer.start();
+                        hopperEmptyTimer.reset(); hopperEmptyTimer.start();
+                    }
+                    if (!hopperEmptyArmed && armedDelayTimer.hasElapsed(Shooter.hopperEmptyArmedDelaySec)) {
+                        hopperEmptyArmed = true;
+                    }
+
+                    if (hopperEmptyArmed) {
+                        boolean dipping = actualMPS < setpointMPS - Shooter.hopperEmptyDipThresholdMPS;
+                        if (dipping && !dipActive) {
+                            shotCount++;
+                            dipActive = true;
+                            hopperEmptyTimer.reset();
+                        } else if (!dipping) {
+                            dipActive = false;
+                        }
+                    }
+                }
             }
             case CHARACTERIZING -> {
                 // SysIdRoutine controls the motor directly — just keep fuelInjector off
@@ -234,7 +274,22 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
+
+        double wc = Math.PI * Shooter.shooterWheelDiameterMeters;
+        Logger.recordOutput("Shooter/ShotCount",         shotCount);
+        Logger.recordOutput("Shooter/HopperEmpty",        isHopperEmpty());
+        Logger.recordOutput("Shooter/HopperEmptyArmed",   hopperEmptyArmed);
+        Logger.recordOutput("Shooter/HopperIdleTimerSec", hopperEmptyTimer.get());
+        Logger.recordOutput("Shooter/FlywheelLinearMPS",  getCurrentVelocityRPS() * wc);
+        Logger.recordOutput("Shooter/SetpointLinearMPS",  targetVelocityRPS * wc);
     }
+
+    public boolean isHopperEmpty() {
+        return hopperEmptyArmed && shotCount > 0
+            && hopperEmptyTimer.hasElapsed(Shooter.hopperEmptyTimeoutSec);
+    }
+
+    public int getShotCount() { return shotCount; }
 
     public void setUseRealDist(boolean useRealDist) {
         this.useRealDist = useRealDist;

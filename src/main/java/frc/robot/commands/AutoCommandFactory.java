@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakePosition;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.drive.DrivetrainBase;
 
@@ -247,7 +248,7 @@ public class AutoCommandFactory {
         );
         commands.add(stopDrive());
         commands.add(Commands.parallel(
-            new TimedShootCommand(shooterHopper, true, 20.0),
+            new AutoShootCommand(shooterHopper, true).withTimeout(20.0),
             new FaceTowardHub(drivetrainBase),
             new DynamicRumble(intake).andThen(new DynamicRumble(intake))
         ));
@@ -263,7 +264,7 @@ public class AutoCommandFactory {
             ));
             commands.add(stopDrive());
             commands.add(Commands.parallel(
-                new TimedShootCommand(shooterHopper, true, 8.0),
+                new AutoShootCommand(shooterHopper, true).withTimeout(15.0),
                 new DynamicRumble(intake)
             ));
         }
@@ -285,7 +286,7 @@ public class AutoCommandFactory {
             ),
             stopDrive(),
             Commands.parallel(
-                new ShootCommand(shooterHopper, true),
+                new AutoShootCommand(shooterHopper, true).withTimeout(15.0),
                 new DynamicRumble(intake)
             )
         );
