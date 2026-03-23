@@ -149,6 +149,9 @@ public class RobotContainer {
 
         if (drivetrain != null) {
             autoCommandFactory = new AutoCommandFactory(drivetrain, shooterHopper, intake);
+            if (shooterHopper != null) {
+                drivetrain.setShootingSupplier(shooterHopper::isShooting);
+            }
         }
 
         console("[DONE] RobotContainer");
