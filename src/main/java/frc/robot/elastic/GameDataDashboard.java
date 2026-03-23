@@ -4,8 +4,8 @@ import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.util.GameDataTracker;
-import frc.robot.util.GameDataTracker.ShiftInfo;
+import frc.robot.game.GameDataTracker;
+import frc.robot.game.GameDataTracker.ShiftInfo;
 import frc.utils.pid.DashboardTuner;
 
 /**

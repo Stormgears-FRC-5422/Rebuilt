@@ -19,7 +19,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotState.StatePeriod;
-import frc.robot.util.GameDataTracker;
+import frc.robot.game.GameDataTracker;
 import frc.utils.configfile.OptionsRegistry;
 
 public class Robot extends LoggedRobot {
