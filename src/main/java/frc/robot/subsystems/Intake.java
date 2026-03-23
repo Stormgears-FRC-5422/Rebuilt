@@ -28,7 +28,8 @@ public class Intake extends StormSubsystem {
         HOLD,
         PID_MOTION,
         SIMPLE_MOTION,
-        IDLE
+        IDLE,
+        DIAGNOSTIC
     }
 
     public enum MotionProfile {
@@ -78,6 +79,7 @@ public class Intake extends StormSubsystem {
 
     private boolean rollerEnabled = false;
     private boolean outtakeEnabled = false;
+    private boolean rollerDiagnostic = false;
     public double rollerOutput;
 
 
@@ -162,11 +164,12 @@ public class Intake extends StormSubsystem {
         // Read position from cached signal (refreshed by updownIntakeMotor.periodic() above)
         currentPosition = updownIntakeMotor.getMotorPosition() * 360.0;
 
-        // Roller control
+        // Roller control — rollerDiagnostic skips height interlock for diagnostics
         rollerOutput = 0.0;
-        if (outtakeEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
+        boolean rollerAllowed = rollerDiagnostic || currentPosition > frc.robot.Constants.Intake.minRollerHeight;
+        if (outtakeEnabled && rollerAllowed) {
             rollerOutput = intakeOptions.rollerOuttakeSpeed.get();
-        } else if (rollerEnabled && currentPosition > frc.robot.Constants.Intake.minRollerHeight) {
+        } else if (rollerEnabled && rollerAllowed) {
             rollerOutput = -intakeOptions.rollerIntakeSpeed.get();
         }
         rollerIntakeMotor.set(rollerOutput);
@@ -192,6 +195,12 @@ public class Intake extends StormSubsystem {
                     updownIntakeMotor.setVoltage(updownVolts);
                 } else {
                     console("Stubbornly refusing to move before homed!", 25);
+                }
+                break;
+
+            case DIAGNOSTIC:
+                if (hasBeenHomed) {
+                    setAngleDegrees(targetPosition);
                 }
                 break;
 
@@ -237,6 +246,11 @@ public class Intake extends StormSubsystem {
 
             case SIMPLE_MOTION:
                 console("***** SIMPLE_MOTION state *****", 1);
+                enableSoftLimits(true);
+                break;
+
+            case DIAGNOSTIC:
+                console("***** DIAGNOSTIC state *****", 1);
                 enableSoftLimits(true);
                 break;
         }
@@ -341,6 +355,10 @@ public class Intake extends StormSubsystem {
 
     public void setOuttakeRollers(boolean enabled) {
         outtakeEnabled = enabled;
+    }
+
+    public void setRollerDiagnostic(boolean enabled) {
+        rollerDiagnostic = enabled;
     }
 
     // Soft limits (thresholds in mechanism rotations, converted from degrees)

@@ -25,6 +25,18 @@ public class SingleMotorTuner extends DashboardTuner {
         applyPub.set(false); // Initial value
     }
 
+    /** Add gravity feedforward (kG) to the dashboard. */
+    public SingleMotorTuner withGravity() {
+        shooterPIDTuning.withGravity();
+        return this;
+    }
+
+    /** Add output limits (kMin, kMax) to the dashboard. */
+    public SingleMotorTuner withOutputLimits() {
+        shooterPIDTuning.withOutputLimits();
+        return this;
+    }
+
     public void periodic() {
         shooterPIDTuning.periodic();
 

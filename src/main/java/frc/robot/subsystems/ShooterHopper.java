@@ -133,7 +133,9 @@ public class ShooterHopper extends StormSubsystem {
         // SysId characterization routine — mode-aware (voltage or torque-current)
         sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(
-                null, null, null,
+                useTorqueFOC ? Volts.of(20).per(Second) : null,  // amps/s in FOC mode
+                useTorqueFOC ? Volts.of(50) : null,              // amps in FOC mode
+                null,
                 (sysIdState) -> Logger.recordOutput("Shooter/SysIdState", sysIdState.toString())),
             new SysIdRoutine.Mechanism(
                 output -> {
@@ -143,14 +145,11 @@ public class ShooterHopper extends StormSubsystem {
                         : sysIdVoltage.withOutput(value));
                 },
                 log -> {
-                    var entry = log.motor("shooter");
-                    if (useTorqueFOC) {
-                        entry.current(Amps.of(leaderMotor.getMotorCurrent()));
-                    } else {
-                        entry.voltage(Volts.of(leaderMotor.getMotorVoltageOutput()));
-                    }
-                    entry.angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
-                         .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
+                    log.motor("shooter")
+                        .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .current(Amps.of(leaderMotor.getMotorCurrent()))
+                        .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
+                        .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
                 },
                 this));
 
