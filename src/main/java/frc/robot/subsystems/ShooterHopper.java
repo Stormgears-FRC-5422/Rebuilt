@@ -12,6 +12,7 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -146,6 +147,7 @@ public class ShooterHopper extends StormSubsystem {
                 log -> {
                     log.motor("shooter")
                         .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .current(Amps.of(leaderMotor.getMotorCurrent()))
                         .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
                         .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
                 },
@@ -159,6 +161,10 @@ public class ShooterHopper extends StormSubsystem {
 
     public void stopShooter() {
         setState(ShooterState.IDLE);
+    }
+
+    public boolean isShooting() {
+        return state == ShooterState.SPEEDING_UP || state == ShooterState.SHOOTING;
     }
 
     public void setState(ShooterState newState) {
@@ -264,6 +270,12 @@ public class ShooterHopper extends StormSubsystem {
 
         ok &= checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
         ok &= checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
+
+        TorqueCurrentConfigs torqueCurrentConfigs = new TorqueCurrentConfigs();
+        torqueCurrentConfigs.PeakForwardTorqueCurrent = Shooter.statorCurrentLimit;
+        torqueCurrentConfigs.PeakReverseTorqueCurrent = -Shooter.peakReverseTorqueAmps;
+        ok &= checkApply(leaderMotor.getConfigurator().apply(torqueCurrentConfigs), "leader torqueCurrent");
+        ok &= checkApply(followerMotor.getConfigurator().apply(torqueCurrentConfigs), "follower torqueCurrent");
 
         ok &= checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
         ok &= checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");

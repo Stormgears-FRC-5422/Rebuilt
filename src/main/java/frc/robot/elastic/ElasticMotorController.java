@@ -29,6 +29,13 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> climberManualUp;
   public final Option<Boolean> climberManualDown;
 
+  // Diagnostic controls
+  public final Option<Boolean> diagShooter;
+  public final Option<Boolean> diagHopper;
+  public final Option<Boolean> diagIntakeRoller;
+  public final Option<Boolean> diagIntakeUpDown;
+  public final Option<Boolean> systemCheck;
+
   public ElasticMotorController() {
     super("Motor tester with elastic");
 
@@ -56,6 +63,12 @@ public class ElasticMotorController extends OptionsController {
     climberSequence   = createBooleanOption("CLIMBER SEQUENCE", false);
     climberManualUp   = createBooleanOption("CLIMBER MANUAL UP", false);
     climberManualDown = createBooleanOption("CLIMBER MANUAL DOWN", false);
+
+    diagShooter        = createBooleanOption("DIAG SHOOTER", false);
+    diagHopper         = createBooleanOption("DIAG HOPPER", false);
+    diagIntakeRoller   = createBooleanOption("DIAG INTAKE ROLLER", false);
+    diagIntakeUpDown   = createBooleanOption("DIAG INTAKE UP/DOWN", false);
+    systemCheck        = createBooleanOption("SYSTEM CHECK", false);
 
     OptionsRegistry.register(this);
   }

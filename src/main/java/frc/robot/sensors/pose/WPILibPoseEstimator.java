@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 /**
  * Wraps WPILib's SwerveDrivePoseEstimator for use with the PoseEstimator interface.
- * This is a thin wrapper - the update cycle is managed by the drive subsystem.
+ * This is a thin wrapper — EstimationManager owns the update cycle.
  */
 public class WPILibPoseEstimator implements PoseEstimator {
     private final SwerveDrivePoseEstimator estimator;
@@ -57,6 +57,11 @@ public class WPILibPoseEstimator implements PoseEstimator {
     @Override
     public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds, Matrix<N3, N1> stdDevs) {
         estimator.addVisionMeasurement(visionPose, timestampSeconds, stdDevs);
+    }
+
+    @Override
+    public void updateOdometry(double timestampSeconds, Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
+        estimator.updateWithTime(timestampSeconds, gyroAngle, modulePositions);
     }
 
     /**

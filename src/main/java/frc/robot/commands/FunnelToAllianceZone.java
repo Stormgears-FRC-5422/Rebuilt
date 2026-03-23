@@ -145,7 +145,7 @@ public class FunnelToAllianceZone extends StormCommand {
     }
 
     private void updateGoalAngle() {
-        Pose2d current = drivetrain.getPoseEstimator().getPose();
+        Pose2d current = RobotState.getInstance().getPose();
 
         // Get field-relative velocity for compensation
         ChassisSpeeds fieldVel = drivetrain.getMeasuredFieldSpeeds();

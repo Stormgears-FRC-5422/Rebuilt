@@ -28,6 +28,10 @@ import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.diagnostic.IntakePositionDiagnostic;
+import frc.robot.commands.diagnostic.IntakeRollerDiagnostic;
+import frc.robot.commands.diagnostic.ShooterDiagnostic;
+import frc.robot.commands.diagnostic.SystemCheck;
 import frc.robot.commands.climber.ClimberHome;
 import frc.robot.commands.climber.ClimberSequence;
 import frc.robot.commands.intake.DynamicRumble;
@@ -46,6 +50,7 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.ShooterHopper;
+import frc.robot.subsystems.EstimationManager;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
@@ -69,6 +74,7 @@ public class RobotContainer {
     private Lights lights;
     @SuppressWarnings("unused")
     private VisionSubsystem vision;
+    private EstimationManager estimationManager;
     private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
     @SuppressWarnings("unused")
@@ -111,11 +117,16 @@ public class RobotContainer {
             vision = new VisionSubsystem(drivetrain, limelights.toArray(new String[0]));
         }
 
+        if (Toggles.useDrive) {
+            estimationManager = new EstimationManager(drivetrain, vision);
+        }
+
         if (Toggles.useIntake) {
             console("Create intake");
             intake = new Intake();
             if (Toggles.usePidTuner) {
-                intakeTuner = new SingleMotorTuner("IntakeArmPID", intake.getPidConfig());
+                intakeTuner = new SingleMotorTuner("IntakeArmPID", intake.getPidConfig())
+                    .withGravity();
             }
         }
 
@@ -133,7 +144,8 @@ public class RobotContainer {
             console("Create shooter");
             shooterHopper = new ShooterHopper();
             if (Toggles.usePidTuner) {
-                shooterTuner = new SingleMotorTuner("ShooterPID", shooterHopper.getPidConfig());
+                shooterTuner = new SingleMotorTuner("ShooterPID", shooterHopper.getPidConfig())
+                    .withOutputLimits();
             }
         }
 
@@ -143,6 +155,9 @@ public class RobotContainer {
 
         if (drivetrain != null) {
             autoCommandFactory = new AutoCommandFactory(drivetrain, shooterHopper, intake);
+            if (shooterHopper != null) {
+                drivetrain.setShootingSupplier(shooterHopper::isShooting);
+            }
         }
 
         console("[DONE] RobotContainer");
@@ -246,6 +261,35 @@ public class RobotContainer {
             new Trigger(() -> sysIdOpts.sysIdDynamicRev.get())
                 .whileTrue(shooterHopper.sysIdDynamic(SysIdRoutine.Direction.kReverse, sysIdOpts.sysIdDynamicRev));
         }
+
+        // --- Diagnostic triggers ---
+        if (shooterHopper != null) {
+            new Trigger(() -> elasticMotorController.diagShooter.get() || elasticMotorController.diagHopper.get())
+                .whileTrue(new ShooterDiagnostic(shooterHopper,
+                        elasticMotorController.diagShooter::get,
+                        elasticMotorController.diagHopper::get)
+                    .finallyDo(() -> {
+                        elasticMotorController.diagShooter.setValue(false);
+                        elasticMotorController.diagHopper.setValue(false);
+                    }));
+        }
+
+        if (intake != null) {
+            new Trigger(() -> elasticMotorController.diagIntakeRoller.get())
+                .whileTrue(new IntakeRollerDiagnostic(intake)
+                    .finallyDo(() -> elasticMotorController.diagIntakeRoller.setValue(false)));
+
+            new Trigger(() -> elasticMotorController.diagIntakeUpDown.get())
+                .whileTrue(new IntakePositionDiagnostic(intake)
+                    .finallyDo(() -> elasticMotorController.diagIntakeUpDown.setValue(false)));
+        }
+
+        if (shooterHopper != null && intake != null) {
+            new Trigger(() -> elasticMotorController.systemCheck.get())
+                .whileTrue(new SystemCheck(shooterHopper, intake)
+                    .finallyDo(() -> elasticMotorController.systemCheck.setValue(false)));
+        }
+
         // --- Game data overrides ---
         GameDataTracker.setAllianceWinOverride(
             () -> {

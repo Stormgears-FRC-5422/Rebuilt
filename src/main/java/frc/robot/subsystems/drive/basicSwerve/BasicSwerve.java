@@ -12,8 +12,8 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.subsystems.OdometrySample;
 import frc.robot.subsystems.drive.DrivetrainBase;
-import frc.robot.subsystems.drive.SimplePoseTelemetry;
 import frc.robot.sensors.imu.IMU;
 import frc.robot.sensors.imu.IMUFactory;
 import frc.robot.sensors.pose.PoseEstimator;
@@ -30,7 +30,6 @@ public class BasicSwerve extends DrivetrainBase {
     private final SwerveModuleGroup moduleGroup;
     private final SwerveModuleBase[] modules;
     private final SwerveDriveKinematics kinematics;
-    private final SimplePoseTelemetry robotTelemetry;
     private final IMU imu;
     private final SwerveDrivePoseEstimator internalPoseEstimator;
     private final WPILibPoseEstimator poseEstimatorWrapper;
@@ -43,8 +42,6 @@ public class BasicSwerve extends DrivetrainBase {
 
     public BasicSwerve() {
         super();
-        robotTelemetry = new SimplePoseTelemetry("robotPose");
-
         imu = IMUFactory.createIMU();
         imu.reset();
 
@@ -91,13 +88,13 @@ public class BasicSwerve extends DrivetrainBase {
             driveWithoutRotation();
         }
 
-        // Update pose estimator with current gyro reading and module positions
-        currentPose = internalPoseEstimator.update(
+        // Queue odometry for EstimationManager to process
+        addOdometrySample(new OdometrySample(
+            edu.wpi.first.wpilibj.Timer.getFPGATimestamp(),
             imu.getRotation(),
             moduleGroup.getModulePositions()
-        );
+        ));
 
-        robotTelemetry.telemeterize(currentPose);
     }
 
     // ==================== Core API Overrides ====================
