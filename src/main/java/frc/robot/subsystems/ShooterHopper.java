@@ -244,11 +244,11 @@ public class ShooterHopper extends StormSubsystem {
                     double actualMPS   = getCurrentVelocityRPS() * wc;
 
                     if (!hopperEmptyArmed && !armedDelayTimer.isRunning()) {
-                        armedDelayTimer.reset();  armedDelayTimer.start();
-                        hopperEmptyTimer.reset(); hopperEmptyTimer.start();
+                        armedDelayTimer.reset(); armedDelayTimer.start();
                     }
                     if (!hopperEmptyArmed && armedDelayTimer.hasElapsed(Shooter.hopperEmptyArmedDelaySec)) {
                         hopperEmptyArmed = true;
+                        hopperEmptyTimer.reset(); hopperEmptyTimer.start();
                     }
 
                     if (hopperEmptyArmed) {
@@ -285,8 +285,7 @@ public class ShooterHopper extends StormSubsystem {
     }
 
     public boolean isHopperEmpty() {
-        return hopperEmptyArmed && shotCount > 0
-            && hopperEmptyTimer.hasElapsed(Shooter.hopperEmptyTimeoutSec);
+        return hopperEmptyArmed && hopperEmptyTimer.hasElapsed(Shooter.hopperEmptyTimeoutSec);
     }
 
     public int getShotCount() { return shotCount; }
