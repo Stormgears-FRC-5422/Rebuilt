@@ -41,6 +41,7 @@ import frc.robot.FieldConstants;
 import frc.robot.Options;
 import frc.robot.sensors.pose.PoseEstimator;
 import frc.robot.sensors.pose.WPILibPoseEstimator;
+import frc.robot.subsystems.OdometrySample;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.tunerConstants.RebuiltTorqueFOC;
 
@@ -76,9 +77,11 @@ public class AkitDrive extends DrivetrainBase {
         };
     private SwerveDrivePoseEstimator poseEstimator =
         new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+    private final WPILibPoseEstimator poseEstimatorWrapper;
 
     public AkitDrive() {
         this.gyroIO = new GyroIOPigeon2();
+        poseEstimatorWrapper = new WPILibPoseEstimator(poseEstimator, () -> rawGyroRotation, this::getModulePositions);
         modules[0] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontLeft),
             0, RebuiltTorqueFOC.FrontLeft);
         modules[1] = new Module(new ModuleIOTalonFX(RebuiltTorqueFOC.FrontRight),
@@ -172,8 +175,8 @@ public class AkitDrive extends DrivetrainBase {
                 rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
             }
 
-            // Apply update
-            poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+            // Queue for EstimationManager to process
+            addOdometrySample(new OdometrySample(sampleTimestamps[i], rawGyroRotation, modulePositions));
         }
 
         // Update gyro alert
@@ -376,6 +379,6 @@ public class AkitDrive extends DrivetrainBase {
 
     @Override
     public PoseEstimator getPoseEstimator() {
-        return new WPILibPoseEstimator(poseEstimator, this::getRotation, this::getModulePositions);
+        return poseEstimatorWrapper;
     }
 }
