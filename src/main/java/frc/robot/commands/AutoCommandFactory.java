@@ -81,8 +81,6 @@ public class AutoCommandFactory {
             autoChooser.addOption("HokeyPokeyRabbit", "HokeyPokeyRabbit");
             autoChooser.addOption("PoopingSloth", "PoopingSloth");
             autoChooser.addOption("Tortoise", "Tortoise");
-            autoChooser.addOption("Left Close Outpost", "left_close_outpost");
-            autoChooser.addOption("Right Close Outpost", "right_close_outpost");
 
             // Cycle auto sub-choosers
             startPositionChooser.addDefaultOption("Left", "left");
@@ -91,14 +89,12 @@ public class AutoCommandFactory {
 
             firstCycleChooser.addDefaultOption("Mid", "mid");
             firstCycleChooser.addOption("Depot", "depot");
-            firstCycleChooser.addOption("Outpost", "outpost");
             firstCycleChooser.addOption("Shoot Only", "shoot_only");
-            firstCycleChooser.addOption("Close Outpost", "close_outpost");
 
             secondCycleChooser.addDefaultOption("None", "none");
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Depot", "depot");
-            secondCycleChooser.addOption("Outpost", "outpost");
+            secondCycleChooser.addOption("Double Swipe", "double_swipe");
             chooserInitialized = true;
         }
 
@@ -186,18 +182,15 @@ public class AutoCommandFactory {
         loadTrajectory("left_first_depot");
         loadTrajectory("left_second_mid");
         loadTrajectory("left_second_depot");
-        loadTrajectory("left_close_outpost");
+        loadTrajectory("left_second_double_swipe");
 
         // Right-side cycle trajectories
         loadTrajectory("right_first_mid");
-        loadTrajectory("right_first_outpost");
         loadTrajectory("right_second_mid");
-        loadTrajectory("right_second_outpost");
-        loadTrajectory("right_close_outpost");
+        loadTrajectory("right_second_double_swipe");
 
-        // Middle-start cycle trajectories (mid + mid is not valid; middle only has depot/outpost/shoot)
+        // Middle-start cycle trajectories (mid + mid is not valid; middle only has depot/shoot)
         loadTrajectory("mid_first_depot");
-        loadTrajectory("mid_first_outpost");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -406,18 +399,13 @@ public class AutoCommandFactory {
     }
 
     private String resolveFirstTrajectory(String start, String firstCycle) {
-        if ("close_outpost".equals(firstCycle)) {
-
-            return start + "_close_outpost"; // left n right
-        }
         return start + "_first_" + firstCycle;
     }
 
 
     private String resolveEffectiveSide(String start, String firstCycle) {
         if ("left".equals(start) || "right".equals(start)) return start;
-        // Middle start: depot and mid end at left scoring position, outpost ends at right
-        if ("outpost".equals(firstCycle)) return "right";
+        // Middle start: depot and mid end at left scoring position
         return "left";
     }
 
@@ -428,33 +416,17 @@ public class AutoCommandFactory {
 
     private String resolveInitialPoseTrajectory(String start, String firstCycle) {
         if ("shoot_only".equals(firstCycle)) return start + "_shoot_only";
-        if ("close_outpost".equals(firstCycle)) return start + "_close_outpost";
         return resolveFirstTrajectory(start, firstCycle);
     }
 
 
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
-
-        if ("mid".equals(start) && "close_outpost".equals(firstCycle)) return false;
-
         // Middle can't do mid as first cycle
         if ("mid".equals(start) && "mid".equals(firstCycle)) return false;
-
-        // Left can't do outpost
-        if ("left".equals(start)) {
-            if ("outpost".equals(firstCycle) || "outpost".equals(secondCycle)) return false;
-        }
 
         // Right can't do depot
         if ("right".equals(start)) {
             if ("depot".equals(firstCycle) || "depot".equals(secondCycle)) return false;
-        }
-
-        // Middle: second cycle must match effective side
-        if ("mid".equals(start) && !"none".equals(secondCycle) && !"shoot_only".equals(firstCycle)) {
-            String effectiveSide = resolveEffectiveSide(start, firstCycle);
-            if ("left".equals(effectiveSide) && "outpost".equals(secondCycle)) return false;
-            if ("right".equals(effectiveSide) && "depot".equals(secondCycle)) return false;
         }
 
         return true;
