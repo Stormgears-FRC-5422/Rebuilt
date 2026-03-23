@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.commands.intake.*;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -18,7 +17,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
-import frc.robot.Constants.Auto;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakePosition;
@@ -43,7 +41,7 @@ public class AutoCommandFactory {
     private Command chosenCommand;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<? extends Trajectory<?>> chosenTrajectory = Optional.empty();
-    private String chooserTrajectoryName = Auto.path;
+    private String chooserTrajectoryName = "CycleAuto";
     private String lastStartPosition = "";
     private String lastFirstCycle = "";
     private String lastSecondCycle = "";
@@ -68,33 +66,28 @@ public class AutoCommandFactory {
         loadTrajectories();
 
         if (!chooserInitialized) {
-            // Main auto chooser — legacy autos + cycle auto
-            autoChooser.addDefaultOption(Auto.path, Auto.path);
+            autoChooser.addDefaultOption("Cycle Auto", "CycleAuto");
             autoChooser.addOption("Nothing", null);
-            autoChooser.addOption("Cycle Auto", "CycleAuto");
-            autoChooser.addOption("Straight", "Straight");
-            autoChooser.addOption("Reload", "Reload");
-            autoChooser.addOption("Sweeper", "Sweeper");
-            autoChooser.addOption("TwoCycleLeft", "TwoCycleLeft");
-            autoChooser.addOption("TwoCycleRight", "TwoCycleRight");
-            autoChooser.addOption("CircularRabbit", "CircularRabbit");
-            autoChooser.addOption("HokeyPokeyRabbit", "HokeyPokeyRabbit");
-            autoChooser.addOption("PoopingSloth", "PoopingSloth");
-            autoChooser.addOption("Tortoise", "Tortoise");
 
-            // Cycle auto sub-choosers
             startPositionChooser.addDefaultOption("Left", "left");
             startPositionChooser.addOption("Middle", "mid");
             startPositionChooser.addOption("Right", "right");
 
             firstCycleChooser.addDefaultOption("Mid", "mid");
+            firstCycleChooser.addOption("Mid TR", "mid_tr");
+            firstCycleChooser.addOption("Mid TR Steal", "mid_tr_steal");
+            firstCycleChooser.addOption("Mid Windham", "mid_windham");
+            firstCycleChooser.addOption("Mid Windham Steal", "mid_windham_steal");
             firstCycleChooser.addOption("Depot", "depot");
             firstCycleChooser.addOption("Shoot Only", "shoot_only");
 
             secondCycleChooser.addDefaultOption("None", "none");
             secondCycleChooser.addOption("Mid", "mid");
+            secondCycleChooser.addOption("Mid TR", "mid_tr");
+            secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
             secondCycleChooser.addOption("Depot", "depot");
             secondCycleChooser.addOption("Double Swipe", "double_swipe");
+
             chooserInitialized = true;
         }
 
@@ -151,27 +144,14 @@ public class AutoCommandFactory {
             chosenCommand = buildCycleAuto(currentStart, currentFirst, currentSecond);
             chosenTrajectory = loadTrajectory(resolveInitialPoseTrajectory(currentStart, currentFirst));
         } else {
-            chosenCommand = buildCommand(chooserTrajectoryName);
-            chosenTrajectory = (chooserTrajectoryName != null)
-                ? loadTrajectory(chooserTrajectoryName)
-                : Optional.empty();
+            chosenCommand = Commands.none();
+            chosenTrajectory = Optional.empty();
         }
 
         isDirty = false;
     }
 
     private void loadTrajectories() {
-        // Legacy trajectories
-        loadTrajectory("Straight");
-        loadTrajectory("Reload");
-        loadTrajectory("Sweeper");
-        loadTrajectory("TwoCycleLeft");
-        loadTrajectory("TwoCycleRight");
-        loadTrajectory("CircularRabbit");
-        loadTrajectory("HokeyPokeyRabbit");
-        loadTrajectory("PoopingSloth");
-        loadTrajectory("Tortoise");
-
         // Shoot-only trajectories
         loadTrajectory("left_shoot_only");
         loadTrajectory("mid_shoot_only");
@@ -179,17 +159,31 @@ public class AutoCommandFactory {
 
         // Left-side cycle trajectories
         loadTrajectory("left_first_mid");
+        loadTrajectory("left_first_mid_tr");
+        loadTrajectory("left_first_mid_tr_steal");
+        loadTrajectory("left_first_mid_windham");
+        loadTrajectory("left_first_mid_windham_steal");
         loadTrajectory("left_first_depot");
         loadTrajectory("left_second_mid");
+        loadTrajectory("left_second_mid_tr");
+        loadTrajectory("left_second_mid_tr_2");
         loadTrajectory("left_second_depot");
         loadTrajectory("left_second_double_swipe");
 
         // Right-side cycle trajectories
         loadTrajectory("right_first_mid");
+        loadTrajectory("right_first_mid_tr");
+        loadTrajectory("right_first_mid_tr_steal");
+        loadTrajectory("right_first_mid_windham");
+        loadTrajectory("right_first_mid_windham_steal");
+        loadTrajectory("right_first_depot");
         loadTrajectory("right_second_mid");
+        loadTrajectory("right_second_mid_tr");
+        loadTrajectory("right_second_mid_tr_2");
+        loadTrajectory("right_second_depot");
         loadTrajectory("right_second_double_swipe");
 
-        // Middle-start cycle trajectories (mid + mid is not valid; middle only has depot/shoot)
+        // Middle-start cycle trajectories
         loadTrajectory("mid_first_depot");
     }
 
@@ -202,111 +196,9 @@ public class AutoCommandFactory {
     }
 
 
-    private Command buildCommand(String trajectoryName) {
-        if (trajectoryName == null) return Commands.none();
-        switch (trajectoryName){
-            case "Reload":
-                return reloadAuto();
-            case "TwoCycleRight", "TwoCycleLeft":
-                return twoCycleAuto(trajectoryName);
-            default:
-                return basicAuto(trajectoryName);
-        }
-    }
-
     private Command stopDrive() {
         return Commands.runOnce(() -> drivetrainBase.drive(new ChassisSpeeds(), false), drivetrainBase);
     }
-
-    private Command basicAuto(String name) {
-        Command trajectory = choreoFactory.trajectoryCmd(name);
-        Command printName = new PrintCommand("Auto: " + name);
-
-        if (intake == null) return Commands.sequence(printName, trajectory, stopDrive());
-
-        return Commands.sequence(
-            printName,
-            Commands.parallel(
-                new IntakeHome(intake),
-                trajectory
-            ),
-            stopDrive()
-        );
-    }
-
-    private Command reloadAuto() {
-        String name = "Reload";
-        Command intakeLeg1 = choreoFactory.trajectoryCmd(name, 0);
-        Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
-        Command printName = new PrintCommand("Auto: " + name);
-
-
-
-        if (intake == null || shooterHopper == null) return Commands.sequence(printName, intakeLeg1, stopDrive());
-
-        return Commands.sequence(
-            printName,
-            Commands.parallel(
-                new IntakeHome(intake),
-                intakeLeg1
-            ),
-            stopDrive(),
-            Commands.parallel(
-                new TimedShootCommand(shooterHopper, true,8),
-                new DynamicRumble(intake)
-            ),
-            Commands.parallel(
-                new IntakeHome(intake),
-                shootLeg1
-            ),
-            stopDrive(),
-            Commands.parallel(
-                new TimedShootCommand(shooterHopper, true,8),
-                new DynamicRumble(intake)
-            )
-
-        );
-    }
-
-    private Command twoCycleAuto(String name) {
-        Command printName = new PrintCommand("Auto: " + name);
-
-        Command intakeLeg1 = choreoFactory.trajectoryCmd(name, 0);
-        Command shootLeg1 = choreoFactory.trajectoryCmd(name, 1);
-        Command intakeLeg2 = choreoFactory.trajectoryCmd(name, 2);
-        Command shootLeg2 = choreoFactory.trajectoryCmd(name, 3);
-
-        return Commands.sequence(
-            printName,
-            Commands.parallel(
-                new IntakeHome(intake),
-                Commands.race(
-                    intakeLeg1,
-                    new RunRoller(intake, true)
-                )
-            ),
-            stopDrive(),
-            shootLeg1,
-            stopDrive(),
-            Commands.parallel(
-                new TimedShootCommand(shooterHopper, true, 8.0),
-                new FaceTowardHub(drivetrainBase),
-                new DynamicRumble(intake)
-            ),
-            new IntakeGoToPosition(intake, IntakePosition.HOME),
-            Commands.race(
-                intakeLeg2,
-                new RunRoller(intake, true)
-            ),
-            stopDrive(),
-            shootLeg2,
-            Commands.parallel(
-                new TimedShootCommand(shooterHopper, true, 8.0),
-                new DynamicRumble(intake)
-            )
-        );
-    }
-
 
     private Command buildCycleAuto(String start, String firstCycle, String secondCycle) {
         String label = "Cycle Auto: " + start + " / " + firstCycle + " / " + secondCycle;
@@ -323,7 +215,7 @@ public class AutoCommandFactory {
         }
 
         // Resolve trajectory names
-        String firstTrajectory = resolveFirstTrajectory(start, firstCycle);
+        String firstTrajectory = start + "_first_" + firstCycle;
         String effectiveSide = resolveEffectiveSide(start, firstCycle);
         String secondTrajectory = resolveSecondTrajectory(effectiveSide, secondCycle);
 
@@ -398,11 +290,6 @@ public class AutoCommandFactory {
         );
     }
 
-    private String resolveFirstTrajectory(String start, String firstCycle) {
-        return start + "_first_" + firstCycle;
-    }
-
-
     private String resolveEffectiveSide(String start, String firstCycle) {
         if ("left".equals(start) || "right".equals(start)) return start;
         // Middle start: depot and mid end at left scoring position
@@ -416,19 +303,13 @@ public class AutoCommandFactory {
 
     private String resolveInitialPoseTrajectory(String start, String firstCycle) {
         if ("shoot_only".equals(firstCycle)) return start + "_shoot_only";
-        return resolveFirstTrajectory(start, firstCycle);
+        return start + "_first_" + firstCycle;
     }
 
 
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
         // Middle can't do mid as first cycle
-        if ("mid".equals(start) && "mid".equals(firstCycle)) return false;
-
-        // Right can't do depot
-        if ("right".equals(start)) {
-            if ("depot".equals(firstCycle) || "depot".equals(secondCycle)) return false;
-        }
-
+        if ("mid".equals(start) && firstCycle.startsWith("mid")) return false;
         return true;
     }
 }
