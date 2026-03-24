@@ -105,4 +105,9 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public void setRumble(double strength) {
         xboxController.setRumble(edu.wpi.first.wpilibj.GenericHID.RumbleType.kBothRumble, strength);
     }
+
+    @Override
+    public boolean testAutoShoot() {
+        return xboxController.getPOV() == 0; // D-pad up
+    }
 }
