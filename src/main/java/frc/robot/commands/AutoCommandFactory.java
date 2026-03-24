@@ -85,6 +85,7 @@ public class AutoCommandFactory {
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Mid TR", "mid_tr");
             secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
+            secondCycleChooser.addOption("Mid Windham", "mid_windham");
             secondCycleChooser.addOption("Depot", "depot");
             secondCycleChooser.addOption("Double Swipe", "double_swipe");
 
@@ -167,6 +168,7 @@ public class AutoCommandFactory {
         loadTrajectory("left_second_mid");
         loadTrajectory("left_second_mid_tr");
         loadTrajectory("left_second_mid_tr_2");
+        loadTrajectory("left_second_mid_windham");
         loadTrajectory("left_second_depot");
         loadTrajectory("left_second_double_swipe");
 
@@ -180,6 +182,7 @@ public class AutoCommandFactory {
         loadTrajectory("right_second_mid");
         loadTrajectory("right_second_mid_tr");
         loadTrajectory("right_second_mid_tr_2");
+        loadTrajectory("right_second_mid_windham");
         loadTrajectory("right_second_depot");
         loadTrajectory("right_second_double_swipe");
 
