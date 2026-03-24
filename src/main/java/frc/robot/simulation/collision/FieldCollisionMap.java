@@ -1,7 +1,7 @@
 package frc.robot.simulation.collision;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import frc.robot.RebuiltField;
+import frc.robot.game.RebuiltField;
 
 import java.util.ArrayList;
 import java.util.List;

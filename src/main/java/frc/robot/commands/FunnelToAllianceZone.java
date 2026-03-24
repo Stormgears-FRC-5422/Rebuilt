@@ -13,8 +13,8 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Constants.Shooter;
-import frc.robot.FieldConstants;
-import frc.robot.RebuiltField;
+import frc.robot.game.FieldConstants;
+import frc.robot.game.RebuiltField;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
 import frc.robot.joysticks.RebuiltJoystick;
@@ -145,7 +145,7 @@ public class FunnelToAllianceZone extends StormCommand {
     }
 
     private void updateGoalAngle() {
-        Pose2d current = drivetrain.getPoseEstimator().getPose();
+        Pose2d current = RobotState.getInstance().getPose();
 
         // Get field-relative velocity for compensation
         ChassisSpeeds fieldVel = drivetrain.getMeasuredFieldSpeeds();

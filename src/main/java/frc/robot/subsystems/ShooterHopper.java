@@ -12,6 +12,7 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -27,6 +28,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -72,6 +74,12 @@ public class ShooterHopper extends StormSubsystem {
 
     private boolean toHub = true;
 
+    // Flywheel disturbance detection state
+    private int     shotCount             = 0;
+    private boolean dipActive             = false;
+    private boolean detectionArmed        = false;
+    private final Timer flywheelIdleTimer = new Timer();
+    private final Timer armingTimer       = new Timer();
 
     @SuppressWarnings("resource")
     public ShooterHopper() {
@@ -146,6 +154,7 @@ public class ShooterHopper extends StormSubsystem {
                 log -> {
                     log.motor("shooter")
                         .voltage(Volts.of(leaderMotor.getMotorVoltageOutput()))
+                        .current(Amps.of(leaderMotor.getMotorCurrent()))
                         .angularPosition(Rotations.of(leaderMotor.getMotorPosition()))
                         .angularVelocity(RotationsPerSecond.of(leaderMotor.getMotorVelocity()));
                 },
@@ -161,8 +170,19 @@ public class ShooterHopper extends StormSubsystem {
         setState(ShooterState.IDLE);
     }
 
+    public boolean isShooting() {
+        return state == ShooterState.SPEEDING_UP || state == ShooterState.SHOOTING;
+    }
+
     public void setState(ShooterState newState) {
         if (state == newState) return;
+        if (newState == ShooterState.SPEEDING_UP || newState == ShooterState.IDLE) {
+            shotCount       = 0;
+            dipActive       = false;
+            detectionArmed  = false;
+            flywheelIdleTimer.reset(); flywheelIdleTimer.stop();
+            armingTimer.reset();       armingTimer.stop();
+        }
         console("setState: " + state + " -> " + newState, 1);
         state = newState;
     }
@@ -216,6 +236,32 @@ public class ShooterHopper extends StormSubsystem {
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
+
+                // Hopper-empty detection (SHOOTING only — not DIAGNOSTIC)
+                if (state == ShooterState.SHOOTING) {
+                    double wc          = Math.PI * Shooter.shooterWheelDiameterMeters;
+                    double setpointMPS = targetVelocityRPS       * wc;
+                    double actualMPS   = getCurrentVelocityRPS() * wc;
+
+                    if (!detectionArmed && !armingTimer.isRunning()) {
+                        armingTimer.reset(); armingTimer.start();
+                    }
+                    if (!detectionArmed && armingTimer.hasElapsed(Shooter.hopperEmptyArmedDelaySec)) {
+                        detectionArmed = true;
+                        flywheelIdleTimer.reset(); flywheelIdleTimer.start();
+                    }
+
+                    if (detectionArmed) {
+                        boolean dipping = actualMPS < setpointMPS - Shooter.hopperEmptyDipThresholdMPS;
+                        if (dipping && !dipActive) {
+                            shotCount++;
+                            dipActive = true;
+                            flywheelIdleTimer.reset();
+                        } else if (!dipping) {
+                            dipActive = false;
+                        }
+                    }
+                }
             }
             case CHARACTERIZING -> {
                 // SysIdRoutine controls the motor directly — just keep fuelInjector off
@@ -228,7 +274,23 @@ public class ShooterHopper extends StormSubsystem {
             pid.clearDirty();
             console(String.valueOf(pid),1);
         }
+
+        double wc = Math.PI * Shooter.shooterWheelDiameterMeters;
+        Logger.recordOutput("Shooter/ShotCount",            shotCount);
+        Logger.recordOutput("Shooter/FlywheelBusy",         isFlywheelBusy());
+        Logger.recordOutput("Shooter/FlywheelDetectionArmed", detectionArmed);
+        Logger.recordOutput("Shooter/FlywheelIdleTimerSec", flywheelIdleTimer.get());
+        Logger.recordOutput("Shooter/FlywheelLinearMPS",    getCurrentVelocityRPS() * wc);
+        Logger.recordOutput("Shooter/SetpointLinearMPS",    targetVelocityRPS * wc);
     }
+
+    /** Returns true while balls are hitting the flywheel, false when spinning clean. */
+    public boolean isFlywheelBusy() {
+        if (!detectionArmed) return true;
+        return !flywheelIdleTimer.hasElapsed(Shooter.hopperEmptyTimeoutSec);
+    }
+
+    public int getShotCount() { return shotCount; }
 
     public void setUseRealDist(boolean useRealDist) {
         this.useRealDist = useRealDist;
@@ -264,6 +326,13 @@ public class ShooterHopper extends StormSubsystem {
 
         ok &= checkApply(leaderMotor.getConfigurator().apply(currentLimits), "leader currentLimits");
         ok &= checkApply(followerMotor.getConfigurator().apply(currentLimits), "follower currentLimits");
+
+        if (useTorqueFOC) {
+            TorqueCurrentConfigs torqueLimits = new TorqueCurrentConfigs();
+            torqueLimits.PeakForwardTorqueCurrent = Shooter.statorCurrentLimit;
+            torqueLimits.PeakReverseTorqueCurrent = -15;
+            ok &= checkApply(leaderMotor.getConfigurator().apply(torqueLimits), "leader torqueLimits");
+        }
 
         ok &= checkApply(followerMotor.getConfigurator().apply(followerOut), "follower motorOutput");
         ok &= checkApply(leaderMotor.getConfigurator().apply(out), "leader motorOutput");

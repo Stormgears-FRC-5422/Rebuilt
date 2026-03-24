@@ -1,12 +1,14 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.util.Color;
 import frc.robot.Constants;
 import frc.robot.RobotState;
-import frc.robot.RobotState.HopperState;
 import frc.utils.StormSubsystem;
 import frc.robot.subsystems.misc.BatteryMonitor;
+import frc.robot.game.GameDataTracker;
+import frc.robot.game.GameDataTracker.ShiftInfo;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -14,31 +16,20 @@ public class Lights extends StormSubsystem {
 
     private final RobotState m_robotState;
 
-    private final AddressableLED addressableLED;
-    private final AddressableLEDBuffer addressableLEDBuffer;
-    private AddressableLEDBufferView m_bottom;
-    private AddressableLEDBufferView m_top;
+    Color RED_COLOR = Color.kRed;
+    Color BLUE_COLOR = Color.kBlue;
+    Color YELLOW_COLOR = Color.kYellow;
+    Color GREEN_COLOR = Color.kGreen;
+    Color ORANGE_COLOR = new Color(255, 32, 0);
+    Color PINK_COLOR = new Color(225, 105, 180);
+    Color PURPLE_COLOR = Color.kPurple;
+
+    private AddressableLED addressableLED;
+    private AddressableLEDBuffer addressableLEDBuffer;
+    private AddressableLEDBufferView m_left;
+    private AddressableLEDBufferView m_right;
 
     private boolean pulse = false;
-    private final double pulsePeriod = 5.0;
-
-    // Pre-built patterns — created once, reused every loop to avoid GC pressure
-    private final LEDPattern rainbowForward;
-    private final LEDPattern rainbowReversed;
-    private final LEDPattern patternRed    = LEDPattern.solid(Color.kRed);
-    private final LEDPattern patternGreen  = LEDPattern.solid(Color.kGreen);
-    private final LEDPattern patternBlue   = LEDPattern.solid(Color.kBlue);
-    private final LEDPattern patternOrange = LEDPattern.solid(new Color(255, 32, 0));
-    private final LEDPattern patternPurple = LEDPattern.solid(Color.kPurple);
-
-    // Pre-built breathe variants — avoids creating wrapper objects on every loop tick
-    private final LEDPattern rainbowForwardBreathe;
-    private final LEDPattern rainbowReversedBreathe;
-    private final LEDPattern patternRedBreathe;
-    private final LEDPattern patternGreenBreathe;
-    private final LEDPattern patternBlueBreathe;
-    private final LEDPattern patternOrangeBreathe;
-    private final LEDPattern patternPurpleBreathe;
 
     public Lights() {
         addressableLED = new AddressableLED(Constants.Lights.port);
@@ -47,21 +38,6 @@ public class Lights extends StormSubsystem {
         addressableLED.setLength(addressableLEDBuffer.getLength());
         addressableLED.start();
         setViews();
-
-        LEDPattern rainbow = LEDPattern.rainbow(255, 128)
-            .scrollAtAbsoluteSpeed(MetersPerSecond.of(0.45), Meters.of(1.0 / 120.0));
-        rainbowForward  = rainbow;
-        rainbowReversed = rainbow.reversed();
-
-        var breathePeriod = Seconds.of(pulsePeriod);
-        rainbowForwardBreathe  = rainbowForward.breathe(breathePeriod);
-        rainbowReversedBreathe = rainbowReversed.breathe(breathePeriod);
-        patternRedBreathe      = patternRed.breathe(breathePeriod);
-        patternGreenBreathe    = patternGreen.breathe(breathePeriod);
-        patternBlueBreathe     = patternBlue.breathe(breathePeriod);
-        patternOrangeBreathe   = patternOrange.breathe(breathePeriod);
-        patternPurpleBreathe   = patternPurple.breathe(breathePeriod);
-
         m_robotState = RobotState.getInstance();
     }
 
@@ -70,59 +46,92 @@ public class Lights extends StormSubsystem {
         super.periodic();
 
         setBatteryPulse();
+        switchShift();
 
-        if (DriverStation.isDisabled()) {
-            setRainbow(true);
-        } else {
-            switchLightState(m_robotState.getHopperState());
-        }
-
+        // Write the data to the LED strip
         addressableLED.setData(addressableLEDBuffer);
         addressableLED.start();
     }
 
-    // Selects base or pre-built breathe variant — zero allocation
-    private <T extends LEDReader & LEDWriter> void patternApplyTo(
-            LEDPattern base, LEDPattern breatheVer, T view) {
-        (pulse ? breatheVer : base).applyTo(view);
+    // Wrapper function to allow pulse effect to be applied to any pattern.
+    // Call this function rather than calling pattern.applyTo()
+    private <T extends LEDReader & LEDWriter> void patternApplyTo(LEDPattern basePattern, T view) {
+        LEDPattern finalPattern = basePattern;
+
+        if (pulse) {
+            finalPattern = basePattern.breathe(Seconds.of(Constants.Lights.pulsePeriodSeconds));
+        }
+
+        finalPattern.applyTo(view);
     }
 
     public void setAllianceColor() {
-        switch (m_robotState.getAlliance()) {
-            case RED     -> patternApplyTo(patternRed,    patternRedBreathe,    addressableLEDBuffer);
-            case BLUE    -> patternApplyTo(patternBlue,   patternBlueBreathe,   addressableLEDBuffer);
-            case MISSING -> patternApplyTo(patternPurple, patternPurpleBreathe, addressableLEDBuffer);
+        if (m_robotState.getAlliance() == RobotState.StateAlliance.RED) {
+            setSolid(RED_COLOR);
+        } else if (m_robotState.getAlliance() == RobotState.StateAlliance.BLUE) {
+            setSolid(BLUE_COLOR);
+        } else if (m_robotState.getAlliance() == RobotState.StateAlliance.MISSING) {
+            setSolid(PURPLE_COLOR);
         }
     }
 
     public void setBatteryPulse() {
-        pulse = m_robotState.getBatteryState() != BatteryMonitor.BatteryState.GOOD;
+        if (m_robotState.getBatteryState() == BatteryMonitor.BatteryState.GOOD) {
+            pulse = false;
+        } else if (m_robotState.getBatteryState() == BatteryMonitor.BatteryState.WARN) {
+            pulse = true;
+        } else if (m_robotState.getBatteryState() == BatteryMonitor.BatteryState.BAD) {
+            pulse = true;
+        }
     }
 
     public void setRainbow(boolean forward) {
-        LEDPattern base    = forward ? rainbowForward        : rainbowReversed;
-        LEDPattern breathe = forward ? rainbowForwardBreathe : rainbowReversedBreathe;
-        patternApplyTo(base, breathe, m_bottom);
-        patternApplyTo(base, breathe, m_top);
+        LEDPattern rainbow = LEDPattern.rainbow(255, 128);
+        Distance kLedSpacing = Meters.of(1.0 / Constants.Lights.ledDensityPerMeter);
+        LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(
+                MetersPerSecond.of(Constants.Lights.scrollSpeedMPS), kLedSpacing);
+        if (!forward)
+            scrollingRainbow = scrollingRainbow.reversed();
+
+        patternApplyTo(scrollingRainbow, m_left);
+        patternApplyTo(scrollingRainbow, m_right);
     }
 
     public void setSolid(Color color) {
-        LEDPattern.solid(color).applyTo(addressableLEDBuffer);
+        LEDPattern pattern = LEDPattern.solid(color);
+        patternApplyTo(pattern, addressableLEDBuffer);
     }
 
     public void setViews() {
-        // Right view is reversed because LED strips are wired in series
-        m_bottom = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
-        m_top    = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
+        var leftView = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
+        m_left = Constants.Lights.leftViewReversed ? leftView.reversed() : leftView;
+        var rightView = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd);
+        m_right = Constants.Lights.rightViewReversed ? rightView.reversed() : rightView;
     }
 
-    private void switchLightState(HopperState state) {
-        switch (state) {
-            case IDLE, UNKNOWN -> setAllianceColor();
-            case HOPPER_EMPTY  -> patternApplyTo(patternRed,    patternRedBreathe,    addressableLEDBuffer);
-            case HOPPER_HALF   -> { patternApplyTo(patternRed, patternRedBreathe, m_top); patternApplyTo(patternGreen, patternGreenBreathe, m_bottom); }
-            case HOPPER_FULL   -> patternApplyTo(patternGreen,  patternGreenBreathe,  addressableLEDBuffer);
-            case HOPPER_LOW    -> patternApplyTo(patternOrange, patternOrangeBreathe, addressableLEDBuffer);
+    public void switchShift() {
+        ShiftInfo info = GameDataTracker.getShiftInfo();
+
+        switch (info.currentShift()) {
+            case AUTO:
+                setAllianceColor();
+                break;
+            case DISABLED:
+                setSolid(ORANGE_COLOR);
+                break;
+            case ENDGAME:
+                setRainbow(true);
+                break;
+            default:
+                if (info.ourShift()) {
+                    setSolid(GREEN_COLOR);
+                } else {
+                    setSolid(RED_COLOR);
+                }
+                if (info.remainingTime() < Constants.Lights.shiftWarningSeconds) {
+                    setSolid(YELLOW_COLOR);
+                }
+                break;
         }
     }
 }

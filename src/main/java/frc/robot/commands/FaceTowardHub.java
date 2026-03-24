@@ -4,7 +4,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import frc.robot.FieldConstants;
+import frc.robot.game.FieldConstants;
 import frc.robot.Constants.Drive;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DrivetrainBase;
@@ -31,7 +31,7 @@ public class FaceTowardHub extends StormCommand {
 
         //Calculate Translation distance between Hub and current Robot Loc.
         Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
-        Pose2d current = drivetrain.getPoseEstimator().getPose();
+        Pose2d current = RobotState.getInstance().getPose();
         Translation2d trans = hubPose.getTranslation().minus(current.getTranslation());
 
         //Finds goal angle based on X and Y component of the translation
