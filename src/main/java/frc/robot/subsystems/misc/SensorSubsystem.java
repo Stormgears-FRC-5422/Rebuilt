@@ -57,7 +57,7 @@ public class SensorSubsystem extends StormSubsystem {
         double distance = stormNet.getLidarDistance();
         // double distance = 1.0;
         // use elastic and see
-        // Logger.recordOutput("SensorSubsystem/LidarDistance", 1.0);        // Lidar: lower distance = fuller hopper. Negative means bad data.
+        Logger.recordOutput("SensorSubsystem/LidarDistance", distance);        // Lidar: lower distance = fuller hopper. Negative means bad data.
         HopperState lidarState = HopperState.UNKNOWN;
         if (distance >= 0) {
             if (distance <= Constants.SensorSubsystem.lidarDepthFull) {
