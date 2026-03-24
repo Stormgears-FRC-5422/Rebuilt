@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class VisionSubsystem extends StormSubsystem {
@@ -23,6 +24,11 @@ public class VisionSubsystem extends StormSubsystem {
     private static final double MAX_TAG_DISTANCE_METERS = MAX_TAG_DISTANCE_FEET * 0.3048;
 
     private ArrayList<VisionMeasurement> latestMeasurements = new ArrayList<>();
+
+    // Per-cycle cached query results (updated in periodic)
+    private boolean anyTagSeen;
+    private double closestTagDistAnyLL = Double.MAX_VALUE;
+    private int totalTagCount;
 
     public VisionSubsystem(
         DrivetrainBase drivetrain,
@@ -42,6 +48,15 @@ public class VisionSubsystem extends StormSubsystem {
         latestMeasurements = new ArrayList<>();
         return measurements;
     }
+
+    /** Returns true if any limelight currently sees at least one AprilTag. */
+    public boolean seesAnyTag() { return anyTagSeen; }
+
+    /** Returns the minimum tag distance (meters) across all limelights this cycle. */
+    public double getClosestTagDistAnyLL() { return closestTagDistAnyLL; }
+
+    /** Returns the number of unique tags seen across all limelights this cycle. */
+    public int getTotalTagCount() { return totalTagCount; }
 
     public boolean seesTag(String limelightID) {
         double ATid = LimelightHelpers.getFiducialID(limelightID);
@@ -127,6 +142,23 @@ public class VisionSubsystem extends StormSubsystem {
         for (String ll : limelightIDs) {
             estimates.put(ll, LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(ll));
         }
+
+        // Compute per-cycle aggregate stats
+        anyTagSeen = false;
+        closestTagDistAnyLL = Double.MAX_VALUE;
+        HashSet<Integer> uniqueTags = new HashSet<>();
+        for (String ll : limelightIDs) {
+            PoseEstimate est = estimates.get(ll);
+            if (est != null && est.tagCount > 0) {
+                anyTagSeen = true;
+                double dist = closestTagDist(est);
+                if (dist < closestTagDistAnyLL) closestTagDistAnyLL = dist;
+                for (LimelightHelpers.RawFiducial fid : est.rawFiducials) {
+                    if (fid != null) uniqueTags.add(fid.id);
+                }
+            }
+        }
+        totalTagCount = uniqueTags.size();
 
         // Log per-limelight data
         logLLs(estimates);

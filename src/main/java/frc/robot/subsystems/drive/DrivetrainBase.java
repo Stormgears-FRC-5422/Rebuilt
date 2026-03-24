@@ -416,10 +416,8 @@ public abstract class DrivetrainBase extends StormSubsystem {
             collisionManager.updateAndConstrain(getPose(), this::setPose);
         }
 
-        // Update global state and telemetry after all pose corrections
-        Pose2d currentPose = getPoseEstimator().getPose();
-        state.setPose(currentPose);
-        robotTelemetry.telemeterize(currentPose);
+        // Telemetry only — EstimationManager owns state.setPose()
+        robotTelemetry.telemeterize(getPoseEstimator().getPose());
     }
 
     // ==================== PID / etc Characterization ====================

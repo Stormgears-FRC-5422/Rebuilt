@@ -127,7 +127,8 @@ public class RobotContainer {
             console("Create intake");
             intake = new Intake();
             if (Toggles.usePidTuner) {
-                intakeTuner = new SingleMotorTuner("IntakeArmPID", intake.getPidConfig());
+                intakeTuner = new SingleMotorTuner("IntakeArmPID", intake.getPidConfig())
+                    .withGravity();
             }
         }
 
@@ -145,7 +146,8 @@ public class RobotContainer {
             console("Create shooter");
             shooterHopper = new ShooterHopper();
             if (Toggles.usePidTuner) {
-                shooterTuner = new SingleMotorTuner("ShooterPID", shooterHopper.getPidConfig());
+                shooterTuner = new SingleMotorTuner("ShooterPID", shooterHopper.getPidConfig())
+                    .withOutputLimits();
             }
         }
 

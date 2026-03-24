@@ -23,7 +23,8 @@ public class EstimationManager extends StormSubsystem {
 
     /** Vision measurement standard deviations [x(m), y(m), theta(rad)].
      *  theta is set very high because MegaTag2 already uses the gyro for heading. */
-    private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(0.7, 0.7, 9999999);
+    private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(
+        Constants.Vision.stdDevX, Constants.Vision.stdDevY, Constants.Vision.stdDevTheta);
 
     public EstimationManager(DrivetrainBase drivetrain, VisionSubsystem vision) {
         this.drivetrain = drivetrain;

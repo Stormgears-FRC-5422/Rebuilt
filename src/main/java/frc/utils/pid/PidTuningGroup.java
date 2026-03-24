@@ -2,10 +2,12 @@ package frc.utils.pid;
 
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
 
 /**
- * Groups related NetworkTable entries for PID tuning. Each group manages the P,
- * I, D, Max, and V values for a PID configuration.
+ * Groups related NetworkTable entries for PID tuning. Each group manages
+ * P, I, D, A, V, S values by default. Optional gains (kG, kMin/kMax) can
+ * be added via fluent {@code with*()} methods.
  */
 public final class PidTuningGroup {
 
@@ -23,19 +25,25 @@ public final class PidTuningGroup {
     private final DoubleSubscriber kVSub;
     private final DoubleSubscriber kSSub;
 
+    // Optional — null until with*() called
+    private DoublePublisher kGPub, kMinPub, kMaxPub;
+    private DoubleSubscriber kGSub, kMinSub, kMaxSub;
 
+    private final NetworkTable table;
+    private final String prefix;
     private final PidConfig config;
 
     public PidTuningGroup(DashboardTuner tuner, String prefix, PidConfig config) {
         this.config = config;
+        this.table = tuner.getTable();
+        this.prefix = prefix.isEmpty() ? "" : prefix + "/";
 
-        String p = prefix.isEmpty() ? "" : prefix + "/";
-        var kpTopic = tuner.getTable().getDoubleTopic(p + "kP");
-        var kiTopic = tuner.getTable().getDoubleTopic(p + "kI");
-        var kdTopic = tuner.getTable().getDoubleTopic(p + "kD");
-        var kATopic = tuner.getTable().getDoubleTopic(p + "kA");
-        var kVTopic = tuner.getTable().getDoubleTopic(p + "kV");
-        var kSTopic = tuner.getTable().getDoubleTopic(p + "kS");
+        var kpTopic = table.getDoubleTopic(this.prefix + "kP");
+        var kiTopic = table.getDoubleTopic(this.prefix + "kI");
+        var kdTopic = table.getDoubleTopic(this.prefix + "kD");
+        var kATopic = table.getDoubleTopic(this.prefix + "kA");
+        var kVTopic = table.getDoubleTopic(this.prefix + "kV");
+        var kSTopic = table.getDoubleTopic(this.prefix + "kS");
 
         kpPub = kpTopic.publish();
         kiPub = kiTopic.publish();
@@ -55,6 +63,28 @@ public final class PidTuningGroup {
         doPublishConfig(config);
     }
 
+    /** Add gravity feedforward (kG) to the dashboard. */
+    public PidTuningGroup withGravity() {
+        var topic = table.getDoubleTopic(prefix + "kG");
+        kGPub = topic.publish();
+        kGSub = topic.subscribe(config.kG);
+        kGPub.set(config.kG);
+        return this;
+    }
+
+    /** Add output limits (kMin, kMax) to the dashboard. */
+    public PidTuningGroup withOutputLimits() {
+        var kMinTopic = table.getDoubleTopic(prefix + "kMin");
+        var kMaxTopic = table.getDoubleTopic(prefix + "kMax");
+        kMinPub = kMinTopic.publish();
+        kMaxPub = kMaxTopic.publish();
+        kMinSub = kMinTopic.subscribe(config.kMin);
+        kMaxSub = kMaxTopic.subscribe(config.kMax);
+        kMinPub.set(config.kMin);
+        kMaxPub.set(config.kMax);
+        return this;
+    }
+
     public void periodic() {
         updateConfig(config);
     }
@@ -70,6 +100,9 @@ public final class PidTuningGroup {
         kAPub.set(config.kA);
         kVPub.set(config.kV);
         kSPub.set(config.kS);
+        if (kGPub != null) kGPub.set(config.kG);
+        if (kMinPub != null) kMinPub.set(config.kMin);
+        if (kMaxPub != null) kMaxPub.set(config.kMax);
     }
 
     public void updateConfig(PidConfig config) {
@@ -91,5 +124,18 @@ public final class PidTuningGroup {
         if (kS != config.kS) kSPub.set(kS);
 
         config.withKP(kP).withKI(kI).withKD(kD).withKA(kA).withKV(kV).withKS(kS);
+
+        if (kGSub != null) {
+            double kG = kGSub.get();
+            if (kG != config.kG) kGPub.set(kG);
+            config.withKG(kG);
+        }
+        if (kMinSub != null && kMaxSub != null) {
+            double kMin = kMinSub.get();
+            double kMax = kMaxSub.get();
+            if (kMin != config.kMin) kMinPub.set(kMin);
+            if (kMax != config.kMax) kMaxPub.set(kMax);
+            config.withKMinMax(kMin, kMax);
+        }
     }
 }
