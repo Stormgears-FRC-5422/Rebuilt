@@ -178,12 +178,10 @@ public class AutoCommandFactory {
         loadTrajectory("right_first_mid_tr_steal");
         loadTrajectory("right_first_mid_windham");
         loadTrajectory("right_first_mid_windham_steal");
-        loadTrajectory("right_first_depot");
         loadTrajectory("right_second_mid");
         loadTrajectory("right_second_mid_tr");
         loadTrajectory("right_second_mid_tr_2");
         loadTrajectory("right_second_mid_windham");
-        loadTrajectory("right_second_depot");
         loadTrajectory("right_second_double_swipe");
 
         // Middle-start cycle trajectories
@@ -311,8 +309,8 @@ public class AutoCommandFactory {
 
 
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
-        // Middle can't do mid as first cycle
         if ("mid".equals(start) && firstCycle.startsWith("mid")) return false;
+        if ("right".equals(start) && ("depot".equals(firstCycle) || "depot".equals(secondCycle))) return false;
         return true;
     }
 }
