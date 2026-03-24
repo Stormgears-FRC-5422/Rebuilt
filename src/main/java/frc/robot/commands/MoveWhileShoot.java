@@ -97,6 +97,9 @@ public class MoveWhileShoot extends StormCommand {
             y *= scale;
         }
 
+        // Detect whether driver is commanding translational movement
+        boolean hasMovement = Math.hypot(x, y) > Drive.xLockVelocity;
+
         // PID + feedforward omega to face the hub (continuously updated as robot moves)
         updateGoalAngle();
         double currentAngle = drivetrain.getRotation().getRadians();
@@ -114,17 +117,25 @@ public class MoveWhileShoot extends StormCommand {
 
         double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
-        boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
-        ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
+        // Check if at target FIRST (with current tolerance), then widen if so.
+        // Hysteresis: enter X lock at 2 deg, stay locked until error exceeds 4 deg or driver moves.
+        if (!hasMovement && headingController.atSetpoint()) {
+            headingController.setTolerance(Math.toRadians(Drive.xLockToleranceDegrees));
+            drivetrain.percentOutputDrive(new ChassisSpeeds(0, 0, 0), false);
+        } else {
+            headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
+            boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
+            ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
 
-        if (fieldRelative) {
-            Rotation2d perspective = drivetrain.getDriverPerspective();
-            if (perspective != null) {
-                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+            if (fieldRelative) {
+                Rotation2d perspective = drivetrain.getDriverPerspective();
+                if (perspective != null) {
+                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+                }
             }
-        }
 
-        drivetrain.percentOutputDrive(speeds, fieldRelative);
+            drivetrain.percentOutputDrive(speeds, fieldRelative);
+        }
 
         // Telemetry
         double headingError = MathUtil.angleModulus(goalAngle - currentAngle);
