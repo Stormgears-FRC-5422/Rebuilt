@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.Toggles;
 import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
@@ -382,6 +383,11 @@ public class RobotContainer {
             new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
         } else if (Toggles.useShooter && Toggles.useIntake) {
             new Trigger(() -> secondJoystick.autoShoot()).whileTrue(new ShootCommand(shooterHopper, true));
+        }
+
+        if (Toggles.useShooter) {
+            new Trigger(() -> firstJoystick.testAutoShoot())
+                .whileTrue(new AutoShootCommand(shooterHopper, true));
         }
     }
 

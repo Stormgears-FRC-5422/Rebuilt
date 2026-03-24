@@ -17,5 +17,8 @@ public class RebuiltLogitechJoystick extends RebuiltJoystick {
         return controller.getSliderAxis();
     }
 
-
+    @Override
+    public boolean testAutoShoot() {
+        return controller.getPOV() == 0; // D-pad up
+    }
 }
