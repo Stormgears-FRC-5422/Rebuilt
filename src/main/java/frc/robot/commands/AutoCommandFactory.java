@@ -17,10 +17,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
+import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakePosition;
-import frc.robot.commands.AutoShootCommand;
 import frc.robot.subsystems.ShooterHopper;
 import frc.robot.subsystems.drive.DrivetrainBase;
 
@@ -35,6 +35,13 @@ public class AutoCommandFactory {
     private final LoggedDashboardChooser<String> startPositionChooser = new LoggedDashboardChooser<>("Start Position");
     private final LoggedDashboardChooser<String> firstCycleChooser = new LoggedDashboardChooser<>("First Cycle");
     private final LoggedDashboardChooser<String> secondCycleChooser = new LoggedDashboardChooser<>("Second Cycle");
+
+    /** Returns the configured auto-shoot command with safety timeout. */
+    private Command shootCmd() {
+        return Shooter.useAutoShoot
+            ? new AutoShootCommand(shooterHopper, true).withTimeout(9.0)
+            : new TimedShootCommand(shooterHopper, true, 8.0);
+    }
 
     @AutoLogOutput
     private boolean isDirty;
@@ -248,7 +255,7 @@ public class AutoCommandFactory {
         );
         commands.add(stopDrive());
         commands.add(Commands.parallel(
-            new AutoShootCommand(shooterHopper, true).withTimeout(9.0),
+            shootCmd(),
             new FaceTowardHub(drivetrainBase),
             new DynamicRumble(intake).andThen(new DynamicRumble(intake))
         ));
@@ -264,7 +271,7 @@ public class AutoCommandFactory {
             ));
             commands.add(stopDrive());
             commands.add(Commands.parallel(
-                new AutoShootCommand(shooterHopper, true).withTimeout(9.0),
+                shootCmd(),
                 new DynamicRumble(intake)
             ));
         }
@@ -286,7 +293,7 @@ public class AutoCommandFactory {
             ),
             stopDrive(),
             Commands.parallel(
-                new AutoShootCommand(shooterHopper, true).withTimeout(9.0),
+                shootCmd(),
                 new DynamicRumble(intake)
             )
         );
