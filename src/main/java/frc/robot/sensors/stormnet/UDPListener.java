@@ -15,6 +15,7 @@ public class UDPListener extends StormNetVoice implements Runnable{
     private Map<String, Integer> m_commandMap;
     private byte[] m_receiveBuffer = new byte[0];
     private boolean m_stopNow = false;
+    private long m_lastPacketTimeMs = 0;
     private final Object m_lock = 0;
 
     public UDPListener() {
@@ -80,11 +81,18 @@ public class UDPListener extends StormNetVoice implements Runnable{
                 //System.out.println(Arrays.toString(localBuffer));
                 synchronized (m_lock) {
                     System.arraycopy(packet.getData(), 0, m_receiveBuffer, 0, packet.getLength());
+                    m_lastPacketTimeMs = System.currentTimeMillis();
                 }
             }
             socket.close(); // so we don't run into ourselves later
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public long getLastPacketTimeMs() {
+        synchronized (m_lock) {
+            return m_lastPacketTimeMs;
         }
     }
 

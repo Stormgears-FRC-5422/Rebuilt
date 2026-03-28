@@ -1,5 +1,7 @@
 package frc.robot.sensors.stormnet;
 
+import frc.robot.Constants;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +79,17 @@ public class StormNet {
         m_lidar.setDebug(true);
         console("average lidar distance = " + getLidarDistance());
 		return true;
+	}
+
+	public boolean isReady() {
+		if (m_thread == null || !m_thread.isAlive()) {
+			return false;
+		}
+		long lastPacket = m_listener.getLastPacketTimeMs();
+		if (lastPacket == 0) {
+			return false;
+		}
+		return (System.currentTimeMillis() - lastPacket) < Constants.StormNet.staleThresholdMs;
 	}
 
 	public double getLidarDistance() {
