@@ -67,7 +67,7 @@ public class ElasticMotorController extends OptionsController {
     diagShooter        = createBooleanOption("DIAG SHOOTER", false);
     diagHopper         = createBooleanOption("DIAG HOPPER", false);
     diagIntakeRoller   = createBooleanOption("DIAG INTAKE ROLLER", false);
-    diagIntakeUpDown   = createBooleanOption("DIAG INTAKE UP/DOWN", false);
+    diagIntakeUpDown   = createBooleanOption("DIAG INTAKE UPDOWN", false);
     systemCheck        = createBooleanOption("SYSTEM CHECK", false);
 
     OptionsRegistry.register(this);
