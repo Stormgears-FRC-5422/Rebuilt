@@ -51,7 +51,7 @@ public class IntakeManual extends StormCommand {
                 intake.setTargetPosition(Constants.Intake.intakingAngle);
                 intake.setState(IntakeState.PID_MOTION);
             } else {
-                intake.setTargetPosition(intake.getCurrentPosition());
+                intake.setIdle();
                 intake.setState(IntakeState.HOLD);
             }
             previousDirection = direction;
