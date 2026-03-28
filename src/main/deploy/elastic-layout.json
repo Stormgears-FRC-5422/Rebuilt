@@ -114,7 +114,7 @@
             "y": 512.0,
             "width": 384.0,
             "height": 128.0,
-            "type": "Number Slider",
+            "type": "Number Bar",
             "properties": {
               "topic": "/Elastic/Intake Options/rollerIntakeSpeed",
               "period": 0.06,
@@ -122,7 +122,8 @@
               "min_value": 0.0,
               "max_value": 1.0,
               "divisions": 5,
-              "update_continuously": false
+              "inverted": false,
+              "orientation": "horizontal"
             }
           },
           {
@@ -131,7 +132,7 @@
             "y": 512.0,
             "width": 384.0,
             "height": 128.0,
-            "type": "Number Slider",
+            "type": "Number Bar",
             "properties": {
               "topic": "/Elastic/Intake Options/rollerOuttakeSpeed",
               "period": 0.06,
@@ -139,7 +140,8 @@
               "min_value": 0.0,
               "max_value": 1.0,
               "divisions": 5,
-              "update_continuously": false
+              "inverted": false,
+              "orientation": "horizontal"
             }
           },
           {
@@ -190,7 +192,7 @@
             }
           },
           {
-            "title": "Homed?",
+            "title": "HasBeenHomed",
             "x": 256.0,
             "y": 128.0,
             "width": 128.0,
@@ -207,7 +209,7 @@
             }
           },
           {
-            "title": "home intake",
+            "title": "homeintake",
             "x": 256.0,
             "y": 256.0,
             "width": 128.0,
@@ -215,119 +217,6 @@
             "type": "Toggle Switch",
             "properties": {
               "topic": "/Elastic/Motor tester with elastic/homeintake",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "Intake Angle",
-            "x": 512.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Large Text Display",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Motors/upDownIntakeMotor/Position",
-              "period": 0.06,
-              "data_type": "double"
-            }
-          },
-          {
-            "title": "XLockActive",
-            "x": 128.0,
-            "y": 256.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Drive/XLockActive",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "X Locking",
-            "x": 128.0,
-            "y": 128.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/AdvantageKit/RealOutputs/Drive/XLockActive",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "Voltage",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 512.0,
-            "height": 128.0,
-            "type": "Voltage View",
-            "properties": {
-              "topic": "/AdvantageKit/PowerDistribution/Voltage",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": 4.0,
-              "max_value": 13.0,
-              "divisions": 5,
-              "inverted": false,
-              "orientation": "horizontal"
-            }
-          },
-          {
-            "title": "sysIdDynamicFwd",
-            "x": 0.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Shooter Options/sysIdDynamicFwd",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "sysIdDynamicRev",
-            "x": 128.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Shooter Options/sysIdDynamicRev",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "sysIdQuasistaticFwd",
-            "x": 256.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Shooter Options/sysIdQuasistaticFwd",
-              "period": 0.06,
-              "data_type": "boolean"
-            }
-          },
-          {
-            "title": "sysIdQuasistaticRev",
-            "x": 384.0,
-            "y": 512.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Toggle Switch",
-            "properties": {
-              "topic": "/Elastic/Shooter Options/sysIdQuasistaticRev",
               "period": 0.06,
               "data_type": "boolean"
             }
@@ -609,102 +498,6 @@
                 }
               }
             ]
-          },
-          {
-            "title": "ShooterPID",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 640.0,
-            "type": "List Layout",
-            "properties": {
-              "label_position": "TOP"
-            },
-            "children": [
-              {
-                "title": "Apply",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Toggle Button",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/Apply",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              },
-              {
-                "title": "kP",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/kP",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
-                }
-              },
-              {
-                "title": "kI",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/kI",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
-                }
-              },
-              {
-                "title": "kD",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/kD",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
-                }
-              },
-              {
-                "title": "kV",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/kV",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
-                }
-              },
-              {
-                "title": "kS",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Elastic/ShooterPID/kS",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
-                }
-              }
-            ]
           }
         ],
         "containers": []
@@ -767,14 +560,84 @@
             "y": 128.0,
             "width": 256.0,
             "height": 256.0,
-            "type": "Match Time",
+            "type": "Large Text Display",
             "properties": {
               "topic": "/Elastic/Co-Pilot Dashboard/Shift Remaining",
               "period": 0.06,
-              "data_type": "double",
-              "time_display_mode": "Minutes and Seconds",
-              "red_start_time": 15,
-              "yellow_start_time": 30
+              "data_type": "double"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Diagnostics",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "DIAG HOPPER",
+            "x": 640.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/DIAG HOPPER",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "DIAG INTAKE ROLLER",
+            "x": 640.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/DIAG INTAKE ROLLER",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "DIAG SHOOTER",
+            "x": 640.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/DIAG SHOOTER",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "SYSTEM CHECK",
+            "x": 640.0,
+            "y": 640.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/SYSTEM CHECK",
+              "period": 0.06,
+              "data_type": "boolean"
+            }
+          },
+          {
+            "title": "INTAKE UP",
+            "x": 640.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/Elastic/Motor tester with elastic/INTAKE UP",
+              "period": 0.06,
+              "data_type": "boolean"
             }
           }
         ]
