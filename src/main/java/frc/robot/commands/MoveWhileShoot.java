@@ -100,7 +100,7 @@ public class MoveWhileShoot extends StormCommand {
         }
 
         // Detect whether driver is commanding translational movement
-        boolean hasMovement = Math.hypot(x, y) > Drive.xLockVelocity;
+        boolean hasMovement = x != 0 || y != 0;
 
         if (hasMovement) {
             noMovementTimer.restart();
