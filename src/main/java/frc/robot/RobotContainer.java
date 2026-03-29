@@ -36,6 +36,7 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.robot.subsystems.drive.DrivetrainFactory;
 import frc.robot.subsystems.drive.IllegalDriveTypeException;
+import frc.robot.subsystems.misc.KrakenMusic;
 
 public class RobotContainer {
     private final ElasticMotorController elasticMotorController = new ElasticMotorController();
@@ -52,6 +53,7 @@ public class RobotContainer {
     private AutoCommandFactory autoCommandFactory;
     private ShooterHopper shooterHopper;
     private Intake intake;
+    private KrakenMusic krakenmusic;
     //elastic control
     private SingleMotorTuner shooterTuner;
 
@@ -75,6 +77,11 @@ public class RobotContainer {
             console("Error: Invalid drive type specified: " + e.getMessage());
         } catch (RuntimeException e) {
             console("Error initializing RobotContainer: " + e.getMessage());
+        }
+
+        if (Toggles.useKrakenMusic){
+            krakenmusic = new KrakenMusic();
+            krakenmusic.playR2D2();
         }
 
         if (Toggles.useVision) {
@@ -111,6 +118,7 @@ public class RobotContainer {
         if (drivetrain != null) {
             autoCommandFactory = new AutoCommandFactory(drivetrain, shooterHopper, intake);
         }
+
 
         console("[DONE] RobotContainer");
     }
