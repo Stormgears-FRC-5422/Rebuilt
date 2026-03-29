@@ -263,7 +263,7 @@ public class Intake extends StormSubsystem {
         updownIntakeMotor.setControl(mmRequest.withPosition(degrees / 360.0));
     }
 
-    private void setIdle() {
+    public void setIdle() {
         updownIntakeMotor.setControl(neutralRequest);
     }
 
