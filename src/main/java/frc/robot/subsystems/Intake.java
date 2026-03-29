@@ -4,6 +4,7 @@ import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -60,6 +61,7 @@ public class Intake extends StormSubsystem {
 
     public final StormTalon updownIntakeMotor;
     private final StormTalon rollerIntakeMotor;
+    private final DutyCycleEncoder absoluteEncoder;
     private final MotionMagicVoltage mmRequest;
     private final NeutralOut neutralRequest = new NeutralOut();
     private final TalonFXConfiguration config = new TalonFXConfiguration();
@@ -89,6 +91,7 @@ public class Intake extends StormSubsystem {
     public Intake() {
         updownIntakeMotor = new StormTalon(frc.robot.Constants.Intake.updownIntakeID, new CANBus("")).withName("upDownIntakeMotor").withLoggingScale(360.0).withClosedLoopLogging();
         rollerIntakeMotor = new StormTalon(frc.robot.Constants.Intake.rollerID, new CANBus("")).withName("rollerIntakeMotor");
+        absoluteEncoder = new DutyCycleEncoder(frc.robot.Constants.Intake.absoluteEncoderPort);
 
         CurrentLimitsConfigs rollerCurrentLimits = new CurrentLimitsConfigs();
         rollerCurrentLimits.StatorCurrentLimit = frc.robot.Constants.Intake.rollerStatorCurrentLimit;
@@ -212,6 +215,7 @@ public class Intake extends StormSubsystem {
         Logger.recordOutput("Intake/State", state.toString());
         Logger.recordOutput("Intake/HasBeenHomed", hasBeenHomed);
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
+        Logger.recordOutput("Intake/AbsoluteEncoderPosition", absoluteEncoder.get());
     }
 
     // ===== State Transitions =====
