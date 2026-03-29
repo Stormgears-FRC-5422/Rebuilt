@@ -1,22 +1,24 @@
 package frc.robot.subsystems;
 
-import frc.utils.motorcontrol.StormTalon;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.CANBus;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import frc.robot.Options.IntakeOptions;
 import frc.utils.StormSubsystem;
+import frc.utils.motorcontrol.StormTalon;
 import frc.utils.pid.PidConfig;
 
 public class Intake extends StormSubsystem {
@@ -145,6 +147,20 @@ public class Intake extends StormSubsystem {
 
         setIdle();
         setState(IntakeState.UNKNOWN);
+
+
+        targetPosition = 0;
+        updownVolts = 0;
+
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+            syncMotorToAbsoluteEncoder();
+            hasBeenHomed = true;
+            targetPosition = currentPosition;
+            setState(IntakeState.HOLD);
+        } else {
+            setIdle();
+            setState(IntakeState.UNKNOWN);
+        }
     }
 
     // ===== Periodic =====
@@ -272,6 +288,11 @@ public class Intake extends StormSubsystem {
     }
 
     private void home() {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+            updownIntakeMotor.setVoltage(0.0);
+            return;
+        }
+
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
             updownIntakeMotor.setVoltage(-2.0);
         } else {
@@ -309,6 +330,10 @@ public class Intake extends StormSubsystem {
     }
 
     public boolean isAtHome() {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+            return true;
+        }
+
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
             if (updownIntakeMotor.getMotorCurrent() > frc.robot.Constants.Intake.stallCurrentLimit) {
                 stallFrameCount++;
@@ -334,11 +359,19 @@ public class Intake extends StormSubsystem {
 
     public void declareHome() {
         hasBeenHomed = true;
-        updownIntakeMotor.getConfigurator().setPosition(-0.00444, 0.250);
+
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+            syncMotorToAbsoluteEncoder();
+            targetPosition = currentPosition;
+            console("ABSOLUTE ENCODER ZEROED!", 1);
+        } else {
+            updownIntakeMotor.getConfigurator().setPosition(-0.00444, 0.250);
+            currentPosition = -1.6;
+            console("HOMED!!!!", 1);
+        }
+
         updownIntakeMotor.set(0);
         setIdle();
-        currentPosition = -1.6;
-        console("HOMED!!!!",1);
     }
 
     public void setTargetPosition(IntakePosition position) {
@@ -409,4 +442,23 @@ public class Intake extends StormSubsystem {
     public double getCurrentPosition() {
         return currentPosition;
     }
+
+    private double getAbsoluteAngleDegrees() {
+        double raw = absoluteEncoder.get();
+
+        if (frc.robot.Constants.Intake.absoluteEncoderInverted) {
+            raw = 1.0 - raw;
+        }
+
+        double rotationsFromZero = MathUtil.inputModulus(
+            raw - frc.robot.Constants.Intake.encoderOffset, -0.5,0.5);
+
+        return rotationsFromZero * 360.0;
+    }
+
+private void syncMotorToAbsoluteEncoder() {
+    double absDegrees = getAbsoluteAngleDegrees();
+
+    currentPosition = absDegrees;
+}
 }
