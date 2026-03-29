@@ -54,6 +54,8 @@ public class ShooterHopper extends StormSubsystem {
     public final StormTalon leaderMotor;
     public final StormTalon followerMotor;
     public final StormSparkMax fuelInjector;
+    public final StormSparkMax sideMotorLeader;
+    public final StormSparkMax sideMotorFollower;
 
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
@@ -98,6 +100,22 @@ public class ShooterHopper extends StormSubsystem {
             .openLoopRampRate(Shooter.fuelInjectorRampRateOpen);
 
         fuelInjector.configure(fuelInjectorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        sideMotorLeader = new StormSparkMax(Shooter.sideMotorLeaderID, MotorType.kBrushless).withName("sideMotorLeader");
+        sideMotorFollower = new StormSparkMax(Shooter.sideMotorFollowerID, MotorType.kBrushless).withName("sideMotorFollower");
+
+        SparkMaxConfig sideLeaderConfig = new SparkMaxConfig();
+        sideLeaderConfig
+            .inverted(true)
+            .smartCurrentLimit(Shooter.sideMotorCurrentLimitAmps);
+
+        SparkMaxConfig sideFollowerConfig = new SparkMaxConfig();
+        sideFollowerConfig
+            .follow(Shooter.sideMotorLeaderID, true)
+            .smartCurrentLimit(Shooter.sideMotorCurrentLimitAmps);
+
+        sideMotorLeader.configure(sideLeaderConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        sideMotorFollower.configure(sideFollowerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
         // These are on the standard rio CAN, not the canivore
         leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader").withClosedLoopLogging();
@@ -215,6 +233,8 @@ public class ShooterHopper extends StormSubsystem {
         fuelInjector.periodic();
         leaderMotor.periodic();
         followerMotor.periodic();
+        sideMotorLeader.periodic();
+        sideMotorFollower.periodic();
 
         useRealDist = buttonBoardOptions.usePose.get();
 
@@ -222,6 +242,7 @@ public class ShooterHopper extends StormSubsystem {
             case IDLE -> {
                 leaderMotor.setControl(neutralOut);
                 fuelInjector.set(0);
+                sideMotorLeader.set(0);
             }
             case SPEEDING_UP -> {
                 targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
@@ -229,6 +250,7 @@ public class ShooterHopper extends StormSubsystem {
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(0);
+                sideMotorLeader.set(0);
             }
             case SHOOTING, DIAGNOSTIC -> {
                 targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
@@ -236,6 +258,7 @@ public class ShooterHopper extends StormSubsystem {
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
+                sideMotorLeader.set(shooterOptions.sideMotorSpeed.get());
 
                 // Flywheel disturbance detection (SHOOTING only — not DIAGNOSTIC)
                 if (state == ShooterState.SHOOTING) {
