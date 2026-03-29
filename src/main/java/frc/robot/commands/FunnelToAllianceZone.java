@@ -40,6 +40,7 @@ public class FunnelToAllianceZone extends StormCommand {
     double goalAngle;
     private double previousGoalAngle;
     private double previousTimestamp;
+    private final Timer noMovementTimer = new Timer();
 
     public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick, ShooterHopper shooterHopper) {
         this.drivetrain = drivetrain;
@@ -76,6 +77,7 @@ public class FunnelToAllianceZone extends StormCommand {
         updateGoalAngle();
         previousGoalAngle = goalAngle;
         previousTimestamp = Timer.getFPGATimestamp();
+        noMovementTimer.restart();
     }
 
     @Override
@@ -109,6 +111,10 @@ public class FunnelToAllianceZone extends StormCommand {
         // Detect whether driver is commanding translational movement
         boolean hasMovement = Math.hypot(x, y) > Drive.xLockVelocity;
 
+        if (hasMovement) {
+            noMovementTimer.restart();
+        }
+
         updateGoalAngle();
         double currentAngle = drivetrain.getRotation().getRadians();
         double pidOutput = headingController.calculate(currentAngle, goalAngle);
@@ -124,11 +130,12 @@ public class FunnelToAllianceZone extends StormCommand {
 
         double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
-        // Check if at target FIRST (with current tolerance), then widen if so.
+        // Only X lock after 0.5s of no movement to avoid locking mid-drive.
         // Hysteresis: enter X lock at 2 deg, stay locked until error exceeds 4 deg or driver moves.
-        if (!hasMovement && headingController.atSetpoint()) {
+        if (!hasMovement && noMovementTimer.hasElapsed(0.5) && headingController.atSetpoint()) {
             headingController.setTolerance(Math.toRadians(Drive.xLockToleranceDegrees));
-            drivetrain.percentOutputDrive(new ChassisSpeeds(0, 0, 0), false);
+            drivetrain.drive(new ChassisSpeeds(0, 0, 0), false);
+            drivetrain.stopWithX();
         } else {
             headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
             boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
