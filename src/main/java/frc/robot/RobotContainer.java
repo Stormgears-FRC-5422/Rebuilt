@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.elastic.GameDataDashboard;
 import frc.robot.game.GameDataTracker;
 import frc.robot.game.RebuiltField;
+import frc.robot.subsystems.misc.KrakenMusic;
 import frc.utils.Alert;
 import frc.utils.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -86,6 +87,7 @@ public class RobotContainer {
     //elastic control
     private SingleMotorTuner shooterTuner;
     private SingleMotorTuner intakeTuner;
+    private KrakenMusic krakenmusic;
 
     // **********
     // Commands
@@ -103,6 +105,11 @@ public class RobotContainer {
             }
         } catch (IllegalDriveTypeException e) {
             throw new RuntimeException("Invalid drive type specified: " + e.getMessage(), e);
+        }
+
+        if (Toggles.useKrakenMusic){
+            krakenmusic = new KrakenMusic();
+            krakenmusic.playR2D2();
         }
 
         if (Toggles.useVision) {
