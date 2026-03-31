@@ -13,14 +13,12 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -60,6 +58,8 @@ public class ShooterHopper extends StormSubsystem {
     private final PidConfig pid;
     private final VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private final VelocityTorqueCurrentFOC velocityTorqueFOC = new VelocityTorqueCurrentFOC(0).withSlot(0);
+    private final VelocityVoltage followerVelocityVoltage = new VelocityVoltage(0).withSlot(0);
+    private final VelocityTorqueCurrentFOC followerVelocityTorqueFOC = new VelocityTorqueCurrentFOC(0).withSlot(0);
     private final boolean useTorqueFOC = Shooter.useTorqueFOC;
     private final NeutralOut neutralOut = new NeutralOut();
     private final VoltageOut sysIdVoltage = new VoltageOut(0);
@@ -111,7 +111,7 @@ public class ShooterHopper extends StormSubsystem {
 
         SparkMaxConfig sideFollowerConfig = new SparkMaxConfig();
         sideFollowerConfig
-            .follow(Shooter.sideMotorLeaderID, true)
+            .inverted(false)
             .smartCurrentLimit(Shooter.sideMotorCurrentLimitAmps);
 
         sideMotorLeader.configure(sideLeaderConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
@@ -121,9 +121,6 @@ public class ShooterHopper extends StormSubsystem {
         leaderMotor = new StormTalon(Shooter.leaderMotorID, new CANBus("")).withName("shooterLeader").withClosedLoopLogging();
         followerMotor = new StormTalon(Shooter.followerMotorID, new CANBus("")).withName("shootFollower");
 
-        followerMotor.setControl(
-            new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed)
-        ); // .Opposed
         NeutralModeValue neutralMode = Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
         leaderMotor.setNeutralMode(neutralMode);
         followerMotor.setNeutralMode(neutralMode);
@@ -241,24 +238,35 @@ public class ShooterHopper extends StormSubsystem {
         switch (state) {
             case IDLE -> {
                 leaderMotor.setControl(neutralOut);
+                followerMotor.setControl(neutralOut);
                 fuelInjector.set(0);
                 sideMotorLeader.set(0);
+                sideMotorFollower.set(0);
             }
             case SPEEDING_UP -> {
                 targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
                 leaderMotor.setControl(useTorqueFOC
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
+                followerMotor.setControl(useTorqueFOC
+                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(0);
                 sideMotorLeader.set(0);
+                sideMotorFollower.set(0);
             }
             case SHOOTING, DIAGNOSTIC -> {
                 targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
                 leaderMotor.setControl(useTorqueFOC
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
+                followerMotor.setControl(useTorqueFOC
+                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
-                sideMotorLeader.set(shooterOptions.sideMotorSpeed.get());
+                double sideSpeed = shooterOptions.sideMotorSpeed.get();
+                sideMotorLeader.set(sideSpeed);
+                sideMotorFollower.set(sideSpeed);
 
                 // Flywheel disturbance detection (SHOOTING only — not DIAGNOSTIC)
                 if (state == ShooterState.SHOOTING) {
@@ -303,7 +311,8 @@ public class ShooterHopper extends StormSubsystem {
         Logger.recordOutput("Shooter/FlywheelBusy",           isFlywheelBusy());
         Logger.recordOutput("Shooter/FlywheelDetectionArmed", detectionArmed);
         Logger.recordOutput("Shooter/FlywheelIdleTimerSec",   flywheelIdleTimer.get());
-        Logger.recordOutput("Shooter/FlywheelLinearMPS",      getCurrentVelocityRPS() * wc);
+        Logger.recordOutput("Shooter/LeaderLinearMPS",          getCurrentVelocityRPS() * wc);
+        Logger.recordOutput("Shooter/FollowerLinearMPS",       followerMotor.getMotorVelocity() * wc);
         Logger.recordOutput("Shooter/SetpointLinearMPS",      targetVelocityRPS * wc);
     }
 
@@ -334,6 +343,7 @@ public class ShooterHopper extends StormSubsystem {
         slot0.kV = pid.kV;
         slot0.kA = pid.kA;
         ok &= checkApply(leaderMotor.getConfigurator().apply(slot0), "leader slot0");
+        ok &= checkApply(followerMotor.getConfigurator().apply(slot0), "follower slot0");
 
         MotorOutputConfigs out = new MotorOutputConfigs();
         out.PeakForwardDutyCycle = pid.kMax;
@@ -341,6 +351,9 @@ public class ShooterHopper extends StormSubsystem {
         out.Inverted = InvertedValue.Clockwise_Positive; //used to invert
 
         MotorOutputConfigs followerOut = new MotorOutputConfigs();
+        followerOut.PeakForwardDutyCycle = pid.kMax;
+        followerOut.PeakReverseDutyCycle = pid.kMin;
+        followerOut.Inverted = InvertedValue.CounterClockwise_Positive; // opposed to leader
         followerOut.NeutralMode = Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
 
         CurrentLimitsConfigs currentLimits = new CurrentLimitsConfigs();
@@ -378,8 +391,10 @@ public class ShooterHopper extends StormSubsystem {
     public boolean isReadyToFeed() {
         double target = Math.abs(targetVelocityRPS);
         if (target < 1.0) return false;
-        double actual = Math.abs(leaderMotor.getMotorVelocity());
-        return actual >= target * Shooter.percentTargetReady;
+        double leaderActual = Math.abs(leaderMotor.getMotorVelocity());
+        double followerActual = Math.abs(followerMotor.getMotorVelocity());
+        return leaderActual >= target * Shooter.percentTargetReady
+            && followerActual >= target * Shooter.percentTargetReady;
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction, Option<Boolean> toggle) {
