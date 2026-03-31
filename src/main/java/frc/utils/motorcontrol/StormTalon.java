@@ -13,7 +13,13 @@ import edu.wpi.first.units.measure.Voltage;
 import frc.robot.Constants;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
+    private static final Map<String, StormTalon> registry = new LinkedHashMap<>();
+
     private String name;
     private boolean logClosedLoop = false;
     private double loggingScale = 1.0;
@@ -53,7 +59,12 @@ public class StormTalon extends TalonFX implements MotorLogger<StormTalon> {
 
     public StormTalon withName(String name) {
         this.name = name;
+        registry.put(name, this);
         return this;
+    }
+
+    public static Map<String, StormTalon> getRegistry() {
+        return Collections.unmodifiableMap(registry);
     }
 
     /** Scale factor applied to position/velocity in log output only. Does not affect getMotorPosition()/getMotorVelocity(). */

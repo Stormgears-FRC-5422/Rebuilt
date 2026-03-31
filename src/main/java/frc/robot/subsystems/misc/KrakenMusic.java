@@ -1,24 +1,21 @@
 package frc.robot.subsystems.misc;
 
 import com.ctre.phoenix6.Orchestra;
-import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.utils.StormSubsystem;
+import frc.utils.motorcontrol.StormTalon;
 import frc.robot.Constants.Music;
 
 public class KrakenMusic extends StormSubsystem {
-    private final TalonFX motor1;
-    private final TalonFX motor2;
     private final Orchestra orchestra = new Orchestra();
 
     public KrakenMusic() {
-        motor1  = new TalonFX(10);
-        motor2 = new TalonFX(11);
-        orchestra.addInstrument(motor1);
-        orchestra.addInstrument(motor2);
+        for (StormTalon motor : StormTalon.getRegistry().values()) {
+            orchestra.addInstrument(motor);
+        }
+        System.out.println("KrakenMusic: loaded " + StormTalon.getRegistry().size() + " motors as instruments");
 
         var status = orchestra.loadMusic(Music.file);
         if (!status.isOK()) {

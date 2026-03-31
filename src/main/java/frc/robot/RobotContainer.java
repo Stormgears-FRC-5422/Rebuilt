@@ -107,11 +107,6 @@ public class RobotContainer {
             throw new RuntimeException("Invalid drive type specified: " + e.getMessage(), e);
         }
 
-        if (Toggles.useKrakenMusic){
-            krakenmusic = new KrakenMusic();
-            krakenmusic.playR2D2();
-        }
-
         if (Toggles.useVision) {
             console("Create vision" + ((Toggles.useDrive && drivetrain != null) ? " (with drive)" : " (without drive)"));
             ArrayList<String> limelights = new ArrayList<>();
@@ -160,6 +155,11 @@ public class RobotContainer {
 
         if (Toggles.useLights) {
             lights = new Lights();
+        }
+
+        if (Toggles.useKrakenMusic) {
+            krakenmusic = new KrakenMusic();
+            krakenmusic.playR2D2();
         }
 
         if (drivetrain != null) {
