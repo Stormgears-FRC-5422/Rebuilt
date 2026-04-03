@@ -349,6 +349,7 @@ public class ShooterHopper extends StormSubsystem {
         out.PeakForwardDutyCycle = pid.kMax;
         out.PeakReverseDutyCycle = pid.kMin;
         out.Inverted = InvertedValue.Clockwise_Positive; //used to invert
+        out.NeutralMode = Shooter.coastMode ? NeutralModeValue.Coast : NeutralModeValue.Brake;
 
         MotorOutputConfigs followerOut = new MotorOutputConfigs();
         followerOut.PeakForwardDutyCycle = pid.kMax;
