@@ -83,9 +83,9 @@ public class AutoCommandFactory {
 
             firstCycleChooser.addDefaultOption("Mid", "mid");
             firstCycleChooser.addOption("Mid TR", "mid_tr");
-            firstCycleChooser.addOption("Mid TR Steal", "mid_tr_steal");
-            firstCycleChooser.addOption("Mid Windham", "mid_windham");
-            firstCycleChooser.addOption("Mid Windham Steal", "mid_windham_steal");
+//            firstCycleChooser.addOption("Mid TR Steal", "mid_tr_steal"); // TODO: re-enable when tr_steal paths are loaded
+//            firstCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
+//            firstCycleChooser.addOption("Mid Windham Steal", "mid_windham_steal"); // TODO: re-enable when windham_steal paths are loaded
             firstCycleChooser.addOption("Depot", "depot");
             firstCycleChooser.addOption("Shoot Only", "shoot_only");
 
@@ -93,9 +93,9 @@ public class AutoCommandFactory {
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Mid TR", "mid_tr");
             secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
-            secondCycleChooser.addOption("Mid Windham", "mid_windham");
-            secondCycleChooser.addOption("Depot", "depot");
-            secondCycleChooser.addOption("Double Swipe", "double_swipe");
+//            secondCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
+//            secondCycleChooser.addOption("Depot", "depot"); // TODO: re-enable when depot paths are loaded
+//            secondCycleChooser.addOption("Double Swipe", "double_swipe"); // TODO: re-enable when double_swipe paths are loaded
 
             chooserInitialized = true;
         }
@@ -169,28 +169,28 @@ public class AutoCommandFactory {
         // Left-side cycle trajectories
         loadTrajectory("left_first_mid");
         loadTrajectory("left_first_mid_tr");
-        loadTrajectory("left_first_mid_tr_steal");
-        loadTrajectory("left_first_mid_windham");
-        loadTrajectory("left_first_mid_windham_steal");
+//        loadTrajectory("left_first_mid_tr_steal"); // TODO: re-enable
+//        loadTrajectory("left_first_mid_windham"); // TODO: re-enable
+//        loadTrajectory("left_first_mid_windham_steal"); // TODO: re-enable
         loadTrajectory("left_first_depot");
         loadTrajectory("left_second_mid");
         loadTrajectory("left_second_mid_tr");
         loadTrajectory("left_second_mid_tr_2");
-        loadTrajectory("left_second_mid_windham");
-        loadTrajectory("left_second_depot");
-        loadTrajectory("left_second_double_swipe");
+//        loadTrajectory("left_second_mid_windham"); // TODO: re-enable
+//        loadTrajectory("left_second_depot"); // TODO: re-enable
+//        loadTrajectory("left_second_double_swipe"); // TODO: re-enable
 
         // Right-side cycle trajectories
         loadTrajectory("right_first_mid");
         loadTrajectory("right_first_mid_tr");
-        loadTrajectory("right_first_mid_tr_steal");
-        loadTrajectory("right_first_mid_windham");
-        loadTrajectory("right_first_mid_windham_steal");
+//        loadTrajectory("right_first_mid_tr_steal"); // TODO: re-enable
+//        loadTrajectory("right_first_mid_windham"); // TODO: re-enable
+//        loadTrajectory("right_first_mid_windham_steal"); // TODO: re-enable
         loadTrajectory("right_second_mid");
         loadTrajectory("right_second_mid_tr");
-        loadTrajectory("right_second_mid_tr_2");
-        loadTrajectory("right_second_mid_windham");
-        loadTrajectory("right_second_double_swipe");
+//        loadTrajectory("right_second_mid_tr_2"); // TODO: re-enable
+//        loadTrajectory("right_second_mid_windham"); // TODO: re-enable
+//        loadTrajectory("right_second_double_swipe"); // TODO: re-enable
 
         // Middle-start cycle trajectories
         loadTrajectory("mid_first_depot");
