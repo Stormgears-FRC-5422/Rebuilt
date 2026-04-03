@@ -90,7 +90,10 @@ public class RebuiltTorqueFOC {
     // Gear ratios and wheel dimensions from properties
     private static final double kDriveGearRatio = Constants.Drive.driveRatio;
     private static final double kSteerGearRatio = Constants.Drive.steerRatio;
-    private static final Distance kWheelRadius = Inches.of(Constants.Drive.frontLeftDiameter / 2.0);
+    private static final Distance kFrontLeftWheelRadius = Inches.of(Constants.Drive.frontLeftDiameter / 2.0);
+    private static final Distance kFrontRightWheelRadius = Inches.of(Constants.Drive.frontRightDiameter / 2.0);
+    private static final Distance kBackLeftWheelRadius = Inches.of(Constants.Drive.backLeftDiameter / 2.0);
+    private static final Distance kBackRightWheelRadius = Inches.of(Constants.Drive.backRightDiameter / 2.0);
 
     // Inversion flags from properties
     private static final boolean kInvertLeftSide = false;
@@ -116,7 +119,7 @@ public class RebuiltTorqueFOC {
             .withDriveMotorGearRatio(kDriveGearRatio)
             .withSteerMotorGearRatio(kSteerGearRatio)
             .withCouplingGearRatio(kCoupleRatio)
-            .withWheelRadius(kWheelRadius)
+            .withWheelRadius(kFrontLeftWheelRadius) // default, overridden per module below
             .withSteerMotorGains(steerGains)
             .withDriveMotorGains(driveGains)
             .withSteerMotorClosedLoopOutput(kSteerClosedLoopOutput)
@@ -189,22 +192,22 @@ public class RebuiltTorqueFOC {
         ConstantCreator.createModuleConstants(
             kFrontLeftSteerMotorId, kFrontLeftDriveMotorId, kFrontLeftEncoderId, kFrontLeftEncoderOffset,
             kFrontLeftXPos, kFrontLeftYPos, kInvertLeftSide, kFrontLeftSteerMotorInverted, kFrontLeftEncoderInverted
-        );
+        ).withWheelRadius(kFrontLeftWheelRadius);
     public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> FrontRight =
         ConstantCreator.createModuleConstants(
             kFrontRightSteerMotorId, kFrontRightDriveMotorId, kFrontRightEncoderId, kFrontRightEncoderOffset,
             kFrontRightXPos, kFrontRightYPos, kInvertRightSide, kFrontRightSteerMotorInverted, kFrontRightEncoderInverted
-        );
+        ).withWheelRadius(kFrontRightWheelRadius);
     public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> BackLeft =
         ConstantCreator.createModuleConstants(
             kBackLeftSteerMotorId, kBackLeftDriveMotorId, kBackLeftEncoderId, kBackLeftEncoderOffset,
             kBackLeftXPos, kBackLeftYPos, kInvertLeftSide, kBackLeftSteerMotorInverted, kBackLeftEncoderInverted
-        );
+        ).withWheelRadius(kBackLeftWheelRadius);
     public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> BackRight =
         ConstantCreator.createModuleConstants(
             kBackRightSteerMotorId, kBackRightDriveMotorId, kBackRightEncoderId, kBackRightEncoderOffset,
             kBackRightXPos, kBackRightYPos, kInvertRightSide, kBackRightSteerMotorInverted, kBackRightEncoderInverted
-        );
+        ).withWheelRadius(kBackRightWheelRadius);
 
     /**
      * Creates a CommandSwerveDrivetrain instance.

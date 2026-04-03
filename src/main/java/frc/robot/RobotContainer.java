@@ -26,6 +26,7 @@ import frc.robot.Constants.Toggles;
 import frc.robot.commands.AlignNarrow;
 import frc.robot.commands.AutoCommandFactory;
 import frc.robot.commands.AutoShootCommand;
+import frc.robot.commands.DriveCommands;
 import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
@@ -329,12 +330,10 @@ public class RobotContainer {
             JoyStickDrive driveWithFirstJoystick = new JoyStickDrive(drivetrain, firstJoystick);
 
             drivetrain.setDefaultCommand(driveWithFirstJoystick);
-            // new Trigger(() -> firstJoystick.wheelRadiusCharacterization()).onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
             new Trigger(() -> firstJoystick.resetGyro()).onTrue(new InstantCommand(() -> drivetrain.resetOrientation()));
             new Trigger(() -> ShooterOptions.create().moveWhileShoot.get()).whileTrue(new MoveWhileShoot(drivetrain, firstJoystick, shooterHopper));
-
-//            new Trigger(() -> firstJoystick.wheelRadiusCharacterization())
-//                .onTrue(DriveCommands.wheelRadiusCharacterizationAll(drivetrain));
+            new Trigger(() -> firstJoystick.wheelRadiusCharacterization())
+                .onTrue(DriveCommands.wheelRadiusCharacterization(drivetrain));
 
         }
 

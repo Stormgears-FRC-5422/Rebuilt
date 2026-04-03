@@ -110,4 +110,9 @@ public class RebuiltXboxController extends RebuiltJoystick {
     public boolean testAutoShoot() {
         return xboxController.getPOV() == 0; // D-pad up
     }
+
+    @Override
+    public boolean wheelRadiusCharacterization() {
+        return xboxController.getRotateIsPressed();
+    }
 }
