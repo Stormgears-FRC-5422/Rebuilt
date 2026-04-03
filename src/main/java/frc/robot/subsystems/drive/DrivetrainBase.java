@@ -307,6 +307,15 @@ public abstract class DrivetrainBase extends StormSubsystem {
      * @param speeds Chassis speeds as percent output (-1 to 1)
      * @param fieldRelative True for field relative driving
      */
+
+    /**
+     * Stops the drive and turns the modules to an X arrangement to resist movement.
+     * Subclasses should override with swerve-specific implementation.
+     */
+    public void stopWithX() {
+        drive(new ChassisSpeeds(0, 0, 0), false);
+    }
+
     public void percentOutputDrive(ChassisSpeeds speeds, boolean fieldRelative) {
         drive(
             new ChassisSpeeds(

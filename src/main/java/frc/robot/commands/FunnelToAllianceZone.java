@@ -40,6 +40,7 @@ public class FunnelToAllianceZone extends StormCommand {
     double goalAngle;
     private double previousGoalAngle;
     private double previousTimestamp;
+    private final Timer noMovementTimer = new Timer();
 
     public FunnelToAllianceZone(DrivetrainBase drivetrain, RebuiltJoystick joystick, ShooterHopper shooterHopper) {
         this.drivetrain = drivetrain;
@@ -76,6 +77,7 @@ public class FunnelToAllianceZone extends StormCommand {
         updateGoalAngle();
         previousGoalAngle = goalAngle;
         previousTimestamp = Timer.getFPGATimestamp();
+        noMovementTimer.restart();
     }
 
     @Override
@@ -106,6 +108,11 @@ public class FunnelToAllianceZone extends StormCommand {
             y *= scale;
         }
 
+        boolean hasMovement = Math.hypot(x, y) > Drive.xLockVelocity;
+        if (hasMovement) {
+            noMovementTimer.restart();
+        }
+
         updateGoalAngle();
         double currentAngle = drivetrain.getRotation().getRadians();
         double pidOutput = headingController.calculate(currentAngle, goalAngle);
@@ -121,17 +128,24 @@ public class FunnelToAllianceZone extends StormCommand {
 
         double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
-        boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
-        ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
+        if (!hasMovement && noMovementTimer.hasElapsed(0.1) && headingController.atSetpoint()) {
+            headingController.setTolerance(Math.toRadians(Drive.xLockToleranceDegrees));
+            drivetrain.drive(new ChassisSpeeds(0, 0, 0), false);
+            drivetrain.stopWithX();
+        } else {
+            headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
+            boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
+            ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
 
-        if (fieldRelative) {
-            Rotation2d perspective = drivetrain.getDriverPerspective();
-            if (perspective != null) {
-                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+            if (fieldRelative) {
+                Rotation2d perspective = drivetrain.getDriverPerspective();
+                if (perspective != null) {
+                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+                }
             }
-        }
 
-        drivetrain.percentOutputDrive(speeds, fieldRelative);
+            drivetrain.percentOutputDrive(speeds, fieldRelative);
+        }
 
         double headingError = MathUtil.angleModulus(goalAngle - currentAngle);
         Logger.recordOutput("FunnelToAllianceZone/HeadingErrorRad", headingError);

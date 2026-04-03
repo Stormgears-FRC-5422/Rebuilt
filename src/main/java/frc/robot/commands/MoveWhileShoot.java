@@ -38,6 +38,7 @@ public class MoveWhileShoot extends StormCommand {
     double goalAngle;
     private double previousGoalAngle;
     private double previousTimestamp;
+    private final Timer noMovementTimer = new Timer();
 
     public MoveWhileShoot(DrivetrainBase drivetrain, RebuiltJoystick joystick, ShooterHopper shooterHopper) {
         this.drivetrain = drivetrain;
@@ -66,6 +67,7 @@ public class MoveWhileShoot extends StormCommand {
         updateGoalAngle();
         previousGoalAngle = goalAngle;
         previousTimestamp = Timer.getFPGATimestamp();
+        noMovementTimer.restart();
     }
 
     @Override
@@ -97,6 +99,11 @@ public class MoveWhileShoot extends StormCommand {
             y *= scale;
         }
 
+        boolean hasMovement = x != 0 || y != 0;
+        if (hasMovement) {
+            noMovementTimer.restart();
+        }
+
         // PID + feedforward omega to face the hub (continuously updated as robot moves)
         updateGoalAngle();
         double currentAngle = drivetrain.getRotation().getRadians();
@@ -114,17 +121,24 @@ public class MoveWhileShoot extends StormCommand {
 
         double omega = MathUtil.clamp(pidOutput + Drive.targetKFvcmd * goalAngleRate, -1.0, 1.0);
 
-        boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
-        ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
+        if (!hasMovement && noMovementTimer.hasElapsed(0.1) && headingController.atSetpoint()) {
+            headingController.setTolerance(Math.toRadians(Drive.xLockToleranceDegrees));
+            drivetrain.drive(new ChassisSpeeds(0, 0, 0), false);
+            drivetrain.stopWithX();
+        } else {
+            headingController.setTolerance(Math.toRadians(Drive.targetToleranceDegrees));
+            boolean fieldRelative = fieldRelativeSupplier.getAsBoolean();
+            ChassisSpeeds speeds = new ChassisSpeeds(x, y, omega);
 
-        if (fieldRelative) {
-            Rotation2d perspective = drivetrain.getDriverPerspective();
-            if (perspective != null) {
-                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+            if (fieldRelative) {
+                Rotation2d perspective = drivetrain.getDriverPerspective();
+                if (perspective != null) {
+                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, perspective.unaryMinus());
+                }
             }
-        }
 
-        drivetrain.percentOutputDrive(speeds, fieldRelative);
+            drivetrain.percentOutputDrive(speeds, fieldRelative);
+        }
 
         // Telemetry
         double headingError = MathUtil.angleModulus(goalAngle - currentAngle);
