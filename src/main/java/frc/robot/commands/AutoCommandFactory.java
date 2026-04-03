@@ -39,8 +39,8 @@ public class AutoCommandFactory {
     /** Returns the configured auto-shoot command with safety timeout. */
     private Command shootCmd() {
         return Shooter.useAutoShoot
-            ? new AutoShootCommand(shooterHopper, true).withTimeout(9.0)
-            : new TimedShootCommand(shooterHopper, true, 8.0);
+            ? new AutoShootCommand(shooterHopper, true).withTimeout(7.0)
+            : new TimedShootCommand(shooterHopper, true, 7.0);
     }
 
     @AutoLogOutput
