@@ -362,6 +362,10 @@ public abstract class DrivetrainBase extends StormSubsystem {
         ));
     }
 
+    public double getYawRateDegPerSec() {
+        return 0.0;
+    }
+
     private BooleanSupplier isShootingSupplier = () -> false;
 
     public void setShootingSupplier(BooleanSupplier supplier) {

@@ -132,8 +132,9 @@ public class VisionSubsystem extends StormSubsystem {
         // MegaTag2 requires the robot orientation to be set each cycle for all limelights
         if (drivetrain != null) {
             double robotYaw = drivetrain.getRotation().getDegrees();
+            double yawRate = drivetrain.getYawRateDegPerSec();
             for (String ll : limelightIDs) {
-                LimelightHelpers.SetRobotOrientation(ll, robotYaw, 0, 0, 0, 0, 0);
+                LimelightHelpers.SetRobotOrientation(ll, robotYaw, yawRate, 0, 0, 0, 0);
             }
         }
 

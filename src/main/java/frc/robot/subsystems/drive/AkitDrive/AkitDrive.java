@@ -232,6 +232,11 @@ public class AkitDrive extends DrivetrainBase {
         stop();
     }
 
+    @Override
+    public double getYawRateDegPerSec() {
+        return Math.toDegrees(gyroInputs.yawVelocityRadPerSec);
+    }
+
     /**
      * Returns a command to run a quasistatic test in the specified direction.
      */
