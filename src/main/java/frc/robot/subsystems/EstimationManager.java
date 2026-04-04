@@ -50,7 +50,7 @@ public class EstimationManager extends StormSubsystem {
      * matching MegaTag2's observed error growth at range.
      */
     private static Matrix<N3, N1> computeStdDevs(double closestTagDist) {
-        double ratio = closestTagDist / SCALE_PIVOT;
+        double ratio = Math.max(closestTagDist, 0.01) / SCALE_PIVOT;
         double scale = ratio * ratio;
         return VecBuilder.fill(BASE_STD_X * scale, BASE_STD_Y * scale, BASE_STD_THETA);
     }
