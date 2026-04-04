@@ -152,7 +152,7 @@ public class Intake extends StormSubsystem {
         targetPosition = 0;
         updownVolts = 0;
 
-        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
             syncMotorToAbsoluteEncoder();
             hasBeenHomed = true;
             targetPosition = currentPosition;
@@ -289,7 +289,7 @@ public class Intake extends StormSubsystem {
     }
 
     private void home() {
-        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
             updownIntakeMotor.setVoltage(0.0);
             return;
         }
@@ -331,7 +331,7 @@ public class Intake extends StormSubsystem {
     }
 
     public boolean isAtHome() {
-        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
             return true;
         }
 
@@ -361,7 +361,7 @@ public class Intake extends StormSubsystem {
     public void declareHome() {
         hasBeenHomed = true;
 
-        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
             syncMotorToAbsoluteEncoder();
             targetPosition = currentPosition;
             console("ABSOLUTE ENCODER ZEROED!", 1);

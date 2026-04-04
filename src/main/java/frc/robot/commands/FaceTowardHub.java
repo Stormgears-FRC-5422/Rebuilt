@@ -9,12 +9,14 @@ import frc.robot.Constants.Drive;
 import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormCommand;
+import org.littletonrobotics.junction.Logger;
 
 public class FaceTowardHub extends StormCommand {
     private final PIDController headingController;
 
     DrivetrainBase drivetrain;
     double goalAngle;
+    RobotState robotState;
 
     public FaceTowardHub(DrivetrainBase drivetrain) {
         this.drivetrain = drivetrain;
@@ -29,9 +31,10 @@ public class FaceTowardHub extends StormCommand {
     public void initialize() {
         super.initialize();
 
+        robotState = RobotState.getInstance();
         //Calculate Translation distance between Hub and current Robot Loc.
-        Pose2d hubPose = (RobotState.getInstance().getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
-        Pose2d current = RobotState.getInstance().getPose();
+        Pose2d hubPose = (robotState.getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
+        Pose2d current = robotState.getPose();
         Translation2d trans = hubPose.getTranslation().minus(current.getTranslation());
 
         //Finds goal angle based on X and Y component of the translation
@@ -44,11 +47,27 @@ public class FaceTowardHub extends StormCommand {
     @Override
     public void execute() {
         super.execute();
+        //Calculate Translation distance between Hub and current Robot Loc.
+        Pose2d hubPose = (robotState.getAlliance() == RobotState.StateAlliance.BLUE) ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
+        Pose2d current = robotState.getPose();
+        Translation2d trans = hubPose.getTranslation().minus(current.getTranslation());
+
+        //Finds goal angle based on X and Y component of the translation
+        goalAngle = trans.getAngle().getRadians();
+
+//        headingController.reset();
+        headingController.setSetpoint(goalAngle);
+
+
 
         //Uses PID to calc optimal rotation speed
         double currentAngle = drivetrain.getRotation().getRadians();
         double omega = headingController.calculate(currentAngle, goalAngle);
         drivetrain.drive(new ChassisSpeeds(0, 0, omega), false);
+
+        Logger.recordOutput("FaceTowardHub/GoalAngle",goalAngle);
+        Logger.recordOutput("FaceTowardHub/CurrentAngle",currentAngle);
+        Logger.recordOutput("FaceTowardHub/AtSetpoint",headingController.atSetpoint());
     }
 
     @Override

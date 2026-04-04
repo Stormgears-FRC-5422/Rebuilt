@@ -268,8 +268,6 @@ public class AutoCommandFactory {
         if (secondTrajectory != null) {
             commands.add(Commands.race(
                 Commands.sequence(
-                    new IntakeGoToPosition(intake, 5).withTimeout(1.0),
-                    new WaitCommand(1),
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM).withTimeout(1.5),
                     new RunRoller(intake, true)
                 ),
