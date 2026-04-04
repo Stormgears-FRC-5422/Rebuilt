@@ -72,7 +72,7 @@ public class FaceTowardHub extends StormCommand {
 
     @Override
     public boolean isFinished() {
-        return headingController.atSetpoint();
+        return false;
     }
 
     @Override

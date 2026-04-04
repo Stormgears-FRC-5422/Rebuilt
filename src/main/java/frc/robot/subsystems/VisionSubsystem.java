@@ -26,6 +26,9 @@ public class VisionSubsystem extends StormSubsystem {
     private static final double MAX_DIST_SINGLE_TAG = Constants.Vision.maxTagDistSingleTag;
     private static final double MAX_DIST_MULTI_TAG = Constants.Vision.maxTagDistMultiTag;
 
+     /** Reject vision measurements when yaw rate exceeds this threshold */
+    private static final double MAX_YAW_RATE_DEG_PER_SEC = 360.0;
+
     private ArrayList<VisionMeasurement> latestMeasurements = new ArrayList<>();
 
     // Per-cycle cached query results (updated in periodic)
@@ -135,9 +138,8 @@ public class VisionSubsystem extends StormSubsystem {
         // MegaTag2 requires the robot orientation to be set each cycle for all limelights
         if (drivetrain != null) {
             double robotYaw = drivetrain.getRotation().getDegrees();
-            double yawRate = drivetrain.getYawRateDegPerSec();
             for (String ll : limelightIDs) {
-                LimelightHelpers.SetRobotOrientation(ll, robotYaw, yawRate, 0, 0, 0, 0);
+                LimelightHelpers.SetRobotOrientation(ll, robotYaw, 0, 0, 0, 0, 0);
             }
         }
 
@@ -184,8 +186,16 @@ public class VisionSubsystem extends StormSubsystem {
         }
         Logger.recordOutput("Vision/ActiveLL", closestLL);
 
+        // Reject vision when spinning too fast
+        boolean yawTooFast = drivetrain != null
+            && Math.abs(drivetrain.getYawRateDegPerSec()) > MAX_YAW_RATE_DEG_PER_SEC;
+
         // Collect valid measurements from ALL limelights
         for (String ll : limelightIDs) {
+            if (yawTooFast) {
+                continue;
+            }
+
             PoseEstimate estimate = estimates.get(ll);
             if (estimate == null || estimate.tagCount == 0) {
                 continue;
