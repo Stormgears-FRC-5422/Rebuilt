@@ -264,4 +264,9 @@ public class ModuleIOTalonFX implements ModuleIO {
               positionTorqueCurrentRequest.withPosition(rotation.getRotations());
         });
   }
+
+  @Override
+  public void seedTurnEncoder() {
+    turnTalon.setPosition(0.0);
+  }
 }

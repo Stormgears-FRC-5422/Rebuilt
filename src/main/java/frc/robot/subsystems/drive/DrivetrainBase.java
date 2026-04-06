@@ -366,6 +366,10 @@ public abstract class DrivetrainBase extends StormSubsystem {
         return 0.0;
     }
 
+    public void seedTurnEncoder(int moduleIndex) {
+        // Override in subclass if supported
+    }
+
     private BooleanSupplier isShootingSupplier = () -> false;
 
     public void setShootingSupplier(BooleanSupplier supplier) {

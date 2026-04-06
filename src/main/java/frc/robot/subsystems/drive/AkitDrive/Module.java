@@ -129,6 +129,11 @@ public class Module {
     return inputs.odometryTimestamps;
   }
 
+  /** Seeds the turn encoder to zero — used to bypass a busted CANcoder. */
+  public void seedTurnEncoder() {
+    io.seedTurnEncoder();
+  }
+
   /** Returns the module position in radians. */
   public double getWheelRadiusCharacterizationPosition() {
     return inputs.drivePositionRad;

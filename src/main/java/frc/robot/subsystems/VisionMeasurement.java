@@ -6,6 +6,5 @@ public record VisionMeasurement(
     Pose2d pose,
     double timestampSeconds,
     double closestTagDistanceMeters,
-    int tagCount,
     String sourceLimelight
 ) {}

@@ -200,6 +200,12 @@ public class RobotContainer {
         if (Toggles.useDrive) {
             new Trigger(() -> elasticMotorController.alignNarrow.get())
                 .whileTrue(new AlignNarrow(drivetrain, firstJoystick));
+            new Trigger(() -> elasticMotorController.zeroModule2Steer.get())
+                .onTrue(Commands.runOnce(() -> {
+                    drivetrain.seedTurnEncoder(2);
+                    elasticMotorController.zeroModule2Steer.setValue(false);
+                    System.out.println("RobotContainer : Module 2 steer encoder zeroed");
+                }));
         }
 
         if (Toggles.useIntake) {

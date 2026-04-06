@@ -289,6 +289,13 @@ public class AkitDrive extends DrivetrainBase {
         return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
     }
 
+    /** Seeds a module's turn encoder to zero — used to bypass a busted CANcoder. */
+    public void seedTurnEncoder(int moduleIndex) {
+        if (moduleIndex >= 0 && moduleIndex < modules.length) {
+            modules[moduleIndex].seedTurnEncoder();
+        }
+    }
+
     /**
      * Returns the position of each module in radians.
      */

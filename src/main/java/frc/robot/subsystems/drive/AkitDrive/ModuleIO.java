@@ -46,4 +46,7 @@ public interface ModuleIO {
 
   /** Run the turn motor to the specified rotation. */
   public default void setTurnPosition(Rotation2d rotation) {}
+
+  /** Seeds the turn encoder to zero — used when CANcoder is busted. */
+  public default void seedTurnEncoder() {}
 }

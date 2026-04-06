@@ -29,6 +29,9 @@ public class ElasticMotorController extends OptionsController {
   public final Option<Boolean> climberManualUp;
   public final Option<Boolean> climberManualDown;
 
+  // Drive bypass controls
+  public final Option<Boolean> zeroModule2Steer;
+
   // Diagnostic controls
   public final Option<Boolean> diagShooter;
   public final Option<Boolean> diagHopper;
@@ -63,6 +66,8 @@ public class ElasticMotorController extends OptionsController {
     climberSequence   = createBooleanOption("CLIMBER SEQUENCE", false);
     climberManualUp   = createBooleanOption("CLIMBER MANUAL UP", false);
     climberManualDown = createBooleanOption("CLIMBER MANUAL DOWN", false);
+
+    zeroModule2Steer   = createBooleanOption("ZERO MODULE 2 STEER", false);
 
     diagShooter        = createBooleanOption("DIAG SHOOTER", false);
     diagHopper         = createBooleanOption("DIAG HOPPER", false);

@@ -152,7 +152,7 @@ public class Intake extends StormSubsystem {
         targetPosition = 0;
         updownVolts = 0;
 
-        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
             syncMotorToAbsoluteEncoder();
             hasBeenHomed = true;
             targetPosition = currentPosition;
@@ -231,7 +231,7 @@ public class Intake extends StormSubsystem {
         Logger.recordOutput("Intake/State", state.toString());
         Logger.recordOutput("Intake/HasBeenHomed", hasBeenHomed);
         Logger.recordOutput("Intake/RollerOutput", rollerOutput);
-        Logger.recordOutput("Intake/AbsoluteEncoderRaw", absoluteEncoder.get());
+        Logger.recordOutput("Intake/AbsoluteEncoderRaw", MathUtil.inputModulus(absoluteEncoder.get(), 0, 1.0));
         Logger.recordOutput("Intake/AbsoluteAngleDegrees", getAbsoluteAngleDegrees());
     }
 
@@ -289,7 +289,7 @@ public class Intake extends StormSubsystem {
     }
 
     private void home() {
-        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
             updownIntakeMotor.setVoltage(0.0);
             return;
         }
@@ -331,12 +331,12 @@ public class Intake extends StormSubsystem {
     }
 
     public boolean isAtHome() {
-        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
             return true;
         }
 
         if (frc.robot.Constants.Intake.useCurrentLimitHomeStrategy) {
-            if (updownIntakeMotor.getMotorCurrent() > frc.robot.Constants.Intake.stallCurrentLimit) {
+            if (Math.abs(updownIntakeMotor.getMotorCurrent()) > frc.robot.Constants.Intake.stallCurrentLimit) {
                 stallFrameCount++;
             } else {
                 stallFrameCount = 0;
@@ -361,7 +361,7 @@ public class Intake extends StormSubsystem {
     public void declareHome() {
         hasBeenHomed = true;
 
-        if (intakeOptions.useAbsoluteEncoderZeroing.get()) {
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
             syncMotorToAbsoluteEncoder();
             targetPosition = currentPosition;
             console("ABSOLUTE ENCODER ZEROED!", 1);
@@ -445,7 +445,7 @@ public class Intake extends StormSubsystem {
     }
 
     private double getAbsoluteAngleDegrees() {
-        double raw = absoluteEncoder.get();
+        double raw = MathUtil.inputModulus(absoluteEncoder.get(), 0, 1.0);
 
         if (frc.robot.Constants.Intake.absoluteEncoderInverted) {
             raw = 1.0 - raw;

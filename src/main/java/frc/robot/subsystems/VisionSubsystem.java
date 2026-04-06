@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.Constants;
 import frc.robot.subsystems.drive.DrivetrainBase;
 import frc.utils.StormSubsystem;
 import frc.utils.vision.LimelightHelpers;
@@ -20,11 +19,9 @@ public class VisionSubsystem extends StormSubsystem {
     /** Drivetrain reference — used for gyro heading (MegaTag2 requirement) */
     private DrivetrainBase drivetrain;
 
-    /** Maximum closest-tag distance (meters) to accept an estimate, by tag count.
-     *  Single-tag MegaTag2 estimates degrade rapidly with distance (54% >0.5m error
-     *  at range in MAWOR Q1 logs), so they get a tighter cutoff. */
-    private static final double MAX_DIST_SINGLE_TAG = Constants.Vision.maxTagDistSingleTag;
-    private static final double MAX_DIST_MULTI_TAG = Constants.Vision.maxTagDistMultiTag;
+    /** Maximum distance to accept a tag measurement, in feet */
+    private static final double MAX_TAG_DISTANCE_FEET = 9.0;
+    private static final double MAX_TAG_DISTANCE_METERS = MAX_TAG_DISTANCE_FEET * 0.3048;
 
      /** Reject vision measurements when yaw rate exceeds this threshold */
     private static final double MAX_YAW_RATE_DEG_PER_SEC = 360.0;
@@ -202,8 +199,7 @@ public class VisionSubsystem extends StormSubsystem {
             }
 
             double tagDist = closestTagDist(estimate);
-            double maxDist = estimate.tagCount >= 2 ? MAX_DIST_MULTI_TAG : MAX_DIST_SINGLE_TAG;
-            if (tagDist > maxDist) {
+            if (tagDist > MAX_TAG_DISTANCE_METERS) {
                 continue;
             }
 
@@ -211,7 +207,6 @@ public class VisionSubsystem extends StormSubsystem {
                 estimate.pose,
                 estimate.timestampSeconds,
                 tagDist,
-                estimate.tagCount,
                 ll
             ));
         }
@@ -221,8 +216,7 @@ public class VisionSubsystem extends StormSubsystem {
             PoseEstimate closestEstimate = estimates.get(closestLL);
             if (closestEstimate != null && closestEstimate.tagCount > 0) {
                 double dist = closestTagDist(closestEstimate);
-                double maxDist = closestEstimate.tagCount >= 2 ? MAX_DIST_MULTI_TAG : MAX_DIST_SINGLE_TAG;
-                boolean accepted = dist <= maxDist;
+                boolean accepted = dist <= MAX_TAG_DISTANCE_METERS;
                 Logger.recordOutput("Vision/Closest/HasTarget", true);
                 Logger.recordOutput("Vision/Closest/Accepted", accepted);
                 Logger.recordOutput("Vision/Closest/TagCount", closestEstimate.tagCount);

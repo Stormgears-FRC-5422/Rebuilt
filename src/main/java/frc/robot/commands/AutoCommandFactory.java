@@ -41,8 +41,8 @@ public class AutoCommandFactory {
     /** Returns the configured auto-shoot command with safety timeout. */
     private Command shootCmd() {
         return Shooter.useAutoShoot
-            ? new AutoShootCommand(shooterHopper, true).withTimeout(6.0)
-            : new TimedShootCommand(shooterHopper, true, 7.0);
+            ? new AutoShootCommand(shooterHopper, true).withTimeout(5.5)
+            : new TimedShootCommand(shooterHopper, true, 5.5);
     }
 
     @AutoLogOutput
@@ -207,6 +207,15 @@ public class AutoCommandFactory {
     }
 
 
+    /** Starts the shooter spinning up without requiring the shooter subsystem. */
+    private Command spinUp() {
+        return Commands.runOnce(() -> {
+            shooterHopper.setToHub(true);
+            shooterHopper.setUseRealDist(true);
+            shooterHopper.setState(ShooterHopper.ShooterState.SPEEDING_UP);
+        });
+    }
+
     private Command stopDrive() {
         return Commands.runOnce(() -> drivetrainBase.drive(new ChassisSpeeds(), false), drivetrainBase);
     }
@@ -252,7 +261,10 @@ public class AutoCommandFactory {
             Commands.race(
                 new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
                 new RunRoller(intake, true),
-                choreoFactory.trajectoryCmd(firstTrajectory)
+                Commands.deadline(
+                    choreoFactory.trajectoryCmd(firstTrajectory),
+                    Commands.sequence(Commands.waitSeconds(2.0), spinUp())
+                )
             )
         );
         commands.add(stopDrive());
@@ -271,7 +283,10 @@ public class AutoCommandFactory {
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM).withTimeout(1.5),
                     new RunRoller(intake, true)
                 ),
-                choreoFactory.trajectoryCmd(secondTrajectory)
+                Commands.deadline(
+                    choreoFactory.trajectoryCmd(secondTrajectory),
+                    Commands.sequence(Commands.waitSeconds(2.0), spinUp())
+                )
             ));
             commands.add(stopDrive());
             commands.add(Commands.race(
