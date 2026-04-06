@@ -26,6 +26,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -44,6 +45,7 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterHopper extends StormSubsystem {
     public enum ShooterState {
         IDLE,
+        AUTO_REVVING,
         ACTIVE_SHIFT_REVVING,
         SPEEDING_UP,
         SHOOTING,
@@ -225,6 +227,10 @@ public class ShooterHopper extends StormSubsystem {
             && RobotState.getInstance().isInAllianceZone();
     }
 
+    private boolean shouldAutoRev() {
+        return DriverStation.isAutonomousEnabled();
+    }
+
     public double getTimeOfFlight(double distanceMeters) {
         double rps = toHub ? shootSpeedMap.get(distanceMeters) : funnelSpeedMap.get(distanceMeters);
         double exitVelocity = rps * Math.PI * Shooter.shooterWheelDiameterMeters;
@@ -249,16 +255,34 @@ public class ShooterHopper extends StormSubsystem {
 
         useRealDist = buttonBoardOptions.usePose.get();
 
-        if (state == ShooterState.IDLE && shouldActiveShiftRev()) {
-            state = ShooterState.ACTIVE_SHIFT_REVVING;
+        if (state == ShooterState.IDLE) {
+            if (shouldAutoRev()) {
+                state = ShooterState.AUTO_REVVING;
+            } else if (shouldActiveShiftRev()) {
+                state = ShooterState.ACTIVE_SHIFT_REVVING;
+            }
+        } else if (state == ShooterState.AUTO_REVVING && !shouldAutoRev()) {
+            state = shouldActiveShiftRev() ? ShooterState.ACTIVE_SHIFT_REVVING : ShooterState.IDLE;
         } else if (state == ShooterState.ACTIVE_SHIFT_REVVING && !shouldActiveShiftRev()) {
-            state = ShooterState.IDLE;
+            state = shouldAutoRev() ? ShooterState.AUTO_REVVING : ShooterState.IDLE;
         }
 
         switch (state) {
             case IDLE -> {
                 leaderMotor.setControl(neutralOut);
                 followerMotor.setControl(neutralOut);
+                fuelInjector.set(0);
+                sideMotorLeader.set(0);
+                sideMotorFollower.set(0);
+            }
+            case AUTO_REVVING -> {
+                targetVelocityRPS = getHubRPS();
+                leaderMotor.setControl(useTorqueFOC
+                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : velocityVoltage.withVelocity(targetVelocityRPS));
+                followerMotor.setControl(useTorqueFOC
+                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(0);
                 sideMotorLeader.set(0);
                 sideMotorFollower.set(0);
