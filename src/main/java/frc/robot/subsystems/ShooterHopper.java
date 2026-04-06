@@ -34,6 +34,7 @@ import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.Options.ButtonBoardOptions;
 import frc.robot.Options.ShooterOptions;
+import frc.robot.game.GameDataTracker;
 import frc.utils.StormSubsystem;
 import frc.utils.configfile.Option;
 import frc.utils.pid.PidConfig;
@@ -43,6 +44,7 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterHopper extends StormSubsystem {
     public enum ShooterState {
         IDLE,
+        ACTIVE_SHIFT_REVVING,
         SPEEDING_UP,
         SHOOTING,
         DIAGNOSTIC,
@@ -211,6 +213,18 @@ public class ShooterHopper extends StormSubsystem {
 
     }
 
+    private double getHubRPS() {
+        return shootSpeedMap.get(RobotState.getInstance().getDistFromHub());
+    }
+
+    private boolean shouldActiveShiftRev() {
+        GameDataTracker.ShiftInfo shiftInfo = GameDataTracker.getShiftInfo();
+        return shiftInfo.currentShift() != GameDataTracker.Shift.AUTO
+            && shiftInfo.currentShift() != GameDataTracker.Shift.DISABLED
+            && shiftInfo.ourShift()
+            && RobotState.getInstance().isInAllianceZone();
+    }
+
     public double getTimeOfFlight(double distanceMeters) {
         double rps = toHub ? shootSpeedMap.get(distanceMeters) : funnelSpeedMap.get(distanceMeters);
         double exitVelocity = rps * Math.PI * Shooter.shooterWheelDiameterMeters;
@@ -235,10 +249,28 @@ public class ShooterHopper extends StormSubsystem {
 
         useRealDist = buttonBoardOptions.usePose.get();
 
+        if (state == ShooterState.IDLE && shouldActiveShiftRev()) {
+            state = ShooterState.ACTIVE_SHIFT_REVVING;
+        } else if (state == ShooterState.ACTIVE_SHIFT_REVVING && !shouldActiveShiftRev()) {
+            state = ShooterState.IDLE;
+        }
+
         switch (state) {
             case IDLE -> {
                 leaderMotor.setControl(neutralOut);
                 followerMotor.setControl(neutralOut);
+                fuelInjector.set(0);
+                sideMotorLeader.set(0);
+                sideMotorFollower.set(0);
+            }
+            case ACTIVE_SHIFT_REVVING -> {
+                targetVelocityRPS = getHubRPS();
+                leaderMotor.setControl(useTorqueFOC
+                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : velocityVoltage.withVelocity(targetVelocityRPS));
+                followerMotor.setControl(useTorqueFOC
+                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
+                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
                 fuelInjector.set(0);
                 sideMotorLeader.set(0);
                 sideMotorFollower.set(0);
