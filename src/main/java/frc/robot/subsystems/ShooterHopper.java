@@ -4,6 +4,8 @@ import static edu.wpi.first.units.Units.*;
 
 import java.util.Arrays;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.utils.motorcontrol.StormSparkMax;
 import frc.utils.motorcontrol.StormTalon;
 
@@ -35,7 +37,9 @@ import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.Options.ButtonBoardOptions;
 import frc.robot.Options.ShooterOptions;
+import frc.robot.game.FieldConstants;
 import frc.robot.game.GameDataTracker;
+import frc.robot.game.RebuiltField;
 import frc.utils.StormSubsystem;
 import frc.utils.configfile.Option;
 import frc.utils.pid.PidConfig;
@@ -370,6 +374,7 @@ public class ShooterHopper extends StormSubsystem {
         Logger.recordOutput("Shooter/LeaderLinearMPS",          getCurrentVelocityRPS() * wc);
         Logger.recordOutput("Shooter/FollowerLinearMPS",       followerMotor.getMotorVelocity() * wc);
         Logger.recordOutput("Shooter/SetpointLinearMPS",      targetVelocityRPS * wc);
+        Logger.recordOutput("Shooter/ReadyToFeedAimErrorDeg", getAimErrorDegrees());
     }
 
     /** Returns true while balls are hitting the flywheel, false when spinning clean. */
@@ -444,13 +449,31 @@ public class ShooterHopper extends StormSubsystem {
         return leaderMotor.getMotorVelocity();
     }
 
+    private Pose2d getHubPose() {
+        RobotState robotState = RobotState.getInstance();
+
+        return robotState.isAllianceBlue() ? FieldConstants.hubPositionBLUE() : FieldConstants.hubPositionRED();
+        //todo: figure out when we want to funnel and when we funnel dont require any error from any target
+    }
+
+    public double getAimErrorDegrees() {
+        Pose2d currentPose = RobotState.getInstance().getPose();
+        Pose2d targetPose = getHubPose();
+        double targetAngle = Math.atan2(
+            targetPose.getY() - currentPose.getY(),
+            targetPose.getX() - currentPose.getX()
+        );
+        return Math.abs(Math.toDegrees(MathUtil.angleModulus(targetAngle - currentPose.getRotation().getRadians())));
+    }
+
     public boolean isReadyToFeed() {
         double target = Math.abs(targetVelocityRPS);
         if (target < 1.0) return false;
         double leaderActual = Math.abs(leaderMotor.getMotorVelocity());
         double followerActual = Math.abs(followerMotor.getMotorVelocity());
-        return leaderActual >= target * Shooter.percentTargetReady
+        boolean shooterAtSpeed = leaderActual >= target * Shooter.percentTargetReady
             && followerActual >= target * Shooter.percentTargetReady;
+        return shooterAtSpeed && getAimErrorDegrees() <= Shooter.errorFromHubDegrees;
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction, Option<Boolean> toggle) {
