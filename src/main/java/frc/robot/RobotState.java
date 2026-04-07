@@ -152,7 +152,7 @@ public class RobotState {
     }
 
     public boolean isInAllianceZone() {
-        return currentPose != null && FieldConstants.isInAllianceZone(currentPose, alliance);
+        return currentPose != null && alliance != null && FieldConstants.isInAllianceZone(currentPose, alliance);
     }
 
     public double GetDistFromAlliance() {
