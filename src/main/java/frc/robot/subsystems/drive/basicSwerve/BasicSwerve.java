@@ -111,6 +111,11 @@ public class BasicSwerve extends DrivetrainBase {
     }
 
     @Override
+    public double getYawRateDegPerSec() {
+        return Math.toDegrees(m_chassisSpeeds.omegaRadiansPerSecond);
+    }
+
+    @Override
     public PoseEstimator getPoseEstimator() {
         return poseEstimatorWrapper;
     }
