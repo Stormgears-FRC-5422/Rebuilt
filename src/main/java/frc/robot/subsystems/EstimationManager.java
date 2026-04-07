@@ -31,6 +31,14 @@ public class EstimationManager extends StormSubsystem {
     private Matrix<N3, N1> computeStdDevs(VisionMeasurement m) {
         int tagCount = Math.max(1, m.tagCount());
         double dist = m.closestTagDistanceMeters();
+
+        // dist <= 0 is physically impossible and indicates a bad measurement.
+        // dist = 0 → xyStdDev = 0 (infinite trust in garbage data).
+        // dist < 0 → Math.pow returns NaN, which permanently corrupts the estimator.
+        if (dist <= 0) {
+            return VecBuilder.fill(9999, 9999, Constants.Vision.stdDevTheta);
+        }
+
         double xyStdDev = Constants.Vision.stdDevX
             * Math.pow(dist, 1.2)
             / Math.pow(tagCount, 2.0);
