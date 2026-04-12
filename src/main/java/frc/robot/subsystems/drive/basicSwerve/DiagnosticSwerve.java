@@ -30,6 +30,11 @@ public class DiagnosticSwerve extends DrivetrainBase {
     }
 
     @Override
+    public double getYawRateDegPerSec() {
+        return 0.0; // Diagnostic-only drivetrain, no real gyro
+    }
+
+    @Override
     public void periodic() {
         double drivePercent = m_chassisSpeeds.vxMetersPerSecond * m_driveSpeedScale;
         double steerPercent = m_chassisSpeeds.omegaRadiansPerSecond * m_driveSpeedScale;

@@ -362,9 +362,7 @@ public abstract class DrivetrainBase extends StormSubsystem {
         ));
     }
 
-    public double getYawRateDegPerSec() {
-        return 0.0;
-    }
+    public abstract double getYawRateDegPerSec();
 
     public void seedTurnEncoder(int moduleIndex) {
         // Override in subclass if supported

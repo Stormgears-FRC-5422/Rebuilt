@@ -132,11 +132,13 @@ public class VisionSubsystem extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        // MegaTag2 requires the robot orientation to be set each cycle for all limelights
+        // MegaTag2 requires the robot orientation to be set each cycle for all limelights.
+        // Passing the real yaw rate lets MegaTag2 compensate for rotation during exposure.
         if (drivetrain != null) {
             double robotYaw = drivetrain.getRotation().getDegrees();
+            double yawRate = drivetrain.getYawRateDegPerSec();
             for (String ll : limelightIDs) {
-                LimelightHelpers.SetRobotOrientation(ll, robotYaw, 0, 0, 0, 0, 0);
+                LimelightHelpers.SetRobotOrientation(ll, robotYaw, yawRate, 0, 0, 0, 0);
             }
         }
 
@@ -207,6 +209,7 @@ public class VisionSubsystem extends StormSubsystem {
                 estimate.pose,
                 estimate.timestampSeconds,
                 tagDist,
+                estimate.tagCount,
                 ll
             ));
         }
