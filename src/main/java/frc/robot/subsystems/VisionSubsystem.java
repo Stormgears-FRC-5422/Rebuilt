@@ -24,7 +24,7 @@ public class VisionSubsystem extends StormSubsystem {
     private static final double MAX_TAG_DISTANCE_METERS = MAX_TAG_DISTANCE_FEET * 0.3048;
 
      /** Reject vision measurements when yaw rate exceeds this threshold */
-    private static final double MAX_YAW_RATE_DEG_PER_SEC = 45.0;
+    private static final double MAX_YAW_RATE_DEG_PER_SEC = 20.0;
 
     private ArrayList<VisionMeasurement> latestMeasurements = new ArrayList<>();
 
