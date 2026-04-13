@@ -11,6 +11,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -51,7 +52,7 @@ public class ShooterHopper extends StormSubsystem {
 
     public final StormTalon leaderMotor;
     public final StormTalon followerMotor;
-    public final StormSparkMax fuelInjector;
+    public final StormTalon fuelInjector;
     public final StormSparkMax sideMotorLeader;
     public final StormSparkMax sideMotorFollower;
 
@@ -91,15 +92,22 @@ public class ShooterHopper extends StormSubsystem {
             state = ShooterState.IDLE;
         }
 
-        fuelInjector = new StormSparkMax(Shooter.fuelInjectorMotorID, MotorType.kBrushless).withName("fuelInjector");
+        fuelInjector = new StormTalon(Shooter.fuelInjectorMotorID, new CANBus("")).withName("fuelInjector");
 
-        SparkMaxConfig fuelInjectorConfig = new SparkMaxConfig();
-        fuelInjectorConfig
-            .inverted(true)
-            .smartCurrentLimit(Shooter.fuelInjectorCurrentLimitAmps)
-            .openLoopRampRate(Shooter.fuelInjectorRampRateOpen);
+        MotorOutputConfigs fuelInjectorOut = new MotorOutputConfigs();
+        fuelInjectorOut.Inverted = InvertedValue.Clockwise_Positive;
+        fuelInjectorOut.NeutralMode = NeutralModeValue.Brake;
 
-        fuelInjector.configure(fuelInjectorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        CurrentLimitsConfigs fuelInjectorCurrentLimits = new CurrentLimitsConfigs();
+        fuelInjectorCurrentLimits.SupplyCurrentLimit = Shooter.fuelInjectorCurrentLimitAmps;
+        fuelInjectorCurrentLimits.SupplyCurrentLimitEnable = true;
+
+        OpenLoopRampsConfigs fuelInjectorRamps = new OpenLoopRampsConfigs();
+        fuelInjectorRamps.DutyCycleOpenLoopRampPeriod = Shooter.fuelInjectorRampRateOpen;
+
+        fuelInjector.getConfigurator().apply(fuelInjectorOut);
+        fuelInjector.getConfigurator().apply(fuelInjectorCurrentLimits);
+        fuelInjector.getConfigurator().apply(fuelInjectorRamps);
 
         sideMotorLeader = new StormSparkMax(Shooter.sideMotorLeaderID, MotorType.kBrushless).withName("sideMotorLeader");
         sideMotorFollower = new StormSparkMax(Shooter.sideMotorFollowerID, MotorType.kBrushless).withName("sideMotorFollower");
