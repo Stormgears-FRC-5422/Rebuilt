@@ -86,6 +86,9 @@ public class Intake extends StormSubsystem {
     private boolean rollerDiagnostic = false;
     public double rollerOutput;
 
+    private boolean initialAbsSyncDone = false;
+    private int absDriftCheckCounter = 0;
+
 
     // ===== Constructor =====
 
@@ -152,15 +155,8 @@ public class Intake extends StormSubsystem {
         targetPosition = 0;
         updownVolts = 0;
 
-        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
-            syncMotorToAbsoluteEncoder();
-            hasBeenHomed = true;
-            targetPosition = currentPosition;
-            setState(IntakeState.HOLD);
-        } else {
-            setIdle();
-            setState(IntakeState.UNKNOWN);
-        }
+        setIdle();
+        setState(IntakeState.UNKNOWN);
     }
 
     // ===== Periodic =====
@@ -182,6 +178,33 @@ public class Intake extends StormSubsystem {
 
         // Read position from cached signal (refreshed by updownIntakeMotor.periodic() above)
         currentPosition = updownIntakeMotor.getMotorPosition() * 360.0;
+
+        // Absolute encoder zeroing: lazy first sync once DIO is live, then drift correction.
+        if (frc.robot.Constants.Intake.useAbsoluteEncoderZeroing) {
+            if (!initialAbsSyncDone
+                    && absoluteEncoder.isConnected()
+                    && absoluteEncoder.getFrequency() > 900) {
+                syncMotorToAbsoluteEncoder();
+                hasBeenHomed = true;
+                targetPosition = currentPosition;
+                setState(IntakeState.HOLD);
+                initialAbsSyncDone = true;
+            } else if (initialAbsSyncDone) {
+                // Re-sync when arm is essentially stopped and motor encoder has drifted.
+                // Throttled to ~2 Hz to avoid spamming configurator calls.
+                if (++absDriftCheckCounter >= 25) {
+                    absDriftCheckCounter = 0;
+                    if (Math.abs(updownIntakeMotor.getMotorVelocity()) < 0.05) {
+                        double absDeg = getAbsoluteAngleDegrees();
+                        if (Math.abs(absDeg - currentPosition) > 2.0) {
+                            updownIntakeMotor.setPosition(absDeg / 360.0);
+                            currentPosition = absDeg;
+                            console("Re-synced motor to abs encoder: " + absDeg + " deg", 1);
+                        }
+                    }
+                }
+            }
+        }
 
         // Roller control — rollerDiagnostic skips height interlock for diagnostics
         rollerOutput = 0.0;

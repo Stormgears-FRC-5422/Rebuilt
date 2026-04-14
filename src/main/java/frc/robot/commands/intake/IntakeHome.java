@@ -21,7 +21,8 @@ public class IntakeHome extends StormCommand {
         alreadyHomed = false;
         if (skip) return;
 
-        alreadyHomed = !frc.robot.Constants.Intake.allowRehome && intake.hasBeenHomed;
+        boolean absSynced = frc.robot.Constants.Intake.useAbsoluteEncoderZeroing && intake.hasBeenHomed;
+        alreadyHomed = absSynced || (!frc.robot.Constants.Intake.allowRehome && intake.hasBeenHomed);
         if (!alreadyHomed) {
             intake.setState(IntakeState.HOMING);
         } else {
