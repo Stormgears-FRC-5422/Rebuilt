@@ -46,7 +46,7 @@ public class IntakeHome extends StormCommand {
         if (!skip && !alreadyHomed) {
             if (!interrupted) {
                 intake.declareHome();
-                intake.holdCurrentPosition(-1.6);
+                intake.holdCurrentPosition(frc.robot.Constants.Intake.homedPositionDegrees);
             } else {
                 intake.setState(IntakeState.UNKNOWN);
             }

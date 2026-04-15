@@ -389,8 +389,8 @@ public class Intake extends StormSubsystem {
             targetPosition = currentPosition;
             console("ABSOLUTE ENCODER ZEROED!", 1);
         } else {
-            updownIntakeMotor.getConfigurator().setPosition(-0.00444, 0.250);
-            currentPosition = -1.6;
+            updownIntakeMotor.getConfigurator().setPosition(frc.robot.Constants.Intake.homedPositionDegrees / 360.0, 0.250);
+            currentPosition = frc.robot.Constants.Intake.homedPositionDegrees;
             console("HOMED!!!!", 1);
         }
 
