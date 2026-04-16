@@ -74,6 +74,11 @@ public class RebuiltXboxController extends RebuiltJoystick {
     }
 
     @Override
+    public boolean funnelFullPower() {
+        return xboxController.getYButtonIsHeld();
+    }
+
+    @Override
     public boolean intakeUp() {
         return xboxController.getLeftJoystickY() > frc.robot.Constants.ButtonBoard.intakeStickThreshold;
     }

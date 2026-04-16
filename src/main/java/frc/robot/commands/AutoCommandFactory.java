@@ -41,8 +41,8 @@ public class AutoCommandFactory {
     /** Returns the configured auto-shoot command with safety timeout. */
     private Command shootCmd() {
         return Shooter.useAutoShoot
-            ? new AutoShootCommand(shooterHopper, true).withTimeout(5.5)
-            : new TimedShootCommand(shooterHopper, true, 5.5);
+            ? new AutoShootCommand(shooterHopper, true).withTimeout(7)
+            : new TimedShootCommand(shooterHopper, true, 7);
     }
 
     @AutoLogOutput
@@ -89,6 +89,7 @@ public class AutoCommandFactory {
 //            firstCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
 //            firstCycleChooser.addOption("Mid Windham Steal", "mid_windham_steal"); // TODO: re-enable when windham_steal paths are loaded
             firstCycleChooser.addOption("Depot", "depot");
+            firstCycleChooser.addOption("Outpost", "outpost");
             firstCycleChooser.addOption("Shoot Only", "shoot_only");
 
             secondCycleChooser.addDefaultOption("None", "none");
@@ -196,6 +197,7 @@ public class AutoCommandFactory {
 
         // Middle-start cycle trajectories
         loadTrajectory("mid_first_depot");
+        loadTrajectory("mid_first_outpost");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -338,6 +340,7 @@ public class AutoCommandFactory {
     private boolean isValidCycleCombo(String start, String firstCycle, String secondCycle) {
         if ("mid".equals(start) && firstCycle.startsWith("mid")) return false;
         if ("right".equals(start) && ("depot".equals(firstCycle) || "depot".equals(secondCycle))) return false;
+        if ("outpost".equals(firstCycle) && !"mid".equals(start)) return false;
         return true;
     }
 }

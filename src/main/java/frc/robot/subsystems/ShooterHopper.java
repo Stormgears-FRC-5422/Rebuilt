@@ -46,6 +46,7 @@ public class ShooterHopper extends StormSubsystem {
         IDLE,
         SPEEDING_UP,
         SHOOTING,
+        FULL_POWER,
         DIAGNOSTIC,
         CHARACTERIZING;
     }
@@ -64,6 +65,7 @@ public class ShooterHopper extends StormSubsystem {
     private final boolean useTorqueFOC = Shooter.useTorqueFOC;
     private final NeutralOut neutralOut = new NeutralOut();
     private final VoltageOut sysIdVoltage = new VoltageOut(0);
+    private final VoltageOut fullPowerVoltage = new VoltageOut(12.0);
     private final TorqueCurrentFOC sysIdTorque = new TorqueCurrentFOC(0);
     private final SysIdRoutine sysIdRoutine;
     private double targetVelocityRPS;
@@ -301,6 +303,14 @@ public class ShooterHopper extends StormSubsystem {
                         }
                     }
                 }
+            }
+            case FULL_POWER -> {
+                leaderMotor.setControl(fullPowerVoltage);
+                followerMotor.setControl(fullPowerVoltage);
+                fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
+                double sideSpeed = shooterOptions.sideMotorSpeed.get();
+                sideMotorLeader.set(sideSpeed);
+                sideMotorFollower.set(sideSpeed);
             }
             case CHARACTERIZING -> {
                 // SysIdRoutine controls the motor directly — just keep fuelInjector off

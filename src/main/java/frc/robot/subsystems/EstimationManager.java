@@ -23,8 +23,8 @@ public class EstimationManager extends StormSubsystem {
 
     /**
      * Computes vision stddevs scaled by distance and tag count.
-     * Formula: xyStdDev = stdDevX * distance^1.2 / tagCount^2
-     * Close multi-tag views get much lower stddev (more trust);
+     * Formula: xyStdDev = stdDevX * distance^1.2 / tagCount^1.4
+     * Close multi-tag views get lower stddev (more trust);
      * far single-tag views get high stddev (barely moves pose).
      * theta is always huge because MegaTag2 uses the gyro for heading.
      */
@@ -41,7 +41,7 @@ public class EstimationManager extends StormSubsystem {
 
         double xyStdDev = Constants.Vision.stdDevX
             * Math.pow(dist, 1.2)
-            / Math.pow(tagCount, 2.0);
+            / Math.pow(tagCount, 1.4);
         return VecBuilder.fill(xyStdDev, xyStdDev, Constants.Vision.stdDevTheta);
     }
 

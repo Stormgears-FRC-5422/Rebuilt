@@ -31,6 +31,7 @@ import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.ShootFullPower;
 import frc.robot.commands.diagnostic.IntakePositionDiagnostic;
 import frc.robot.commands.diagnostic.IntakeRollerDiagnostic;
 import frc.robot.commands.diagnostic.ShooterDiagnostic;
@@ -348,9 +349,13 @@ public class RobotContainer {
     private void configureSecondJoystickBindings() {
         console("Configuring second joystick bindings");
 
-        if (Toggles.useDrive) {
-            new Trigger(() -> secondJoystick.safe())
-                .onTrue(new IntakeGoToPosition(intake, Constants.Intake.cruiseAngleDegrees));
+        if (Toggles.useDrive && Toggles.useShooter) {
+            new Trigger(() -> secondJoystick.funnelFullPower()).whileTrue(
+                new ParallelCommandGroup(
+                    new ShootFullPower(shooterHopper),
+                    new FunnelToAllianceZone(drivetrain, secondJoystick, shooterHopper)
+                )
+            );
         }
 
         if (Toggles.useIntake) {
