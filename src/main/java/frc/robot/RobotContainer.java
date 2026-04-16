@@ -364,6 +364,8 @@ public class RobotContainer {
 
             new Trigger(() -> secondJoystick.intakeTogglePressed())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
+
+            new Trigger(() -> secondJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
         }
 
         if (Toggles.useClimber) {

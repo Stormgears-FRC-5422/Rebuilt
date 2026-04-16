@@ -208,7 +208,7 @@ public class Intake extends StormSubsystem {
 
         // Roller control — rollerDiagnostic skips height interlock for diagnostics
         rollerOutput = 0.0;
-        boolean rollerAllowed = rollerDiagnostic || currentPosition > frc.robot.Constants.Intake.minRollerHeight;
+        boolean rollerAllowed = true;
         if (outtakeEnabled && rollerAllowed) {
             rollerOutput = intakeOptions.rollerOuttakeSpeed.get();
         } else if (rollerEnabled && rollerAllowed) {
