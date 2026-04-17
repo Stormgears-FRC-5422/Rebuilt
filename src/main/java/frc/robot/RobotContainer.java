@@ -31,6 +31,7 @@ import frc.robot.commands.FunnelToAllianceZone;
 import frc.robot.commands.JoyStickDrive;
 import frc.robot.commands.MoveWhileShoot;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.OuttakeCommand;
 import frc.robot.commands.ShootFullPower;
 import frc.robot.commands.diagnostic.IntakePositionDiagnostic;
 import frc.robot.commands.diagnostic.IntakeRollerDiagnostic;
@@ -371,6 +372,15 @@ public class RobotContainer {
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
 
             new Trigger(() -> secondJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+
+            if (Toggles.useShooter) {
+                new Trigger(() -> secondJoystick.outtake()).whileTrue(
+                    new ParallelCommandGroup(
+                        new RunRoller(intake, false),
+                        new OuttakeCommand(shooterHopper)
+                    )
+                );
+            }
         }
 
         if (Toggles.useClimber) {

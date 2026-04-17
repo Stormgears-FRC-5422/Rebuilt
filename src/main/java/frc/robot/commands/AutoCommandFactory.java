@@ -259,16 +259,34 @@ public class AutoCommandFactory {
         commands.add(
             new IntakeHome(intake)
         );
-        commands.add(
-            Commands.race(
-                new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
-                new RunRoller(intake, true),
-                Commands.deadline(
-                    choreoFactory.trajectoryCmd(firstTrajectory),
-                    Commands.sequence(Commands.waitSeconds(2.0), spinUp())
+        if ("outpost".equals(firstCycle)) {
+            commands.add(
+                Commands.race(
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true),
+                    Commands.deadline(
+                        Commands.sequence(
+                            choreoFactory.trajectoryCmd(firstTrajectory, 0),
+                            stopDrive(),
+                            Commands.waitSeconds(2.0),
+                            choreoFactory.trajectoryCmd(firstTrajectory, 1)
+                        ),
+                        Commands.sequence(Commands.waitSeconds(2.0), spinUp())
+                    )
                 )
-            )
-        );
+            );
+        } else {
+            commands.add(
+                Commands.race(
+                    new IntakeGoToPosition(intake, IntakePosition.BOTTOM),
+                    new RunRoller(intake, true),
+                    Commands.deadline(
+                        choreoFactory.trajectoryCmd(firstTrajectory),
+                        Commands.sequence(Commands.waitSeconds(2.0), spinUp())
+                    )
+                )
+            );
+        }
         commands.add(stopDrive());
         commands.add(
             Commands.deadline(
