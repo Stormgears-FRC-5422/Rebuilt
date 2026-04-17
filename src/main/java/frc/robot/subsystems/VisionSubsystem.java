@@ -24,7 +24,7 @@ public class VisionSubsystem extends StormSubsystem {
     private static final double MAX_TAG_DISTANCE_METERS = MAX_TAG_DISTANCE_FEET * 0.3048;
 
      /** Reject vision measurements when yaw rate exceeds this threshold */
-    private static final double MAX_YAW_RATE_DEG_PER_SEC = 20.0;
+    private static final double MAX_YAW_RATE_DEG_PER_SEC = 360.0;
 
     private ArrayList<VisionMeasurement> latestMeasurements = new ArrayList<>();
 
@@ -40,11 +40,6 @@ public class VisionSubsystem extends StormSubsystem {
         this.limelightIDs = limelightIDs;
         this.maxTagsSeen = new int[limelightIDs.length];
         this.drivetrain = drivetrain;
-
-        for (String ll : limelightIDs) {
-            LimelightHelpers.SetIMUAssistAlpha(ll, 0.0067);
-            LimelightHelpers.SetIMUMode(ll, 1);
-        }
     }
 
     /**
@@ -137,13 +132,11 @@ public class VisionSubsystem extends StormSubsystem {
     public void periodic() {
         super.periodic();
 
-        // MegaTag2 requires the robot orientation to be set each cycle for all limelights.
-        // Passing the real yaw rate lets MegaTag2 compensate for rotational blur during exposure.
+        // MegaTag2 requires the robot orientation to be set each cycle for all limelights
         if (drivetrain != null) {
             double robotYaw = drivetrain.getRotation().getDegrees();
-            double yawRate = drivetrain.getYawRateDegPerSec();
             for (String ll : limelightIDs) {
-                LimelightHelpers.SetRobotOrientation(ll, robotYaw, yawRate, 0, 0, 0, 0);
+                LimelightHelpers.SetRobotOrientation(ll, robotYaw, 0, 0, 0, 0, 0);
             }
         }
 
@@ -210,24 +203,10 @@ public class VisionSubsystem extends StormSubsystem {
                 continue;
             }
 
-            // Reject if average ambiguity is too high — indicates Limelight is guessing between
-            // two equally-plausible tag orientations (only an issue for single-tag views at bad angles).
-            if (estimate.rawFiducials != null && estimate.rawFiducials.length > 0) {
-                double avgAmbiguity = 0.0;
-                for (LimelightHelpers.RawFiducial fid : estimate.rawFiducials) {
-                    if (fid != null) avgAmbiguity += fid.ambiguity;
-                }
-                avgAmbiguity /= estimate.rawFiducials.length;
-                if (avgAmbiguity > 0.4) {
-                    continue;
-                }
-            }
-
             latestMeasurements.add(new VisionMeasurement(
                 estimate.pose,
                 estimate.timestampSeconds,
                 tagDist,
-                estimate.tagCount,
                 ll
             ));
         }

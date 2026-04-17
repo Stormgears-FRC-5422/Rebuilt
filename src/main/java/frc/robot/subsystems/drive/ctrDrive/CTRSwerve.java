@@ -99,11 +99,6 @@ public class CTRSwerve extends DrivetrainBase {
     }
 
     @Override
-    public double getYawRateDegPerSec() {
-        return driveInternal.getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
-    }
-
-    @Override
     public PoseEstimator getPoseEstimator() {
         return poseEstimatorWrapper;
     }

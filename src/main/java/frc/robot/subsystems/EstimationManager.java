@@ -21,29 +21,10 @@ public class EstimationManager extends StormSubsystem {
     private final VisionSubsystem vision;
     private final RobotState state;
 
-    /**
-     * Computes vision stddevs scaled by distance and tag count.
-     * Formula: xyStdDev = stdDevX * distance^1.2 / tagCount^1.4
-     * Close multi-tag views get lower stddev (more trust);
-     * far single-tag views get high stddev (barely moves pose).
-     * theta is always huge because MegaTag2 uses the gyro for heading.
-     */
-    private Matrix<N3, N1> computeStdDevs(VisionMeasurement m) {
-        int tagCount = Math.max(1, m.tagCount());
-        double dist = m.closestTagDistanceMeters();
-
-        // dist <= 0 is physically impossible and indicates a bad measurement.
-        // dist = 0 → xyStdDev = 0 (infinite trust in garbage data).
-        // dist < 0 → Math.pow returns NaN, which permanently corrupts the estimator.
-        if (dist <= 0) {
-            return VecBuilder.fill(9999, 9999, Constants.Vision.stdDevTheta);
-        }
-
-        double xyStdDev = Constants.Vision.stdDevX
-            * Math.pow(dist, 1.2)
-            / Math.pow(tagCount, 1.4);
-        return VecBuilder.fill(xyStdDev, xyStdDev, Constants.Vision.stdDevTheta);
-    }
+    /** Vision measurement standard deviations [x(m), y(m), theta(rad)].
+     *  theta is set very high because MegaTag2 already uses the gyro for heading. */
+    private static final Matrix<N3, N1> VISION_STD_DEVS = VecBuilder.fill(
+        Constants.Vision.stdDevX, Constants.Vision.stdDevY, Constants.Vision.stdDevTheta);
 
     public EstimationManager(DrivetrainBase drivetrain, VisionSubsystem vision) {
         this.drivetrain = drivetrain;
@@ -76,11 +57,10 @@ public class EstimationManager extends StormSubsystem {
                 if (Constants.Vision.mergeVision) {
                     Pose2d poseBefore = poseEstimator.getPose();
 
-                    Matrix<N3, N1> stdDevs = computeStdDevs(m);
                     poseEstimator.addVisionMeasurement(
                         m.pose(),
                         m.timestampSeconds(),
-                        stdDevs
+                        VISION_STD_DEVS
                     );
 
                     Pose2d poseAfter = poseEstimator.getPose();
@@ -96,7 +76,6 @@ public class EstimationManager extends StormSubsystem {
                     Logger.recordOutput("Estimation/" + src + "/PoseBefore", poseBefore);
                     Logger.recordOutput("Estimation/" + src + "/PoseAfter", poseAfter);
                     Logger.recordOutput("Estimation/" + src + "/TagDistMeters", m.closestTagDistanceMeters());
-                    Logger.recordOutput("Estimation/" + src + "/StdDevXY", stdDevs.get(0, 0));
                 }
             }
         }
