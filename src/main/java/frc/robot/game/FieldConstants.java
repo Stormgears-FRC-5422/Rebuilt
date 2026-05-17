@@ -3,6 +3,7 @@ package frc.robot.game;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.RobotState.StateAlliance;
 
 public class FieldConstants {
     public static boolean isAndyMark = true;
@@ -32,6 +33,18 @@ public class FieldConstants {
 
     public static boolean isInAllianceZones(double xMeters) {
         return xMeters <= BLUE_ALLIANCE_ZONE_MAX_X || xMeters >= RED_ALLIANCE_ZONE_MIN_X;
+    }
+
+    public static boolean isInAllianceZone(Pose2d pose, StateAlliance alliance) {
+        return isInAllianceZone(pose.getX(), alliance);
+    }
+
+    public static boolean isInAllianceZone(double xMeters, StateAlliance alliance) {
+        return switch (alliance) {
+            case BLUE -> xMeters <= BLUE_ALLIANCE_ZONE_MAX_X;
+            case RED -> xMeters >= RED_ALLIANCE_ZONE_MIN_X;
+            case MISSING -> false;
+        };
     }
 
     /**

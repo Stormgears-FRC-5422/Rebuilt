@@ -151,6 +151,10 @@ public class RobotState {
         return currentPose.minus(hubPose).getTranslation().getNorm();
     }
 
+    public boolean isInAllianceZone() {
+        return currentPose != null && alliance != null && FieldConstants.isInAllianceZone(currentPose, alliance);
+    }
+
     public double GetDistFromAlliance() {
         Pose2d targetPose;
         if(RobotState.getInstance().isAllianceRed())
