@@ -215,7 +215,12 @@ public class RobotContainer {
                 .whileTrue(new IntakeHome(intake)
                     .finallyDo(() -> elasticMotorController.homeIntake.setValue(false)));
 
-            new Trigger(() -> firstJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+            Trigger intakeRunTrigger1 = new Trigger(() -> firstJoystick.getIntakeRun());
+            if (Constants.Intake.toggleableIntakeButton) {
+                intakeRunTrigger1.toggleOnTrue(new RunRoller(intake, true));
+            } else {
+                intakeRunTrigger1.whileTrue(new RunRoller(intake, true));
+            }
 
             new Trigger(() -> firstJoystick.enableRumble()).onTrue(Commands.either(
                 new DynamicRumble(intake),
@@ -371,7 +376,12 @@ public class RobotContainer {
             new Trigger(() -> secondJoystick.intakeTogglePressed())
                 .onTrue(new IntakeGoToPosition(intake, Constants.Intake.intakingAngle));
 
-            new Trigger(() -> secondJoystick.getIntakeRun()).whileTrue(new RunRoller(intake, true));
+            Trigger intakeRunTrigger2 = new Trigger(() -> secondJoystick.getIntakeRun());
+            if (Constants.Intake.toggleableIntakeButton) {
+                intakeRunTrigger2.toggleOnTrue(new RunRoller(intake, true));
+            } else {
+                intakeRunTrigger2.whileTrue(new RunRoller(intake, true));
+            }
 
             if (Toggles.useShooter) {
                 new Trigger(() -> secondJoystick.outtake()).whileTrue(
