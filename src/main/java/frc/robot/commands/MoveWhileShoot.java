@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Constants.Shooter;
+import frc.robot.Constants.Toggles;
 import frc.robot.game.FieldConstants;
 import frc.robot.Options.DriveOptions;
 import frc.robot.RobotState;
@@ -74,10 +75,15 @@ public class MoveWhileShoot extends StormCommand {
     public void execute() {
         super.execute();
 
-        if (turboSupplier.getAsDouble() <= 0.2) {
-            drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
+        if (Toggles.useTurbo) {
+            if (turboSupplier.getAsDouble() <= 0.2) {
+                drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
+            } else {
+                drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
+            }
         } else {
-            drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
+            double stickMag = Math.hypot(txSupplier.getAsDouble(), tySupplier.getAsDouble());
+            drivetrain.setDriveSpeedScale(Drive.minDriveSpeedScale + stickMag * (1.0 - Drive.minDriveSpeedScale));
         }
 
         double x = txSupplier.getAsDouble();
