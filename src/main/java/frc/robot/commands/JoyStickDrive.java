@@ -70,7 +70,7 @@ public class JoyStickDrive extends StormCommand {
     public void execute() {
         super.execute();
 
-        if (Toggles.useTurbo) {
+        if (Drive.useTurbo) {
             if (turboSupplier.getAsDouble() <= 0.2) {
                 drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
             } else {
