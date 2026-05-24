@@ -75,6 +75,9 @@ public class MoveWhileShoot extends StormCommand {
     public void execute() {
         super.execute();
 
+        double x = txSupplier.getAsDouble();
+        double y = tySupplier.getAsDouble();
+
         if (Drive.useTurbo) {
             if (turboSupplier.getAsDouble() <= 0.2) {
                 drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
@@ -85,9 +88,6 @@ public class MoveWhileShoot extends StormCommand {
             double stickMag = Math.hypot(txSupplier.getAsDouble(), tySupplier.getAsDouble());
             drivetrain.setDriveSpeedScale(Drive.minDriveSpeedScale + stickMag * (1.0 - Drive.minDriveSpeedScale));
         }
-
-        double x = txSupplier.getAsDouble();
-        double y = tySupplier.getAsDouble();
 
         if (ButtonBoard.squarePath) {
             x = xScaleLimiter.calculate(x * Math.abs(x));
