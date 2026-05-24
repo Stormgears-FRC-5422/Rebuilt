@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
+import frc.robot.Constants.Toggles;
 import frc.robot.Options.DriveOptions;
 import frc.robot.joysticks.RebuiltJoystick;
 import frc.robot.subsystems.drive.DrivetrainBase;
@@ -64,14 +65,19 @@ public class AlignNarrow extends StormCommand {
     public void execute() {
         super.execute();
 
-        if (turboSupplier.getAsDouble() <= 0.2) {
-            drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
-        } else {
-            drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
-        }
-
         double x = txSupplier.getAsDouble();
         double y = tySupplier.getAsDouble();
+
+        if (Drive.useTurbo) {
+            if (turboSupplier.getAsDouble() <= 0.2) {
+                drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
+            } else {
+                drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
+            }
+        } else {
+            double stickMag = Math.hypot(txSupplier.getAsDouble(), tySupplier.getAsDouble());
+            drivetrain.setDriveSpeedScale(Drive.minDriveSpeedScale + stickMag * (1.0 - Drive.minDriveSpeedScale));
+        }
 
         if (ButtonBoard.squarePath) {
             x = xScaleLimiter.calculate(x * Math.abs(x));

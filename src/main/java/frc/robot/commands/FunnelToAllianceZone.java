@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.ButtonBoard;
 import frc.robot.Constants.Drive;
 import frc.robot.Constants.Shooter;
+import frc.robot.Constants.Toggles;
 import frc.robot.game.FieldConstants;
 import frc.robot.game.RebuiltField;
 import frc.robot.Options.DriveOptions;
@@ -84,14 +85,19 @@ public class FunnelToAllianceZone extends StormCommand {
     public void execute() {
         super.execute();
 
-        if (turboSupplier.getAsDouble() <= 0.2) {
-            drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
-        } else {
-            drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
-        }
-
         double x = txSupplier.getAsDouble();
         double y = tySupplier.getAsDouble();
+
+        if (Drive.useTurbo) {
+            if (turboSupplier.getAsDouble() <= 0.2) {
+                drivetrain.setDriveSpeedScale(Drive.precisionSpeedScale);
+            } else {
+                drivetrain.setDriveSpeedScale(turboSupplier.getAsDouble());
+            }
+        } else {
+            double stickMag = Math.hypot(txSupplier.getAsDouble(), tySupplier.getAsDouble());
+            drivetrain.setDriveSpeedScale(Drive.minDriveSpeedScale + stickMag * (1.0 - Drive.minDriveSpeedScale));
+        }
 
         if (ButtonBoard.squarePath) {
             x = xScaleLimiter.calculate(x * Math.abs(x));
