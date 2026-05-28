@@ -34,6 +34,11 @@ public class FieldConstants {
         return xMeters <= BLUE_ALLIANCE_ZONE_MAX_X || xMeters >= RED_ALLIANCE_ZONE_MIN_X;
     }
 
+    public static boolean isPastMidlineAwayFromAlliance(Pose2d robotPose, boolean isRedAlliance) {
+        double midline = RebuiltField.FIELD_LENGTH / 2.0;
+        return isRedAlliance ? robotPose.getX() < midline : robotPose.getX() > midline;
+    }
+
     /**
      * Method should NOT be used directly in commands
      * @param id the id of the tag
