@@ -96,6 +96,7 @@ public class AutoCommandFactory {
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Mid TR", "mid_tr");
             secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
+            secondCycleChooser.addOption("Dot", "dot");
 //            secondCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
 //            secondCycleChooser.addOption("Depot", "depot"); // TODO: re-enable when depot paths are loaded
 //            secondCycleChooser.addOption("Double Swipe", "double_swipe"); // TODO: re-enable when double_swipe paths are loaded
@@ -198,6 +199,10 @@ public class AutoCommandFactory {
         // Middle-start cycle trajectories
         loadTrajectory("mid_first_depot");
         loadTrajectory("mid_first_outpost");
+
+        // drive only second cycles (no scoring/intaking)
+        loadTrajectory("dot_left");
+        loadTrajectory("dot_right");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -298,6 +303,11 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
+            if ("dot".equals(secondCycle)) {
+                commands.add(choreoFactory.trajectoryCmd(secondTrajectory));
+                commands.add(stopDrive());
+                return Commands.sequence(commands.toArray(new Command[0]));
+            }
             commands.add(Commands.race(
                 Commands.sequence(
                     new IntakeGoToPosition(intake, IntakePosition.BOTTOM).withTimeout(1.5),
@@ -346,6 +356,7 @@ public class AutoCommandFactory {
 
     private String resolveSecondTrajectory(String effectiveSide, String secondCycle) {
         if ("none".equals(secondCycle)) return null;
+        if ("dot".equals(secondCycle)) return "dot_" + effectiveSide;
         return effectiveSide + "_second_" + secondCycle;
     }
 
