@@ -130,6 +130,10 @@ public class RobotState {
     }
 
     // Make a copy, not a reference to the same object!
+    public boolean hasPose() {
+        return currentPose != null;
+    }
+
     public Pose2d getPose() {
         return new Pose2d(currentPose.getX(), currentPose.getY(), new Rotation2d(currentPose.getRotation().getRadians()));
     }

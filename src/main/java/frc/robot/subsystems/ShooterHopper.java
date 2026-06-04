@@ -33,6 +33,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
+import frc.robot.game.FieldConstants;
 import frc.robot.Options.ButtonBoardOptions;
 import frc.robot.Options.ShooterOptions;
 import frc.utils.StormSubsystem;
@@ -77,6 +78,7 @@ public class ShooterHopper extends StormSubsystem {
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
     private final InterpolatingDoubleTreeMap funnelSpeedMap = new InterpolatingDoubleTreeMap();
+    private double maxShootSpeedRPS = 0;
     private boolean useRealDist = false;
 
     private boolean toHub = true;
@@ -154,6 +156,7 @@ public class ShooterHopper extends StormSubsystem {
                 .mapToDouble(Double::parseDouble).toArray();
         for (int i = 0; i < distances.length; i++) {
             shootSpeedMap.put(distances[i], speeds[i]);
+            maxShootSpeedRPS = Math.max(maxShootSpeedRPS, speeds[i]);
         }
 
         double[] funnelDistances = Arrays.stream(Shooter.funnelDistances.replaceAll("[{}]", "").split(","))
@@ -214,6 +217,14 @@ public class ShooterHopper extends StormSubsystem {
         state = newState;
     }
 
+    private double getManualRPS() {
+        RobotState rs = RobotState.getInstance();
+        if (rs.hasPose() && FieldConstants.isPastMidlineAwayFromAlliance(rs.getPose(), rs.isAllianceRed())) {
+            return maxShootSpeedRPS;
+        }
+        return shooterOptions.manualRPS.get();
+    }
+
     public double getRPS(){
         return (
             toHub
@@ -256,7 +267,7 @@ public class ShooterHopper extends StormSubsystem {
                 sideMotorFollower.set(0);
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
+                targetVelocityRPS = useRealDist ? getRPS() : getManualRPS();
                 leaderMotor.setControl(useTorqueFOC
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));
@@ -268,7 +279,7 @@ public class ShooterHopper extends StormSubsystem {
                 sideMotorFollower.set(0);
             }
             case SHOOTING, DIAGNOSTIC -> {
-                targetVelocityRPS = useRealDist ? getRPS() : shooterOptions.manualRPS.get();
+                targetVelocityRPS = useRealDist ? getRPS() : getManualRPS();
                 leaderMotor.setControl(useTorqueFOC
                     ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
                     : velocityVoltage.withVelocity(targetVelocityRPS));

@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.Constants.Auto;
 import frc.robot.Constants.Shooter;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Intake;
@@ -77,6 +78,7 @@ public class AutoCommandFactory {
 
         if (!chooserInitialized) {
             autoChooser.addDefaultOption("Cycle Auto", "CycleAuto");
+            autoChooser.addOption("Delayed Cycle Auto", "DelayedCycleAuto");
             autoChooser.addOption("Nothing", null);
 
             startPositionChooser.addDefaultOption("Left", "left");
@@ -135,8 +137,10 @@ public class AutoCommandFactory {
         String currentFirst = firstCycleChooser.get();
         String currentSecond = secondCycleChooser.get();
 
+        boolean isCycleAuto = "CycleAuto".equals(currentSelection) || "DelayedCycleAuto".equals(currentSelection);
+
         // Always log validity for Elastic dashboard
-        if ("CycleAuto".equals(currentSelection)) {
+        if (isCycleAuto) {
             boolean validCombo = isValidCycleCombo(currentStart, currentFirst, currentSecond);
             Logger.recordOutput("Auto/ValidCombo", validCombo);
             Logger.recordOutput("Auto/CycleDescription", currentStart + " / " + currentFirst + " / " + currentSecond);
@@ -157,8 +161,11 @@ public class AutoCommandFactory {
         lastFirstCycle = currentFirst;
         lastSecondCycle = currentSecond;
 
-        if ("CycleAuto".equals(chooserTrajectoryName)) {
-            chosenCommand = buildCycleAuto(currentStart, currentFirst, currentSecond);
+        if (isCycleAuto) {
+            Command cycleAuto = buildCycleAuto(currentStart, currentFirst, currentSecond);
+            chosenCommand = "DelayedCycleAuto".equals(chooserTrajectoryName)
+                ? Commands.sequence(Commands.waitSeconds(Auto.delaySeconds), cycleAuto)
+                : cycleAuto;
             chosenTrajectory = loadTrajectory(resolveInitialPoseTrajectory(currentStart, currentFirst));
         } else {
             chosenCommand = Commands.none();
