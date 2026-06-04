@@ -96,11 +96,7 @@ public class AutoCommandFactory {
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Mid TR", "mid_tr");
             secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
-            // Drive-only second cycles (no shooting/intaking) — value is the trajectory name
-            secondCycleChooser.addOption("LeftDot", "left_second_dot");
-            secondCycleChooser.addOption("RightDot", "right_second_dot");
-            secondCycleChooser.addOption("LeftMidDot", "left_dot_mid");
-            secondCycleChooser.addOption("RightMidDot", "right_dot_mid");
+            secondCycleChooser.addOption("Dot", "dot");
 //            secondCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
 //            secondCycleChooser.addOption("Depot", "depot"); // TODO: re-enable when depot paths are loaded
 //            secondCycleChooser.addOption("Double Swipe", "double_swipe"); // TODO: re-enable when double_swipe paths are loaded
@@ -205,10 +201,8 @@ public class AutoCommandFactory {
         loadTrajectory("mid_first_outpost");
 
         // drive only second cycles (no scoring/intaking)
-        loadTrajectory("left_second_dot");
-        loadTrajectory("right_second_dot");
-        loadTrajectory("left_dot_mid");
-        loadTrajectory("right_dot_mid");
+        loadTrajectory("dot_left");
+        loadTrajectory("dot_right");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -309,7 +303,7 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
-            if (isDriveOnlySecondCycle(secondCycle)) {
+            if ("dot".equals(secondCycle)) {
                 commands.add(choreoFactory.trajectoryCmd(secondTrajectory));
                 commands.add(stopDrive());
                 return Commands.sequence(commands.toArray(new Command[0]));
@@ -360,18 +354,9 @@ public class AutoCommandFactory {
         return "left";
     }
 
-    /** Drive-only second cycles run their trajectory as-is with no intake/shooter/other commands.
-     *  Their chooser value IS the trajectory name. */
-    private static final java.util.Set<String> DRIVE_ONLY_SECOND_CYCLES = java.util.Set.of(
-        "left_second_dot", "right_second_dot", "left_dot_mid", "right_dot_mid");
-
-    private boolean isDriveOnlySecondCycle(String secondCycle) {
-        return DRIVE_ONLY_SECOND_CYCLES.contains(secondCycle);
-    }
-
     private String resolveSecondTrajectory(String effectiveSide, String secondCycle) {
         if ("none".equals(secondCycle)) return null;
-        if (isDriveOnlySecondCycle(secondCycle)) return secondCycle;
+        if ("dot".equals(secondCycle)) return "dot_" + effectiveSide;
         return effectiveSide + "_second_" + secondCycle;
     }
 
