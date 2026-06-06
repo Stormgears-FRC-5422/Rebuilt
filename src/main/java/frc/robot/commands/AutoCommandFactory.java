@@ -98,7 +98,11 @@ public class AutoCommandFactory {
             secondCycleChooser.addOption("Mid", "mid");
             secondCycleChooser.addOption("Mid TR", "mid_tr");
             secondCycleChooser.addOption("Mid TR 2", "mid_tr_2");
-            secondCycleChooser.addOption("Dot", "dot");
+
+            secondCycleChooser.addOption("Left Dot", "left_dot");
+            secondCycleChooser.addOption("Right Dot", "right_dot");
+            secondCycleChooser.addOption("Left Mid Dot", "left_mid_dot");
+            secondCycleChooser.addOption("Right Mid Dot", "right_mid_dot");
 //            secondCycleChooser.addOption("Mid Windham", "mid_windham"); // TODO: re-enable when windham paths are loaded
 //            secondCycleChooser.addOption("Depot", "depot"); // TODO: re-enable when depot paths are loaded
 //            secondCycleChooser.addOption("Double Swipe", "double_swipe"); // TODO: re-enable when double_swipe paths are loaded
@@ -207,9 +211,11 @@ public class AutoCommandFactory {
         loadTrajectory("mid_first_depot");
         loadTrajectory("mid_first_outpost");
 
-        // drive only second cycles (no scoring/intaking)
-        loadTrajectory("dot_left");
-        loadTrajectory("dot_right");
+        // drive only second cycles (no scoring/intaking) — side-independent, any selectable
+        loadTrajectory("left_dot");
+        loadTrajectory("right_dot");
+        loadTrajectory("left_mid_dot");
+        loadTrajectory("right_mid_dot");
     }
 
     private Optional<? extends Trajectory<?>> loadTrajectory(String trajectoryName) {
@@ -310,7 +316,7 @@ public class AutoCommandFactory {
 
         // Second cycle (if selected)
         if (secondTrajectory != null) {
-            if ("dot".equals(secondCycle)) {
+            if (isDot(secondCycle)) {
                 commands.add(choreoFactory.trajectoryCmd(secondTrajectory));
                 commands.add(stopDrive());
                 return Commands.sequence(commands.toArray(new Command[0]));
@@ -363,8 +369,14 @@ public class AutoCommandFactory {
 
     private String resolveSecondTrajectory(String effectiveSide, String secondCycle) {
         if ("none".equals(secondCycle)) return null;
-        if ("dot".equals(secondCycle)) return "dot_" + effectiveSide;
+        // Dot trajectory names are absolute and side-independent — use them as-is
+        if (isDot(secondCycle)) return secondCycle;
         return effectiveSide + "_second_" + secondCycle;
+    }
+
+    /** Dot second cycles are drive-only and selectable from any start position. */
+    private boolean isDot(String secondCycle) {
+        return secondCycle != null && secondCycle.endsWith("dot");
     }
 
     private String resolveInitialPoseTrajectory(String start, String firstCycle) {

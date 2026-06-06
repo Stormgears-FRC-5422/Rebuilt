@@ -14,6 +14,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
@@ -68,6 +69,7 @@ public class ShooterHopper extends StormSubsystem {
     private final NeutralOut neutralOut = new NeutralOut();
     private final VoltageOut sysIdVoltage = new VoltageOut(0);
     private final VoltageOut fullPowerVoltage = new VoltageOut(12.0);
+    private final DutyCycleOut fullDutyCycle = new DutyCycleOut(1.0);
     private final VoltageOut reverseVoltage = new VoltageOut(-12.0);
     private final TorqueCurrentFOC sysIdTorque = new TorqueCurrentFOC(0);
     private final SysIdRoutine sysIdRoutine;
@@ -78,7 +80,6 @@ public class ShooterHopper extends StormSubsystem {
 
     private final InterpolatingDoubleTreeMap shootSpeedMap = new InterpolatingDoubleTreeMap();
     private final InterpolatingDoubleTreeMap funnelSpeedMap = new InterpolatingDoubleTreeMap();
-    private double maxShootSpeedRPS = 0;
     private boolean useRealDist = false;
 
     private boolean toHub = true;
@@ -156,7 +157,6 @@ public class ShooterHopper extends StormSubsystem {
                 .mapToDouble(Double::parseDouble).toArray();
         for (int i = 0; i < distances.length; i++) {
             shootSpeedMap.put(distances[i], speeds[i]);
-            maxShootSpeedRPS = Math.max(maxShootSpeedRPS, speeds[i]);
         }
 
         double[] funnelDistances = Arrays.stream(Shooter.funnelDistances.replaceAll("[{}]", "").split(","))
@@ -218,11 +218,29 @@ public class ShooterHopper extends StormSubsystem {
     }
 
     private double getManualRPS() {
-        RobotState rs = RobotState.getInstance();
-        if (rs.hasPose() && FieldConstants.isPastMidlineAwayFromAlliance(rs.getPose(), rs.isAllianceRed())) {
-            return maxShootSpeedRPS;
-        }
         return shooterOptions.manualRPS.get();
+    }
+
+    private boolean isManualFullSend() {
+        RobotState rs = RobotState.getInstance();
+        return !useRealDist && rs.hasPose()
+                && FieldConstants.isPastMidlineAwayFromAlliance(rs.getPose(), rs.isAllianceRed());
+    }
+
+    private void commandFlywheel() {
+        if (isManualFullSend()) {
+            leaderMotor.setControl(fullDutyCycle);
+            followerMotor.setControl(fullDutyCycle);
+            targetVelocityRPS = getCurrentVelocityRPS(); 
+            return;
+        }
+        targetVelocityRPS = useRealDist ? getRPS() : getManualRPS();
+        leaderMotor.setControl(useTorqueFOC
+            ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
+            : velocityVoltage.withVelocity(targetVelocityRPS));
+        followerMotor.setControl(useTorqueFOC
+            ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
+            : followerVelocityVoltage.withVelocity(targetVelocityRPS));
     }
 
     public double getRPS(){
@@ -267,25 +285,13 @@ public class ShooterHopper extends StormSubsystem {
                 sideMotorFollower.set(0);
             }
             case SPEEDING_UP -> {
-                targetVelocityRPS = useRealDist ? getRPS() : getManualRPS();
-                leaderMotor.setControl(useTorqueFOC
-                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
-                    : velocityVoltage.withVelocity(targetVelocityRPS));
-                followerMotor.setControl(useTorqueFOC
-                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
-                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
+                commandFlywheel();
                 fuelInjector.set(0);
                 sideMotorLeader.set(0);
                 sideMotorFollower.set(0);
             }
             case SHOOTING, DIAGNOSTIC -> {
-                targetVelocityRPS = useRealDist ? getRPS() : getManualRPS();
-                leaderMotor.setControl(useTorqueFOC
-                    ? velocityTorqueFOC.withVelocity(targetVelocityRPS)
-                    : velocityVoltage.withVelocity(targetVelocityRPS));
-                followerMotor.setControl(useTorqueFOC
-                    ? followerVelocityTorqueFOC.withVelocity(targetVelocityRPS)
-                    : followerVelocityVoltage.withVelocity(targetVelocityRPS));
+                commandFlywheel();
                 fuelInjector.set(shooterOptions.fuelInjectorSpeed.get());
                 double sideSpeed = shooterOptions.sideMotorSpeed.get();
                 sideMotorLeader.set(sideSpeed);
